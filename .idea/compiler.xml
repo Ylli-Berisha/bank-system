@@ -7,7 +7,7 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
       </profile>
-      <profile name="Annotation profile for users-service" enabled="true">
+      <profile name="Annotation profile for accounts-service" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
@@ -15,6 +15,7 @@
           <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.38/lombok-1.18.38.jar" />
         </processorPath>
         <module name="accounts-service" />
+        <module name="shared" />
         <module name="users-service" />
         <module name="audit-service" />
         <module name="admin-service" />
@@ -31,6 +32,7 @@
       <module name="admin-service" options="-parameters" />
       <module name="audit-service" options="-parameters" />
       <module name="banking-app-bom" options="" />
+      <module name="shared" options="-parameters" />
       <module name="transactions-service" options="-parameters" />
       <module name="users-service" options="-parameters" />
     </option>

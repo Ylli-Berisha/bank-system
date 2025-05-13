@@ -2,7 +2,7 @@ spring:
   application:
     name: audit-service
   datasource:
-    url: jdbc:postgresql://localhost:5432/auditdb
-    username: "ylli-audit"
+    url: jdbc:postgresql://localhost:5432/bankdb
+    username: "yllbaba"
     password: "secret"
     driver-class-name: org.postgresql.Driver

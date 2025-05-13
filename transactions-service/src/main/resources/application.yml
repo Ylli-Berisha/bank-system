@@ -2,7 +2,7 @@ spring:
   application:
     name: transactions-service
   datasource:
-    url: jdbc:postgresql://localhost:5432/transactionsdb
-    username: "ylli-transactions"
+    url: jdbc:postgresql://localhost:5432/bankdb
+    username: "yllbaba"
     password: "secret"
     driver-class-name: org.postgresql.Driver

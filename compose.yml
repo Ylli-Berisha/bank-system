@@ -4,7 +4,6 @@ services:
     environment:
       POSTGRES_USER: yllbaba
       POSTGRES_PASSWORD: secret
+      POSTGRES_DB: bankdb
     ports:
       - "5432:5432"
-    volumes:
-      - ./init-db:/docker-entrypoint-initdb.d
