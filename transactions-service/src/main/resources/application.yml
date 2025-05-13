@@ -1,0 +1,8 @@
+spring:
+  application:
+    name: transactions-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/transactionsdb
+    username: "ylli-transactions"
+    password: "secret"
+    driver-class-name: org.postgresql.Driver

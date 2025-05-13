@@ -1,0 +1,8 @@
+spring:
+  application:
+    name: admin-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/admindb
+    username: "ylli-admin"
+    password: "secret"
+    driver-class-name: org.postgresql.Driver

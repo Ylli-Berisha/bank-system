@@ -1,0 +1,8 @@
+spring:
+  application:
+    name: accounts-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/accountsdb
+    username: "ylli-accounts"
+    password: "secret"
+    driver-class-name: org.postgresql.Driver
