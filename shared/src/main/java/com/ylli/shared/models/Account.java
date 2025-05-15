@@ -1,50 +1,48 @@
 package com.ylli.shared.models;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.ManyToOne;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+    import jakarta.persistence.Column;
+    import jakarta.persistence.Entity;
+    import jakarta.persistence.Id;
+    import jakarta.persistence.ManyToOne;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
+    import jakarta.validation.constraints.*;
+    import lombok.AllArgsConstructor;
+    import lombok.Getter;
+    import lombok.NoArgsConstructor;
+    import lombok.Setter;
 
-@Entity
-@AllArgsConstructor
-@NoArgsConstructor
-@Getter
-@Setter
-public class Account {
+    import java.math.BigDecimal;
+    import java.time.LocalDateTime;
 
-    @Id
-    private String id;
+    @Entity(name = "accounts")
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Getter
+    @Setter
+    public class Account {
 
+        @Id
+        private String id;
 
-    @ManyToOne
-    private User user;
+        @ManyToOne
+        private User user;
 
+        @Column
+        private String type;
 
-    @Column
-    private String Type;
+        @Column
+        @NotNull(message = "Balance cannot be null")
+        @Digits(integer = 13, fraction = 2, message = "Balance must have up to 13 digits and 2 decimal places")
+        private BigDecimal balance;
 
+        @Column
+        private String status;
 
-    @Column
-    private BigDecimal balance;
+        @Column
+        @NotNull(message = "Created date cannot be null")
+        private LocalDateTime createdAt;
 
-    @Column
-    private String status;
-
-    @Column
-    private LocalDateTime createdAt;
-
-    @Column
-    private LocalDateTime updatedAt;
-
-//    @Column
-//    private String status;
-
-}
-
+        @Column
+        @NotNull(message = "Updated date cannot be null")
+        private LocalDateTime updatedAt;
+    }
