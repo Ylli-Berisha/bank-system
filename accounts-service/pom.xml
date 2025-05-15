@@ -12,7 +12,7 @@
 	<artifactId>accounts-service</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>accounts-service</name>
-	<description>Banking app bom</description>
+	<description>Accounts microservice</description>
 	<url/>
 	<licenses>
 		<license/>
