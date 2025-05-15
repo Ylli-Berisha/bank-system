@@ -1,5 +1,6 @@
 package com.ylli.shared.models;
 
+import com.ylli.shared.base.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -10,14 +11,14 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+
 
 @Entity(name = "loans")
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
 @Setter
-public class Loan {
+public class Loan extends BaseEntity<Long> {
     @Id
     private Long id;
 
@@ -44,9 +45,17 @@ public class Loan {
     @Column
     private LocalDate endDate;
 
-    @Column
-    private LocalDateTime createdAt;
+    @Override
+    public Long getId() {
+        return id;
+    }
 
-    @Column
-    private LocalDateTime updatedAt;
+    @Override
+    public void setId(Long id) {
+        if (id == null) {
+            throw new IllegalArgumentException("ID cannot be null");
+        }
+        this.id = id;
+    }
+
 }

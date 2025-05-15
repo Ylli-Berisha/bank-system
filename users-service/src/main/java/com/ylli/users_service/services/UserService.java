@@ -1,16 +1,9 @@
 package com.ylli.users_service.services;
+import com.ylli.shared.base.BaseService;
 import com.ylli.shared.dtos.UserDto;
 
 import java.util.List;
 
-public interface UserService {
-    UserDto getUserById(String id);
-
-    UserDto createUser(UserDto userDto);
-
-    UserDto updateUser(String id, UserDto userDto);
-
-    UserDto deleteUser(String id);
-
+public interface UserService extends BaseService<UserDto, String> {
     List<UserDto> getAllUsers();
 }

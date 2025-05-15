@@ -1,8 +1,8 @@
-package com.ylli.shared;
+package com.ylli.shared.base;
 
 import java.util.List;
 
-public interface SimpleMapper<E, D> {
+public interface BaseMapper<E, D> {
     D toDto(E entity);
 
     E toEntity(D dto);

@@ -1,5 +1,6 @@
 package com.ylli.shared.models;
 
+import com.ylli.shared.base.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -16,7 +17,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Getter
 @Setter
-public class Audit {
+public class Audit extends BaseEntity<Long> {
 
     @Id
     private Long id;
@@ -31,7 +32,17 @@ public class Audit {
     @Column
     private String details;
 
-    @Column
-    private LocalDateTime createAt;
+    @Override
+    public Long getId() {
+        return id;
+    }
+
+    @Override
+    public void setId(Long id) {
+        if (id == null) {
+            throw new IllegalArgumentException("ID cannot be null");
+        }
+        this.id = id;
+    }
 
 }
