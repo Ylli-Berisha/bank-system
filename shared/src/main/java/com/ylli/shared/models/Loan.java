@@ -1,10 +1,9 @@
 package com.ylli.shared.models;
 
 import com.ylli.shared.base.BaseEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.ManyToOne;
+import com.ylli.shared.enums.LoanStatus;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -12,37 +11,49 @@ import lombok.Setter;
 
 import java.time.LocalDate;
 
-
 @Entity(name = "loans")
+@Table(indexes = {
+        @Index(name = "idx_loan_account", columnList = "account_id"),
+        @Index(name = "idx_loan_status", columnList = "status")
+})
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
 @Setter
 public class Loan extends BaseEntity<Long> {
+
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "account_id", nullable = false)
+    @NotNull(message = "Account cannot be null")
     private Account account;
 
-    //make this enum
-    @Column
-    private String type;
-
-    @Column
+    @Column(nullable = false, precision = 15, scale = 2)
+    @NotNull(message = "Amount cannot be null")
+    @Positive(message = "Amount must be positive")
     private Double amount;
 
-    @Column
+    @Column(nullable = false, precision = 5, scale = 2)
+    @NotNull(message = "Interest rate cannot be null")
+    @PositiveOrZero(message = "Interest rate must be zero or positive")
     private Double interestRate;
 
-    //make this enum
-    @Column
-    private String status;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    @NotNull(message = "Loan status cannot be null")
+    private LoanStatus status;
 
-    @Column
+    @Column(nullable = false)
+    @NotNull(message = "Start date cannot be null")
+    @PastOrPresent(message = "Start date must be in the past or present")
     private LocalDate startDate;
 
-    @Column
+    @Column(nullable = false)
+    @NotNull(message = "End date cannot be null")
+    @Future(message = "End date must be in the future")
     private LocalDate endDate;
 
     @Override
@@ -57,5 +68,4 @@ public class Loan extends BaseEntity<Long> {
         }
         this.id = id;
     }
-
 }

@@ -6,14 +6,9 @@ import com.ylli.shared.models.User;
 import com.ylli.users_service.mappers.UserMapper;
 import com.ylli.users_service.repositories.UserRepository;
 import com.ylli.users_service.services.UserService;
-import jakarta.persistence.EntityNotFoundException;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 
 @Service
@@ -22,6 +17,13 @@ public class UserServiceImpl extends BaseServiceImpl<User, UserDto, String, User
     @Autowired
     public UserServiceImpl(UserRepository userRepository, UserMapper userMapper) {
         super(userRepository, userMapper);
+    }
+
+    @Override
+    public List<UserDto> getAllUsers() {
+        return repository.findAll().stream()
+                .map(mapper::toDto)
+                .collect(Collectors.toList());
     }
 }
 
