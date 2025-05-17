@@ -1,6 +1,6 @@
 package com.ylli.shared.base;
-
-import jakarta.persistence.EntityNotFoundException;
+import com.ylli.shared.exceptions.ResourceNotFoundException;
+import com.ylli.shared.exceptions.ValidationException;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public abstract class BaseServiceImpl<E extends BaseEntity<K>, D, K, R extends JpaRepository<E, K>, M extends BaseMapper<E, D>> implements BaseService<D, K> {
@@ -16,15 +16,16 @@ public abstract class BaseServiceImpl<E extends BaseEntity<K>, D, K, R extends J
     @Override
     public D getById(K id) {
         if (id == null) {
-            throw new IllegalArgumentException("ID cannot be null");
+            throw new ValidationException("ID cannot be null");
         }
-        return mapper.toDto(repository.findById(id).orElseThrow(() -> new EntityNotFoundException("Entity not found")));
+        return mapper.toDto(repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Entity not found with id: " + id)));
     }
 
     @Override
     public D create(D dto) {
         if (dto == null) {
-            throw new IllegalArgumentException("DTO cannot be null");
+            throw new ValidationException("DTO cannot be null");
         }
         E entity = mapper.toEntity(dto);
         return mapper.toDto(repository.save(entity));
@@ -33,9 +34,10 @@ public abstract class BaseServiceImpl<E extends BaseEntity<K>, D, K, R extends J
     @Override
     public D update(K id, D dto) {
         if (id == null || dto == null) {
-            throw new IllegalArgumentException("ID or DTO cannot be null");
+            throw new ValidationException(id == null ? "ID cannot be null" : "DTO cannot be null");
         }
-        E entity = repository.findById(id).orElseThrow(() -> new EntityNotFoundException("Entity not found"));
+        E entity = repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Entity not found with id: " + id));
         E updatedEntity = mapper.toEntity(dto);
         updatedEntity.setId(entity.getId());
         return mapper.toDto(repository.save(updatedEntity));
@@ -44,9 +46,10 @@ public abstract class BaseServiceImpl<E extends BaseEntity<K>, D, K, R extends J
     @Override
     public D delete(K id) {
         if (id == null) {
-            throw new IllegalArgumentException("ID cannot be null");
+            throw new ValidationException("ID cannot be null");
         }
-        E entity = repository.findById(id).orElseThrow(() -> new EntityNotFoundException("Entity not found"));
+        E entity = repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Entity not found with id: " + id));
         repository.delete(entity);
         return mapper.toDto(entity);
     }

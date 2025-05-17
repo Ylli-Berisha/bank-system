@@ -31,12 +31,12 @@ public class Loan extends BaseEntity<Long> {
     @NotNull(message = "Account cannot be null")
     private Account account;
 
-    @Column(nullable = false, precision = 15, scale = 2)
+    @Column(nullable = false)
     @NotNull(message = "Amount cannot be null")
     @Positive(message = "Amount must be positive")
     private Double amount;
 
-    @Column(nullable = false, precision = 5, scale = 2)
+    @Column(nullable = false)
     @NotNull(message = "Interest rate cannot be null")
     @PositiveOrZero(message = "Interest rate must be zero or positive")
     private Double interestRate;
