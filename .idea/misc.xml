@@ -5,13 +5,13 @@
     <option name="originalFiles">
       <list>
         <option value="$PROJECT_DIR$/banking-app-bom/pom.xml" />
-        <option value="$PROJECT_DIR$/accounts-service/pom.xml" />
-        <option value="$PROJECT_DIR$/admin-service/pom.xml" />
         <option value="$PROJECT_DIR$/audit-service/pom.xml" />
         <option value="$PROJECT_DIR$/transactions-service/pom.xml" />
-        <option value="$PROJECT_DIR$/users-service/pom.xml" />
         <option value="$PROJECT_DIR$/shared/pom.xml" />
         <option value="$PROJECT_DIR$/microservices-parent/pom.xml" />
+        <option value="$PROJECT_DIR$/accounts-service/pom.xml" />
+        <option value="$PROJECT_DIR$/users-service/pom.xml" />
+        <option value="$PROJECT_DIR$/admin-service/pom.xml" />
       </list>
     </option>
   </component>

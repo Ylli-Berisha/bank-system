@@ -1,4 +1,4 @@
-package com.ylli.accounts_service.configs;
+package com.ylli.shared.base;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

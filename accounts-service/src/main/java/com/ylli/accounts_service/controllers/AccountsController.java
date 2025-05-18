@@ -3,10 +3,14 @@ package com.ylli.accounts_service.controllers;
 import com.ylli.shared.base.BaseController;
 import com.ylli.accounts_service.services.AccountsService;
 import com.ylli.shared.dtos.AccountDto;
-import jakarta.validation.Valid;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+@Tag(
+        name = "Accounts",
+        description = "Operations related to accounts"
+)
 @RestController
 @RequestMapping("/api/accounts/")
 public class AccountsController extends BaseController<AccountDto, String, AccountsService> {
