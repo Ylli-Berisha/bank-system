@@ -17,6 +17,9 @@
     <!-- <version>0.0.1-SNAPSHOT</version> -->
     <name>admin-service</name>
     <description>Admin microservice</description>
+    <properties>
+        <jib.image.name>ylli-berisha/admin-service</jib.image.name>
+    </properties>
 
     <!-- Properties like java.version and mapstruct.version are inherited from microservices-parent -->
     <!-- <properties> -->
@@ -97,6 +100,21 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
             <!-- Maven Compiler Plugin configuration is inherited from microservices-parent -->
+            <plugin>
+                <groupId>com.google.cloud.tools</groupId>
+                <artifactId>jib-maven-plugin</artifactId>
+                <!-- Configuration here will override or add to parent's configuration -->
+                <!-- For example, if you need specific tags or other settings for this module:
+                <configuration>
+                    <to>
+                        <tags>
+                            <tag>latest</tag>
+                            <tag>${project.version}</tag>
+                        </tags>
+                    </to>
+                </configuration>
+                -->
+            </plugin>
         </plugins>
     </build>
 

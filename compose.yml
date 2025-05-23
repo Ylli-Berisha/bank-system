@@ -7,3 +7,81 @@ services:
       POSTGRES_DB: bankdb
     ports:
       - "5433:5432"
+    networks:
+      - backend_network
+  accounts:
+    image: "ylli-berisha/accounts-service"
+    container_name: "accounts-service"
+    ports:
+      - "8080:8080"
+    deploy:
+      resources:
+        limits:
+          memory: 600m
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/bankdb
+      SPRING_DATASOURCE_USERNAME: yllbaba
+      SPRING_DATASOURCE_PASSWORD: secret
+      SPRING_JPA_HIBERNATE_DDL_AUTO: create-drop
+    networks:
+      - backend_network
+    depends_on:
+      - db
+  audit:
+    image: "ylli-berisha/audit-service"
+    container_name: "audit-service"
+    ports:
+      - "8100:8100"
+    deploy:
+      resources:
+        limits:
+          memory: 600m
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/bankdb
+      SPRING_DATASOURCE_USERNAME: yllbaba
+      SPRING_DATASOURCE_PASSWORD: secret
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+    networks:
+      - backend_network
+    depends_on:
+      - db
+  transactions:
+    image: "ylli-berisha/transactions-service"
+    container_name: "transactions-service"
+    ports:
+      - "8110:8110"
+    deploy:
+      resources:
+        limits:
+          memory: 600m
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/bankdb
+      SPRING_DATASOURCE_USERNAME: yllbaba
+      SPRING_DATASOURCE_PASSWORD: secret
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+    networks:
+      - backend_network
+    depends_on:
+      - db
+  users:
+    image: "ylli-berisha/users-service"
+    container_name: "users-service"
+    ports:
+      - "8120:8120"
+    deploy:
+      resources:
+        limits:
+          memory: 600m
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/bankdb
+      SPRING_DATASOURCE_USERNAME: yllbaba
+      SPRING_DATASOURCE_PASSWORD: secret
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+    networks:
+      - backend_network
+    depends_on:
+      - db
+
+networks:
+  backend_network:
+    driver: bridge

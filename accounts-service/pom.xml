@@ -13,6 +13,9 @@
     <name>accounts-service</name>
     <description>Accounts microservice</description>
 
+    <properties>
+        <jib.image.name>ylli-berisha/accounts-service</jib.image.name>
+    </properties>
     <!-- Empty overrides to prevent inheritance from Spring Boot parent -->
     <url/>
     <licenses>
@@ -95,6 +98,21 @@
                         </exclude>
                     </excludes>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>com.google.cloud.tools</groupId>
+                <artifactId>jib-maven-plugin</artifactId>
+                <!-- Configuration here will override or add to parent's configuration -->
+                <!-- For example, if you need specific tags or other settings for this module:
+                <configuration>
+                    <to>
+                        <tags>
+                            <tag>latest</tag>
+                            <tag>${project.version}</tag>
+                        </tags>
+                    </to>
+                </configuration>
+                -->
             </plugin>
         </plugins>
     </build>
