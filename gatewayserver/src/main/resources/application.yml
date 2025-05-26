@@ -37,3 +37,17 @@ info:
     name: "gatewayserver"
     description: "Edge server for the application"
     version: "1.0.0"
+
+logging:
+  level:
+    com:
+      ylli:
+        gatewayserver: DEBUG
+
+resilience4j.circuitbreaker:
+  configs:
+    default:
+        sliding-window-size: 10
+        permitted-number-of-calls-in-half-open-state: 2
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10000
