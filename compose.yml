@@ -54,6 +54,12 @@ services:
         condition: service_healthy
       eurekaserver:
         condition: service_healthy
+    healthcheck: # Added healthcheck
+      test: "curl --fail --silent localhost:8080/actuator/health/readiness | grep UP || exit 1"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
   audit:
     image: "ylli-berisha/audit-service"
     container_name: "audit-service"
@@ -76,6 +82,12 @@ services:
         condition: service_healthy
       eurekaserver:
         condition: service_healthy
+    healthcheck: # Added healthcheck
+      test: "curl --fail --silent localhost:8100/actuator/health/readiness | grep UP || exit 1"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
   transactions:
     image: "ylli-berisha/transactions-service"
     container_name: "transactions-service"
@@ -98,6 +110,12 @@ services:
         condition: service_healthy
       eurekaserver:
         condition: service_healthy
+    healthcheck: # Added healthcheck
+      test: "curl --fail --silent localhost:8110/actuator/health/readiness | grep UP || exit 1"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
   users:
     image: "ylli-berisha/users-service"
     container_name: "users-service"
@@ -119,6 +137,35 @@ services:
       db:
         condition: service_healthy
       eurekaserver:
+        condition: service_healthy
+    healthcheck: # Added healthcheck
+      test: "curl --fail --silent localhost:8120/actuator/health/readiness | grep UP || exit 1"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  gatewayserver:
+    image: ylli-berisha/gatewayserver
+    container_name: "gatewayserver"
+    ports:
+      - "8072:8072"
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eurekaserver:8070/eureka/
+    networks:
+      - backend_network
+    depends_on:
+      db:
+        condition: service_healthy
+      eurekaserver:
+        condition: service_healthy
+      accounts:
+        condition: service_healthy
+      audit:
+        condition: service_healthy
+      transactions:
+        condition: service_healthy
+      users:
         condition: service_healthy
 
 networks:
