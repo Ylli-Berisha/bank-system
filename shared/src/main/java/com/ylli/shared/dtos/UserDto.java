@@ -1,5 +1,6 @@
 package com.ylli.shared.dtos;
 
+import com.ylli.shared.base.IdentifiableDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.Column;
 import jakarta.persistence.GeneratedValue;
@@ -17,7 +18,7 @@ import java.time.LocalDateTime;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class UserDto {
+public class UserDto implements IdentifiableDto<String> {
 
     @Schema(
             description = "Unique identifier for the user (Pass as null or blank, id is generated server-side)",
@@ -81,4 +82,7 @@ public class UserDto {
     )
     private LocalDateTime createdAt;
 
+//    public String getId() {
+//        return id;
+//    }
 }

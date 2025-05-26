@@ -42,9 +42,6 @@ public class Audit extends BaseEntity<Long> {
 
     @Override
     public void setId(Long id) {
-        if (id == null) {
-            throw new IllegalArgumentException("ID cannot be null");
-        }
         this.id = id;
     }
 }

@@ -1,5 +1,6 @@
 package com.ylli.shared.dtos;
 
+import com.ylli.shared.base.IdentifiableDto;
 import com.ylli.shared.enums.TransactionStatus;
 import com.ylli.shared.enums.TransactionType;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -21,7 +22,7 @@ import java.time.LocalDateTime;
         description = "Transaction Data Transfer Object",
         title = "Transaction DTO"
 )
-public class TransactionDto {
+public class TransactionDto implements IdentifiableDto<String> {
 
     @Schema(
             description = "Unique identifier for the transaction (Pass as null or blank, id is generated server-side)",

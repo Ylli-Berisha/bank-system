@@ -1,14 +1,19 @@
 package com.ylli.shared.base;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.headers.Header;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-public abstract class BaseController<D, K, S extends BaseService<D, K>> {
+import java.net.URI;
+
+public abstract class BaseController<D extends IdentifiableDto<K>, K, S extends BaseService<D, K>> {
 
     protected final S service;
 
@@ -41,7 +46,8 @@ public abstract class BaseController<D, K, S extends BaseService<D, K>> {
             description = "REST API to create an item"
     )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Successfully created item",
+            @ApiResponse(responseCode = "201", description = "Successfully created item",
+                    headers = @Header(name = HttpHeaders.LOCATION, description = "URI of the created item"),
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "400", description = "Invalid input",
                     content = @Content(mediaType = "application/json")),
@@ -50,7 +56,13 @@ public abstract class BaseController<D, K, S extends BaseService<D, K>> {
     })
     @PostMapping("create")
     public ResponseEntity<D> create(@Valid @RequestBody D dto) {
-        return ResponseEntity.ok(service.create(dto));
+        D createdDto = service.create(dto);
+        URI location = ServletUriComponentsBuilder
+                .fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(createdDto.getId())
+                .toUri();
+        return ResponseEntity.created(location).body(createdDto);
     }
 
     @Operation(
@@ -78,8 +90,7 @@ public abstract class BaseController<D, K, S extends BaseService<D, K>> {
             description = "REST API to delete an item by its ID"
     )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Successfully deleted item",
-                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "204", description = "Successfully deleted item"), // No content for 204
             @ApiResponse(responseCode = "400", description = "Invalid ID supplied",
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "Item not found",
@@ -88,9 +99,10 @@ public abstract class BaseController<D, K, S extends BaseService<D, K>> {
                     content = @Content(mediaType = "application/json"))
     })
     @DeleteMapping("delete/{id}")
-    public ResponseEntity<D> delete(@PathVariable K id) {
+    public ResponseEntity<Void> delete(@PathVariable K id) {
         validateId(id);
-        return ResponseEntity.ok(service.delete(id));
+        service.delete(id);
+        return ResponseEntity.noContent().build();
     }
 
     protected void validateId(K id) {

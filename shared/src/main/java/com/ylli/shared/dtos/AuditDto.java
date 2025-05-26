@@ -1,5 +1,6 @@
 package com.ylli.shared.dtos;
 
+import com.ylli.shared.base.IdentifiableDto;
 import com.ylli.shared.enums.AuditType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
@@ -16,7 +17,7 @@ import java.time.LocalDateTime;
         description = "Audit Data Transfer Object",
         title = "Audit DTO"
 )
-public class AuditDto {
+public class AuditDto implements IdentifiableDto<Long> {
 
     @Schema(
             description = "Unique identifier for the audit record (Pass as null or blank, id is generated server-side)",
@@ -29,7 +30,7 @@ public class AuditDto {
             description = "Account associated with the audit record",
             example = "123e4567-e89b-12d3-a456-426614174000"
     )
-    private AccountDto account;
+    private String accountId;
 
     @NotNull(message = "Audit type cannot be null")
     @Schema(

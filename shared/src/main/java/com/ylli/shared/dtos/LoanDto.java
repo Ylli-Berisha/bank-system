@@ -1,5 +1,6 @@
 package com.ylli.shared.dtos;
 
+import com.ylli.shared.base.IdentifiableDto;
 import com.ylli.shared.enums.LoanStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
@@ -17,7 +18,7 @@ import java.time.LocalDateTime;
         description = "Loan Data Transfer Object",
         title = "Loan DTO"
 )
-public class LoanDto {
+public class LoanDto implements IdentifiableDto<Long> {
 
     @Schema(
             description = "Unique identifier for the loan (Pass as null or blank, id is generated server-side)",
@@ -30,7 +31,7 @@ public class LoanDto {
             description = "Account associated with the loan",
             example = "123e4567-e89b-12d3-a456-426614174000"
     )
-    private AccountDto account;
+    private String accountId;
 
     @NotNull(message = "Amount cannot be null")
     @Positive(message = "Amount must be positive")

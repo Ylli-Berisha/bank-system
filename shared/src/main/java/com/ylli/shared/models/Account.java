@@ -52,9 +52,6 @@ public class Account extends BaseEntity<String> {
 
     @Override
     public void setId(String id) {
-        if (id == null || id.isEmpty()) {
-            throw new IllegalArgumentException("ID cannot be null or empty");
-        }
         this.id = id;
     }
 }

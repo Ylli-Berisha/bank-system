@@ -1,5 +1,6 @@
 package com.ylli.shared.dtos;
 
+    import com.ylli.shared.base.IdentifiableDto;
     import com.ylli.shared.enums.AccountStatus;
     import com.ylli.shared.enums.AccountType;
     import com.ylli.shared.models.User;
@@ -19,10 +20,8 @@ package com.ylli.shared.dtos;
             description = "Account Data Transfer Object",
             title = "Account DTO"
     )
-    public class AccountDto {
+    public class AccountDto implements IdentifiableDto<String> {
 
-        @NotBlank(message = "Account ID cannot be blank")
-        @Size(max = 255, message = "Account ID must not exceed 255 characters")
         @Schema(
                 description = "Unique identifier for the account (Pass as null or blank, id is generated server-side)",
                 example = ""
@@ -76,4 +75,5 @@ package com.ylli.shared.dtos;
                 example = ""
         )
         private LocalDateTime updatedAt;
+
     }

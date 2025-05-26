@@ -7,5 +7,5 @@ public interface BaseService<D, K> {
 
     D update(K id, D dto);
 
-    D delete(K id);
+    void delete(K id);
 }

@@ -44,13 +44,12 @@ public abstract class BaseServiceImpl<E extends BaseEntity<K>, D, K, R extends J
     }
 
     @Override
-    public D delete(K id) {
+    public void delete(K id) {
         if (id == null) {
             throw new ValidationException("ID cannot be null");
         }
         E entity = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Entity not found with id: " + id));
         repository.delete(entity);
-        return mapper.toDto(entity);
     }
 }
