@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
         description = "Operations related to accounts"
 )
 @RestController
-@RequestMapping("/api/accounts/")
+@RequestMapping("/api/accounts")
 public class AccountsController extends BaseController<AccountDto, String, AccountsService> {
 
     @Autowired

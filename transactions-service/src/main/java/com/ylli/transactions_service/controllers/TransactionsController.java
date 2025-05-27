@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
         description = "Operations related to transactions"
 )
 @RestController
-@RequestMapping("/api/transactions/")
+@RequestMapping("/api/transactions")
 public class TransactionsController extends BaseController<TransactionDto, String, TransactionsService> {
 
     public TransactionsController(TransactionsService service) {

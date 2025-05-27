@@ -35,8 +35,8 @@ services:
   accounts:
     image: "ylli-berisha/accounts-service"
     container_name: "accounts-service"
-#    ports:
-#      - "8080:8080"
+    ports:
+      - "8080:8080"
     deploy:
       resources:
         limits:
@@ -63,8 +63,8 @@ services:
   audit:
     image: "ylli-berisha/audit-service"
     container_name: "audit-service"
-#    ports:
-#      - "8100:8100"
+    ports:
+      - "8100:8100"
     deploy:
       resources:
         limits:
@@ -91,8 +91,8 @@ services:
   transactions:
     image: "ylli-berisha/transactions-service"
     container_name: "transactions-service"
-#    ports:
-#      - "8110:8110"
+    ports:
+      - "8110:8110"
     deploy:
       resources:
         limits:
@@ -119,8 +119,8 @@ services:
   users:
     image: "ylli-berisha/users-service"
     container_name: "users-service"
-#    ports:
-#      - "8120:8120"
+    ports:
+      - "8120:8120"
     deploy:
       resources:
         limits:

@@ -35,7 +35,7 @@ public abstract class BaseController<D extends IdentifiableDto<K>, K, S extends 
             @ApiResponse(responseCode = "500", description = "Internal server error",
                     content = @Content(mediaType = "application/json"))
     })
-    @GetMapping("get/{id}")
+    @GetMapping("/get/{id}")
     public ResponseEntity<D> getById(@PathVariable K id) {
         validateId(id);
         return ResponseEntity.ok(service.getById(id));
@@ -54,7 +54,7 @@ public abstract class BaseController<D extends IdentifiableDto<K>, K, S extends 
             @ApiResponse(responseCode = "500", description = "Internal server error",
                     content = @Content(mediaType = "application/json"))
     })
-    @PostMapping("create")
+    @PostMapping("/create")
     public ResponseEntity<D> create(@Valid @RequestBody D dto) {
         D createdDto = service.create(dto);
         URI location = ServletUriComponentsBuilder
@@ -79,7 +79,7 @@ public abstract class BaseController<D extends IdentifiableDto<K>, K, S extends 
             @ApiResponse(responseCode = "500", description = "Internal server error",
                     content = @Content(mediaType = "application/json"))
     })
-    @PutMapping("update/{id}")
+    @PutMapping("/update/{id}")
     public ResponseEntity<D> update(@PathVariable K id, @Valid @RequestBody D dto) {
         validateId(id);
         return ResponseEntity.ok(service.update(id, dto));
@@ -98,7 +98,7 @@ public abstract class BaseController<D extends IdentifiableDto<K>, K, S extends 
             @ApiResponse(responseCode = "500", description = "Internal server error",
                     content = @Content(mediaType = "application/json"))
     })
-    @DeleteMapping("delete/{id}")
+    @DeleteMapping("/delete/{id}")
     public ResponseEntity<Void> delete(@PathVariable K id) {
         validateId(id);
         service.delete(id);

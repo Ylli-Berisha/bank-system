@@ -7,8 +7,10 @@ import jakarta.persistence.Entity;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
+import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.context.annotation.ComponentScan;
 
+@EnableFeignClients(basePackages = "com.ylli.shared.clients")
 @SpringBootApplication
 @EntityScan(basePackages = "com.ylli.shared.models")
 @ComponentScan(basePackages = {

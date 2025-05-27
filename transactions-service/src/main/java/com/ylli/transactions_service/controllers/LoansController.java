@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
         description = "Operations related to loans"
 )
 @RestController
-@RequestMapping("/api/loans/")
+@RequestMapping("/api/loans")
 public class LoansController extends BaseController<LoanDto, Long, LoansService> {
     public LoansController(LoansService service) {
         super(service);
