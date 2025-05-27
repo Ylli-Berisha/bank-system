@@ -1,0 +1,36 @@
+package com.ylli.shared.fallback;
+
+import com.ylli.shared.clients.AccountsFeignClient;
+import com.ylli.shared.dtos.AccountDto;
+import org.springframework.cloud.openfeign.FallbackFactory;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Component;
+
+@Component
+public class AccountsFallbackImpl implements FallbackFactory<AccountsFeignClient> {
+    @Override
+    public AccountsFeignClient create(Throwable cause) {
+        return new AccountsFeignClient() {
+
+            @Override
+            public ResponseEntity<AccountDto> getAccount(String id) {
+                return ResponseEntity.status(503).build();
+            }
+
+            @Override
+            public ResponseEntity<AccountDto> createAccount(AccountDto account) {
+                return ResponseEntity.status(503).build();
+            }
+
+            @Override
+            public ResponseEntity<AccountDto> updateAccount(String id, AccountDto account) {
+                return ResponseEntity.status(503).build();
+            }
+
+            @Override
+            public ResponseEntity<Void> deleteAccount(String id) {
+                return ResponseEntity.status(503).build();
+            }
+        };
+    }
+}

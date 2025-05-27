@@ -1,11 +1,12 @@
 package com.ylli.shared.clients;
 
 import com.ylli.shared.dtos.AuditDto;
+import com.ylli.shared.fallback.AuditFallbackImpl;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-@FeignClient(name = "audit-service", path = "/api/audit")
+@FeignClient(name = "audit-service", path = "/api/audit", fallbackFactory = AuditFallbackImpl.class)
 public interface AuditFeignClient {
 
     @GetMapping("/get/{id}")

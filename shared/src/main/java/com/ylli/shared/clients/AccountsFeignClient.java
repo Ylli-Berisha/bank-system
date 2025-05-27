@@ -1,11 +1,12 @@
 package com.ylli.shared.clients;
 
 import com.ylli.shared.dtos.AccountDto;
+import com.ylli.shared.fallback.AccountsFallbackImpl;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-@FeignClient(name = "accounts-service", path = "/api/accounts")
+@FeignClient(name = "accounts-service", path = "/api/accounts", fallbackFactory = AccountsFallbackImpl.class)
 public interface AccountsFeignClient {
     @GetMapping("/get/{id}")
     ResponseEntity<AccountDto> getAccount(@PathVariable("id") String id);

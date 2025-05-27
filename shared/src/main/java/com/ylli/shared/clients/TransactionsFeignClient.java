@@ -2,11 +2,12 @@ package com.ylli.shared.clients;
 
 import com.ylli.shared.dtos.LoanDto;
 import com.ylli.shared.dtos.TransactionDto;
+import com.ylli.shared.fallback.TransactionsFallbackImpl;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-@FeignClient(name = "transactions-service", path = "/api")
+@FeignClient(name = "transactions-service", path = "/api", fallbackFactory = TransactionsFallbackImpl.class)
 public interface TransactionsFeignClient {
 
     @GetMapping("/transactions/get/{id}")
