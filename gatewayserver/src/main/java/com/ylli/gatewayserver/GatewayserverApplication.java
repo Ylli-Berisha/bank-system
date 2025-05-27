@@ -23,35 +23,40 @@ public class GatewayserverApplication {
                         .filters(f -> f
                                 .rewritePath("/accounts-service/(?<segment>.*)", "/${segment}")
                                 .addResponseHeader("Response-Time", LocalDateTime.now().toString())
-                                .circuitBreaker(config -> config.setName("accountsServiceCircuitBreaker")))
+                                .circuitBreaker(config -> config.setName("accountsServiceCircuitBreaker")
+                                        .setFallbackUri("forward:/accounts-service/accounts/fallback")))
                         .uri("lb://accounts-service"))
                 .route(p -> p
                         .path("admin-service/**")
                         .filters(f -> f
                                 .rewritePath("/admin-service/(?<segment>.*)", "/${segment}")
                                 .addResponseHeader("Response-Time", LocalDateTime.now().toString())
-                                .circuitBreaker(config -> config.setName("adminServiceCircuitBreaker")))
+                                .circuitBreaker(config -> config.setName("adminServiceCircuitBreaker")
+                                .setFallbackUri("forward:/admin-service/admin/fallback")))
                         .uri("lb://admin-service"))
                 .route(p -> p
                         .path("/audit-service/**")
                         .filters(f -> f
                                 .rewritePath("/audit-service/(?<segment>.*)", "/${segment}")
                                 .addResponseHeader("Response-Time", LocalDateTime.now().toString())
-                                .circuitBreaker(config -> config.setName("auditServiceCircuitBreaker")))
+                                .circuitBreaker(config -> config.setName("auditServiceCircuitBreaker")
+                                .setFallbackUri("forward:/audit-service/audit/fallback")))
                         .uri("lb://audit-service"))
                 .route(p -> p
                         .path("/transactions-service/**")
                         .filters(f -> f
                                 .rewritePath("/transactions-service/(?<segment>.*)", "/${segment}")
                                 .addResponseHeader("Response-Time", LocalDateTime.now().toString())
-                                .circuitBreaker(config -> config.setName("transactionsServiceCircuitBreaker")))
+                                .circuitBreaker(config -> config.setName("transactionsServiceCircuitBreaker")
+                                .setFallbackUri("forward:/transactions-service/transactions/fallback")))
                         .uri("lb://transactions-service"))
                 .route(p -> p
                         .path("/users-service/**")
                         .filters(f -> f
                                 .rewritePath("/users-service/(?<segment>.*)", "/${segment}")
                                 .addResponseHeader("Response-Time", LocalDateTime.now().toString())
-                                .circuitBreaker(config -> config.setName("usersServiceCircuitBreaker")))
+                                .circuitBreaker(config -> config.setName("usersServiceCircuitBreaker")
+                                .setFallbackUri("forward:/users-service/users/fallback")))
                         .uri("lb://users-service"))
                 .build();
     }
