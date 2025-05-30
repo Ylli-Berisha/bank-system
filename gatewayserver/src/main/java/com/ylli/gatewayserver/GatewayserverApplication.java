@@ -5,7 +5,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.gateway.route.RouteLocator;
 import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
 import org.springframework.context.annotation.Bean;
+import org.springframework.http.HttpMethod;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 
 @SpringBootApplication
@@ -22,15 +24,17 @@ public class GatewayserverApplication {
                         .path("/accounts-service/**")
                         .filters(f -> f
                                 .rewritePath("/accounts-service/(?<segment>.*)", "/${segment}")
-                                .addResponseHeader("Response-Time", LocalDateTime.now().toString())
+                                .addResponseHeader("Response-Time", "#{T(java.time.LocalDateTime).now()}")
+                                .retry(retryConfig -> retryConfig.setRetries(3).setMethods(HttpMethod.GET).setBackoff(Duration.ofMillis(100), Duration.ofMillis(1000), 2, true))
                                 .circuitBreaker(config -> config.setName("accountsServiceCircuitBreaker")
                                         .setFallbackUri("forward:/accounts-service/accounts/fallback")))
                         .uri("lb://accounts-service"))
                 .route(p -> p
-                        .path("admin-service/**")
+                        .path("/admin-service/**")
                         .filters(f -> f
                                 .rewritePath("/admin-service/(?<segment>.*)", "/${segment}")
-                                .addResponseHeader("Response-Time", LocalDateTime.now().toString())
+                                .addResponseHeader("Response-Time", "#{T(java.time.LocalDateTime).now()}")
+                                .retry(retryConfig -> retryConfig.setRetries(3).setMethods(HttpMethod.GET).setBackoff(Duration.ofMillis(100), Duration.ofMillis(1000), 2, true))
                                 .circuitBreaker(config -> config.setName("adminServiceCircuitBreaker")
                                 .setFallbackUri("forward:/admin-service/admin/fallback")))
                         .uri("lb://admin-service"))
@@ -38,7 +42,8 @@ public class GatewayserverApplication {
                         .path("/audit-service/**")
                         .filters(f -> f
                                 .rewritePath("/audit-service/(?<segment>.*)", "/${segment}")
-                                .addResponseHeader("Response-Time", LocalDateTime.now().toString())
+                                .addResponseHeader("Response-Time", "#{T(java.time.LocalDateTime).now()}")
+                                .retry(retryConfig -> retryConfig.setRetries(3).setMethods(HttpMethod.GET).setBackoff(Duration.ofMillis(100), Duration.ofMillis(1000), 2, true))
                                 .circuitBreaker(config -> config.setName("auditServiceCircuitBreaker")
                                 .setFallbackUri("forward:/audit-service/audit/fallback")))
                         .uri("lb://audit-service"))
@@ -46,7 +51,8 @@ public class GatewayserverApplication {
                         .path("/transactions-service/**")
                         .filters(f -> f
                                 .rewritePath("/transactions-service/(?<segment>.*)", "/${segment}")
-                                .addResponseHeader("Response-Time", LocalDateTime.now().toString())
+                                .addResponseHeader("Response-Time", "#{T(java.time.LocalDateTime).now()}")
+                                .retry(retryConfig -> retryConfig.setRetries(3).setMethods(HttpMethod.GET).setBackoff(Duration.ofMillis(100), Duration.ofMillis(1000), 2, true))
                                 .circuitBreaker(config -> config.setName("transactionsServiceCircuitBreaker")
                                 .setFallbackUri("forward:/transactions-service/transactions/fallback")))
                         .uri("lb://transactions-service"))
@@ -54,7 +60,8 @@ public class GatewayserverApplication {
                         .path("/users-service/**")
                         .filters(f -> f
                                 .rewritePath("/users-service/(?<segment>.*)", "/${segment}")
-                                .addResponseHeader("Response-Time", LocalDateTime.now().toString())
+                                .addResponseHeader("Response-Time", "#{T(java.time.LocalDateTime).now()}")
+                                .retry(retryConfig -> retryConfig.setRetries(3).setMethods(HttpMethod.GET).setBackoff(Duration.ofMillis(100), Duration.ofMillis(1000), 2, true))
                                 .circuitBreaker(config -> config.setName("usersServiceCircuitBreaker")
                                 .setFallbackUri("forward:/users-service/users/fallback")))
                         .uri("lb://users-service"))
