@@ -15,7 +15,8 @@ import org.springframework.context.annotation.ComponentScan;
 @ComponentScan(basePackages = {
 		"com.ylli.users_service",
 		"com.ylli.shared.base",
-		"com.ylli.shared.fallback"
+		"com.ylli.shared.fallback",
+		"com.ylli.shared.configs"
 })
 @OpenAPIDefinition(
 		info = @Info(

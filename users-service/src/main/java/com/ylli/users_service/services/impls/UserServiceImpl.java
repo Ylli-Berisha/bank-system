@@ -1,23 +1,36 @@
 package com.ylli.users_service.services.impls;
 
 import com.ylli.shared.base.BaseServiceImpl;
+import com.ylli.shared.configs.JwtUtil;
+import com.ylli.shared.dtos.LoginResponseDto;
 import com.ylli.shared.dtos.UserDto;
+import com.ylli.shared.dtos.UserLoginDto;
+import com.ylli.shared.enums.UserRole;
 import com.ylli.shared.models.User;
 import com.ylli.users_service.mappers.UserMapper;
 import com.ylli.users_service.repositories.UserRepository;
 import com.ylli.users_service.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
+import com.ylli.shared.dtos.UserSignUpDto;
 
 
 @Service
 public class UserServiceImpl extends BaseServiceImpl<User, UserDto, String, UserRepository, UserMapper> implements UserService {
 
+    private final PasswordEncoder passwordEncoder;
+    private final JwtUtil jwtUtil;
+
     @Autowired
-    public UserServiceImpl(UserRepository userRepository, UserMapper userMapper) {
+    public UserServiceImpl(UserRepository userRepository, UserMapper userMapper, PasswordEncoder passwordEncoder, JwtUtil jwtUtil) {
         super(userRepository, userMapper);
+        this.passwordEncoder = passwordEncoder;
+        this.jwtUtil = jwtUtil;
     }
 
     @Override
@@ -26,6 +39,57 @@ public class UserServiceImpl extends BaseServiceImpl<User, UserDto, String, User
                 .map(mapper::toDto)
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public void signUp(UserSignUpDto dto) {
+        if (repository.existsByEmail(dto.getEmail())) {
+            throw new IllegalArgumentException("Email already in use");
+        }
+
+        User user = new User();
+        user.setFirstName(dto.getFirstName());
+        user.setLastName(dto.getLastName());
+        user.setEmail(dto.getEmail());
+        user.setPassword(passwordEncoder.encode(dto.getPassword()));
+        user.setPhoneNumber(dto.getPhoneNumber());
+        user.setAddress(dto.getAddress());
+        user.setBirthDate(dto.getBirthDate());
+        user.setActive(true);
+        user.setRoles(Set.of(UserRole.ROLE_USER));
+
+        repository.save(user);
+    }
+
+    @Override
+    public LoginResponseDto login(UserLoginDto dto) {
+        User user = repository.findByUsername(dto.getUsername())
+                .orElseThrow(() -> new IllegalArgumentException("Invalid username or password"));
+
+        if (!user.isActive()) {
+            throw new IllegalStateException("User account is deactivated");
+        }
+
+        if (!passwordEncoder.matches(dto.getPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("Invalid username or password");
+        }
+
+        String accessToken = jwtUtil.generateToken(user.getUsername());
+//        String refreshToken = jwtUtil.generateRefreshToken(user.getUsername());
+
+        UserDto userDto = mapper.toDto(user);
+
+        return new LoginResponseDto(accessToken, userDto);
+    }
+
+//    @Override
+//    public UserDto validateUser(String username) {
+//        User user = repository.findByUsername(username)
+//                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+//
+//        return mapper.toDto(user);
+//    }
+
+
 }
 
 
