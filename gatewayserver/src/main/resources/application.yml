@@ -1,6 +1,9 @@
 server:
   port: 8072
 
+jwt:
+  secret: zMkyTsdyWe275ZP5VIpFKKRV8zO9fQFXqP45A129EM8=
+
 spring:
   application:
     name: "gatewayserver"
@@ -10,6 +13,8 @@ spring:
         locator:
           enabled: true
           lower-case-service-id: true
+  main:
+    web-application-type: reactive
 
 management:
   endpoints:
@@ -40,9 +45,10 @@ info:
 
 logging:
   level:
-    com:
-      ylli:
-        gatewayserver: DEBUG
+    org.springframework.security: TRACE
+    org.springframework.web: TRACE
+    reactor.netty: TRACE
+
 
 resilience4j.circuitbreaker:
   configs:

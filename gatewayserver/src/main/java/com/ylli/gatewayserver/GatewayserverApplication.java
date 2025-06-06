@@ -1,16 +1,32 @@
 package com.ylli.gatewayserver;
 
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.cloud.gateway.route.RouteLocator;
 import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
+import org.springframework.security.web.server.SecurityWebFilterChain;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Map;
 
-@SpringBootApplication
+@ComponentScan(basePackages = {
+        "com.ylli.gatewayserver",
+        "com.ylli.shared.configs"
+    }
+)
+@EnableWebFluxSecurity
+@SpringBootApplication(exclude = {
+        DataSourceAutoConfiguration.class,
+        org.springframework.boot.autoconfigure.security.reactive.ReactiveSecurityAutoConfiguration.class
+})
 public class GatewayserverApplication {
 
     public static void main(String[] args) {
@@ -24,7 +40,7 @@ public class GatewayserverApplication {
                         .path("/accounts-service/**")
                         .filters(f -> f
                                 .rewritePath("/accounts-service/(?<segment>.*)", "/${segment}")
-                                .addResponseHeader("Response-Time", "#{T(java.time.LocalDateTime).now()}")
+//                                .addResponseHeader("Response-Time", "#{T(java.time.LocalDateTime).now()}")
                                 .retry(retryConfig -> retryConfig.setRetries(3).setMethods(HttpMethod.GET).setBackoff(Duration.ofMillis(100), Duration.ofMillis(1000), 2, true))
                                 .circuitBreaker(config -> config.setName("accountsServiceCircuitBreaker")
                                         .setFallbackUri("forward:/accounts-service/accounts/fallback")))
@@ -33,38 +49,46 @@ public class GatewayserverApplication {
                         .path("/admin-service/**")
                         .filters(f -> f
                                 .rewritePath("/admin-service/(?<segment>.*)", "/${segment}")
-                                .addResponseHeader("Response-Time", "#{T(java.time.LocalDateTime).now()}")
+//                                .addResponseHeader("Response-Time", "#{T(java.time.LocalDateTime).now()}")
                                 .retry(retryConfig -> retryConfig.setRetries(3).setMethods(HttpMethod.GET).setBackoff(Duration.ofMillis(100), Duration.ofMillis(1000), 2, true))
                                 .circuitBreaker(config -> config.setName("adminServiceCircuitBreaker")
-                                .setFallbackUri("forward:/admin-service/admin/fallback")))
+                                        .setFallbackUri("forward:/admin-service/admin/fallback")))
                         .uri("lb://admin-service"))
                 .route(p -> p
                         .path("/audit-service/**")
                         .filters(f -> f
                                 .rewritePath("/audit-service/(?<segment>.*)", "/${segment}")
-                                .addResponseHeader("Response-Time", "#{T(java.time.LocalDateTime).now()}")
+//                                .addResponseHeader("Response-Time", "#{T(java.time.LocalDateTime).now()}")
                                 .retry(retryConfig -> retryConfig.setRetries(3).setMethods(HttpMethod.GET).setBackoff(Duration.ofMillis(100), Duration.ofMillis(1000), 2, true))
                                 .circuitBreaker(config -> config.setName("auditServiceCircuitBreaker")
-                                .setFallbackUri("forward:/audit-service/audit/fallback")))
+                                        .setFallbackUri("forward:/audit-service/audit/fallback")))
                         .uri("lb://audit-service"))
                 .route(p -> p
                         .path("/transactions-service/**")
                         .filters(f -> f
                                 .rewritePath("/transactions-service/(?<segment>.*)", "/${segment}")
-                                .addResponseHeader("Response-Time", "#{T(java.time.LocalDateTime).now()}")
+//                                .addResponseHeader("Response-Time", "#{T(java.time.LocalDateTime).now()}")
                                 .retry(retryConfig -> retryConfig.setRetries(3).setMethods(HttpMethod.GET).setBackoff(Duration.ofMillis(100), Duration.ofMillis(1000), 2, true))
                                 .circuitBreaker(config -> config.setName("transactionsServiceCircuitBreaker")
-                                .setFallbackUri("forward:/transactions-service/transactions/fallback")))
+                                        .setFallbackUri("forward:/transactions-service/transactions/fallback")))
                         .uri("lb://transactions-service"))
                 .route(p -> p
                         .path("/users-service/**")
                         .filters(f -> f
                                 .rewritePath("/users-service/(?<segment>.*)", "/${segment}")
-                                .addResponseHeader("Response-Time", "#{T(java.time.LocalDateTime).now()}")
+//                                .addResponseHeader("Response-Time", "#{T(java.time.LocalDateTime).now()}")
                                 .retry(retryConfig -> retryConfig.setRetries(3).setMethods(HttpMethod.GET).setBackoff(Duration.ofMillis(100), Duration.ofMillis(1000), 2, true))
                                 .circuitBreaker(config -> config.setName("usersServiceCircuitBreaker")
-                                .setFallbackUri("forward:/users-service/users/fallback")))
+                                        .setFallbackUri("forward:/users-service/users/fallback")))
                         .uri("lb://users-service"))
                 .build();
     }
+    @Bean
+    public CommandLineRunner logSecurityChains(ApplicationContext ctx) {
+        return args -> {
+            Map<String, SecurityWebFilterChain> chains = ctx.getBeansOfType(SecurityWebFilterChain.class);
+            chains.forEach((name, chain) -> System.out.println("Security chain: " + name));
+        };
+    }
+
 }

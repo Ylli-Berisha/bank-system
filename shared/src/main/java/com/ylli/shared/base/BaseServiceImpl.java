@@ -1,4 +1,5 @@
 package com.ylli.shared.base;
+import com.ylli.shared.exceptions.DuplicateResourceException;
 import com.ylli.shared.exceptions.ResourceNotFoundException;
 import com.ylli.shared.exceptions.ValidationException;
 import org.springframework.data.jpa.repository.JpaRepository;

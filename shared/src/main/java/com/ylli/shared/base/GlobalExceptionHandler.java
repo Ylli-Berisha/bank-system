@@ -1,6 +1,7 @@
-package com.ylli.shared.exceptions;
+package com.ylli.shared.base;
 
 import com.ylli.shared.dtos.ErrorResponseDto;
+import com.ylli.shared.exceptions.*;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;

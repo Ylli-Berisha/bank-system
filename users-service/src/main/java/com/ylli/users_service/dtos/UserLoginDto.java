@@ -1,4 +1,4 @@
-package com.ylli.shared.dtos;
+package com.ylli.users_service.dtos;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;

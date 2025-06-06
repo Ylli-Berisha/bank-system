@@ -1,25 +1,24 @@
 package com.ylli.users_service.controllers;
 
 import com.ylli.shared.base.BaseController;
-import com.ylli.shared.configs.JwtUtil;
 import com.ylli.shared.dtos.LoginResponseDto;
+import com.ylli.shared.dtos.SignUpResponseDto;
 import com.ylli.shared.dtos.UserDto;
-import com.ylli.shared.dtos.UserLoginDto;
+import com.ylli.users_service.dtos.UserLoginDto;
 import com.ylli.shared.dtos.UserSignUpDto;
 import com.ylli.users_service.services.UserService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+@Slf4j
 @Tag(
         name = "Users",
         description = "Operations related to users"
@@ -28,12 +27,10 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/users")
 public class UserController extends BaseController<UserDto, String, UserService> {
 
-    private final JwtUtil jwtUtil;
 
     @Autowired
-    public UserController(UserService userService, JwtUtil jwtUtil) {
+    public UserController(UserService userService) {
         super(userService);
-        this.jwtUtil = jwtUtil;
     }
 
     @Operation(
@@ -45,10 +42,10 @@ public class UserController extends BaseController<UserDto, String, UserService>
             @ApiResponse(responseCode = "400", description = "Invalid input or email already in use"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
-    @PostMapping("/signup")
-    public ResponseEntity<Void> signUp(@Valid @RequestBody UserSignUpDto dto) {
-        service.signUp(dto);
-        return new ResponseEntity<>(HttpStatus.CREATED);
+    @PostMapping("/auth/signup")
+    public ResponseEntity<SignUpResponseDto> signUp(@Valid @RequestBody UserSignUpDto dto) {
+        var responseDto = service.signUp(dto);
+        return new ResponseEntity<>(responseDto, HttpStatus.CREATED);
     }
 
     @ApiResponses(value = {
@@ -62,13 +59,14 @@ public class UserController extends BaseController<UserDto, String, UserService>
             summary = "User login",
             description = "Authenticates a user with the provided credentials."
     )
-    @PostMapping("/login")
-    public ResponseEntity<LoginResponseDto> login(
-            @Valid @RequestBody UserLoginDto dto
-    ) {
-        LoginResponseDto user = service.login(dto);
+    @PostMapping("/auth/login")
+    public ResponseEntity<LoginResponseDto> login(@RequestBody UserLoginDto loginDto) {
+        log.info("login: {}", loginDto);
+        LoginResponseDto user = service.login(loginDto);
         return ResponseEntity.ok(user);
     }
+
+
 
 //    @PostMapping("/refresh")
 //    @Operation(summary = "Refresh JWT tokens", description = "Get new access and refresh tokens using refresh token")
@@ -86,8 +84,8 @@ public class UserController extends BaseController<UserDto, String, UserService>
 //
 //        return ResponseEntity.ok(response);
 //    }
+    
 }
-
 
 
 //@RestController

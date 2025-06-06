@@ -1,6 +1,9 @@
 server:
   port: 8120
 
+jwt:
+  secret: zMkyTsdyWe275ZP5VIpFKKRV8zO9fQFXqP45A129EM8=
+
 spring:
   application:
     name: users-service

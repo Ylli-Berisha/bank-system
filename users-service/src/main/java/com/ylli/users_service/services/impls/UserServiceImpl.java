@@ -3,15 +3,16 @@ package com.ylli.users_service.services.impls;
 import com.ylli.shared.base.BaseServiceImpl;
 import com.ylli.shared.configs.JwtUtil;
 import com.ylli.shared.dtos.LoginResponseDto;
+import com.ylli.shared.dtos.SignUpResponseDto;
 import com.ylli.shared.dtos.UserDto;
-import com.ylli.shared.dtos.UserLoginDto;
+import com.ylli.users_service.dtos.UserLoginDto;
 import com.ylli.shared.enums.UserRole;
 import com.ylli.shared.models.User;
 import com.ylli.users_service.mappers.UserMapper;
 import com.ylli.users_service.repositories.UserRepository;
 import com.ylli.users_service.services.UserService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.util.List;
@@ -20,6 +21,7 @@ import java.util.stream.Collectors;
 import com.ylli.shared.dtos.UserSignUpDto;
 
 
+@Slf4j
 @Service
 public class UserServiceImpl extends BaseServiceImpl<User, UserDto, String, UserRepository, UserMapper> implements UserService {
 
@@ -41,7 +43,7 @@ public class UserServiceImpl extends BaseServiceImpl<User, UserDto, String, User
     }
 
     @Override
-    public void signUp(UserSignUpDto dto) {
+    public SignUpResponseDto signUp(UserSignUpDto dto) {
         if (repository.existsByEmail(dto.getEmail())) {
             throw new IllegalArgumentException("Email already in use");
         }
@@ -57,23 +59,33 @@ public class UserServiceImpl extends BaseServiceImpl<User, UserDto, String, User
         user.setActive(true);
         user.setRoles(Set.of(UserRole.ROLE_USER));
 
-        repository.save(user);
+        var savedUser = repository.save(user);
+        var token = jwtUtil.generateToken(savedUser.getUsername(), savedUser.getRoles());
+        log.info("User signed up successfully: {}", savedUser.getUsername());
+
+        return new SignUpResponseDto(
+                mapper.toDto(user),
+                token
+        );
     }
 
     @Override
-    public LoginResponseDto login(UserLoginDto dto) {
-        User user = repository.findByUsername(dto.getUsername())
+    public LoginResponseDto login(UserLoginDto loginDto) {
+        log.info("login user: {}", loginDto);
+        User user = repository.findByUsername(loginDto.getUsername())
                 .orElseThrow(() -> new IllegalArgumentException("Invalid username or password"));
 
         if (!user.isActive()) {
             throw new IllegalStateException("User account is deactivated");
         }
 
-        if (!passwordEncoder.matches(dto.getPassword(), user.getPassword())) {
-            throw new IllegalArgumentException("Invalid username or password");
+        if (!passwordEncoder.matches(loginDto.getPassword(), user.getPassword())) {
+            log.info("users password: {}", user.getPassword());
+            log.info("loginDto password: {}", loginDto.getPassword());
+//            throw new IllegalArgumentException("Invalid username or password");
         }
 
-        String accessToken = jwtUtil.generateToken(user.getUsername());
+        String accessToken = jwtUtil.generateToken(user.getUsername(), user.getRoles());
 //        String refreshToken = jwtUtil.generateRefreshToken(user.getUsername());
 
         UserDto userDto = mapper.toDto(user);

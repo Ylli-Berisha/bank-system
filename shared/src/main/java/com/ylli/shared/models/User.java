@@ -66,7 +66,7 @@ public class User extends BaseEntity<String> {
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
     @Column(name = "role")
-    private Set<UserRole> roles = new HashSet<>();
+    private Set<UserRole> roles = new HashSet<>(Set.of(UserRole.ROLE_USER));
 
     @Column(nullable = false)
     private boolean isActive = true;
