@@ -93,6 +93,13 @@ public class UserServiceImpl extends BaseServiceImpl<User, UserDto, String, User
         return new LoginResponseDto(accessToken, userDto);
     }
 
+    @Override
+    public UserDto getDefaultUser() {
+        return repository.findByUsername("admin")
+                .map(mapper::toDto)
+                .orElse(null);
+    }
+
 //    @Override
 //    public UserDto validateUser(String username) {
 //        User user = repository.findByUsername(username)

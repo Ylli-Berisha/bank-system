@@ -1,5 +1,6 @@
 package com.ylli.shared.base;
 
+import com.ylli.shared.dtos.UserDto;
 import io.github.resilience4j.retry.annotation.Retry;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.headers.Header;

@@ -66,6 +66,24 @@ public class UserController extends BaseController<UserDto, String, UserService>
         return ResponseEntity.ok(user);
     }
 
+    @GetMapping("/get/default-user")
+    @Operation(
+            summary = "Get default user",
+            description = "Fetches the default user details."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Default user fetched successfully"),
+            @ApiResponse(responseCode = "404", description = "Default user not found"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
+    public ResponseEntity<UserDto> getDefaultUser() {
+        var user = service.getDefaultUser();
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+        return ResponseEntity.ok(user);
+    }
+
 
 
 //    @PostMapping("/refresh")

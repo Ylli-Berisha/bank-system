@@ -7,6 +7,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @Tag(
         name = "Accounts",
         description = "Operations related to accounts"
@@ -19,6 +21,16 @@ public class AccountsController extends BaseController<AccountDto, String, Accou
     public AccountsController(AccountsService accountsService) {
         super(accountsService);
     }
+
+    @GetMapping("/get/user-accounts")
+    public List<AccountDto> getUserAccounts(@RequestParam String userId) {
+        if (userId == null || userId.isEmpty()) {
+            throw new IllegalArgumentException("User ID cannot be null or empty");
+        }
+        return service.getUserAccounts(userId);
+    }
+
+
 }
 
 

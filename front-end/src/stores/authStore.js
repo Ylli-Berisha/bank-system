@@ -1,16 +1,19 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { jwtDecode } from 'jwt-decode';
-import usersClient from "../helpers/usersClient.js";
+import client from "../helpers/client.js";
 
 export const useAuthStore = defineStore('auth', () => {
     const token = ref(localStorage.getItem('token') || null);
+    const userId = ref(localStorage.getItem('userId') || null);
 
     const logIn = async (user) => {
         try {
-            const response = await usersClient.post('/users-service/api/users/auth/login', user);
+            const response = await client.post('/users-service/api/users/auth/login', user);
             console.log('Login response:', response.data);
             token.value = response.data.accessToken;
+            userId.value = response.data.userObj.id
+            localStorage.setItem('userId', userId.value);
             localStorage.setItem('token', token.value);
             return true;
         } catch (error) {
@@ -21,9 +24,11 @@ export const useAuthStore = defineStore('auth', () => {
 
     const signUp = async (user) => {
         try {
-            const response = await usersClient.post('/users-service/api/users/auth/signup', user);
+            const response = await client.post('/users-service/api/users/auth/signup', user);
             console.log('Sign up response:', response.data);
             token.value = response.data.accessToken;
+            userId.value = response.data.userObj.id
+            localStorage.setItem('userId', userId.value);
             localStorage.setItem('token', token.value);
             return true;
         } catch (error) {
@@ -37,12 +42,22 @@ export const useAuthStore = defineStore('auth', () => {
         localStorage.removeItem('token');
     };
 
-    const loggedInUser = computed(() => {
-        if (!token.value) return null;
-
+    const isTokenValid = () => {
+        if (!token.value) return false;
         try {
             const decoded = jwtDecode(token.value);
-            const now = Date.now() / 1000; // seconds
+            const now = Date.now() / 1000;
+            return decoded.exp && decoded.exp > now;
+        } catch (e) {
+            return false;
+        }
+    };
+
+    const loggedInUser = computed(() => {
+        if (!token.value) return null;
+        try {
+            const decoded = jwtDecode(token.value);
+            const now = Date.now() / 1000;
             return decoded.exp && decoded.exp > now ? decoded : null;
         } catch (e) {
             return null;
@@ -56,6 +71,7 @@ export const useAuthStore = defineStore('auth', () => {
         logIn,
         signUp,
         logOut,
+        isTokenValid,
         isLoggedIn,
         loggedInUser,
     };

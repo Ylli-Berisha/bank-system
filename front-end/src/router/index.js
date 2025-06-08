@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import LoginView from '@/components/LoginView.vue';
 import HomeView from "@/components/HomeView.vue";
 import SignUpView from "@/components/SignUpView.vue";
+import {useAuthStore} from "@/stores/authStore.js";
 
 const routes = [
     {
@@ -43,7 +44,7 @@ router.beforeEach((to, from, next) => {
         console.error('Failed to parse token:', error);
     }
 
-    if (to.meta.requiresAuth && !token) {
+    if (to.meta.requiresAuth && (!token || !useAuthStore().isTokenValid())) {
         next('/login');
     } else if ((to.path === '/login' || to.path === '/sign-up') && token) {
         next('/');

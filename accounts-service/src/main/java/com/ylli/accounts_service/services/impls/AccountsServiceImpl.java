@@ -3,21 +3,39 @@ package com.ylli.accounts_service.services.impls;
 import com.ylli.accounts_service.repositories.AccountsRepository;
 import com.ylli.accounts_service.services.AccountsService;
 import com.ylli.shared.base.BaseServiceImpl;
+import com.ylli.shared.clients.UsersFeignClient;
 import com.ylli.shared.dtos.AccountDto;
 import com.ylli.accounts_service.mappers.AccountMapper;
 import com.ylli.shared.models.Account;
+import com.ylli.shared.models.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 
 
 @Service
 public class AccountsServiceImpl extends BaseServiceImpl<Account, AccountDto, String, AccountsRepository, AccountMapper> implements AccountsService {
+
+
     @Autowired
     public AccountsServiceImpl(AccountsRepository repository, AccountMapper mapper) {
         super(repository, mapper);
+    }
+
+    @Override
+    public List<AccountDto> getUserAccounts(String userId) {
+        User user = new User();
+        user.setId(userId);
+
+        List<Account> accounts = repository.findByUser(user);
+        if (accounts == null || accounts.isEmpty()) {
+            return null;
+        }
+
+        return mapper.toDtoList(accounts);
     }
 }
 

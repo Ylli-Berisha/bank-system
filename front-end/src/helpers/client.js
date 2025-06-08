@@ -1,11 +1,11 @@
 import axios from 'axios';
 
-const usersClient = axios.create({
+const client = axios.create({
     baseURL: 'http://localhost:8072/',
     timeout: 10000, // 10 seconds timeout (adjust if you want)
 });
 
-usersClient.interceptors.request.use((config) => {
+client.interceptors.request.use((config) => {
     const token = localStorage.getItem('token');
     if (token && token.trim() !== '' && token !== 'undefined') {
         config.headers.Authorization = `Bearer ${token}`;
@@ -16,7 +16,7 @@ usersClient.interceptors.request.use((config) => {
     return Promise.reject(error);
 });
 
-usersClient.interceptors.response.use(
+client.interceptors.response.use(
     (response) => response,
     (error) => {
         if (error.response && error.response.status === 401) {
@@ -26,4 +26,4 @@ usersClient.interceptors.response.use(
     }
 );
 
-export default usersClient;
+export default client;

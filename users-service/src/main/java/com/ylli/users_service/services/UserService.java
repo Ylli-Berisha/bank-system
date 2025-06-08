@@ -15,5 +15,7 @@ public interface UserService extends BaseService<UserDto, String> {
 
     LoginResponseDto login(UserLoginDto userLoginDto);
 
+    UserDto getDefaultUser();
+
 //    UserDto validateUser(String username);
 }

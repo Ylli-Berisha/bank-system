@@ -32,6 +32,11 @@ public class UsersFallbackImpl implements FallbackFactory<UsersFeignClient> {
             public ResponseEntity<Void> deleteUser(String id) {
                 return ResponseEntity.status(503).build();
             }
+
+            @Override
+            public ResponseEntity<UserDto> getDefaultUser() {
+                return ResponseEntity.status(503).build();
+            }
         };
     }
 }

@@ -6,7 +6,7 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-@FeignClient(name = "users-service", path = "/api/users", fallbackFactory = UsersFallbackImpl.class)
+@FeignClient(name = "users-service",url = "http://localhost:8120", path = "/api/users", fallbackFactory = UsersFallbackImpl.class)
 public interface UsersFeignClient {
 
     @GetMapping("/get/{id}")
@@ -20,4 +20,7 @@ public interface UsersFeignClient {
 
     @DeleteMapping("/delete/{id}")
     ResponseEntity<Void> deleteUser(@PathVariable("id") String id);
+
+    @GetMapping("/get/default-user")
+    ResponseEntity<UserDto> getDefaultUser();
 }

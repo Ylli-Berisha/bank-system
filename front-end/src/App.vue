@@ -1,9 +1,21 @@
 <script setup>
-import LoginView from "./components/LoginView.vue";
+import { onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { useAuthStore } from '@/stores/authStore.js';
+
+const authStore = useAuthStore();
+const router = useRouter();
+
+onMounted(() => {
+  if (!authStore.isTokenValid()) {
+    authStore.logOut();
+    router.push('/login');
+  }
+});
 </script>
 
 <template>
-<router-view/>
+  <router-view />
 </template>
 
 <style>
