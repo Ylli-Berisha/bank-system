@@ -3,8 +3,10 @@ package com.ylli.accounts_service.controllers;
 import com.ylli.shared.base.BaseController;
 import com.ylli.accounts_service.services.AccountsService;
 import com.ylli.shared.dtos.AccountDto;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -28,6 +30,15 @@ public class AccountsController extends BaseController<AccountDto, String, Accou
             throw new IllegalArgumentException("User ID cannot be null or empty");
         }
         return service.getUserAccounts(userId);
+    }
+
+    @GetMapping("/get/default-account")
+    public ResponseEntity<AccountDto> getDefaultAccount() {
+        var account = service.getDefaultAccount();
+        if(account == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(account);
     }
 
 

@@ -12,26 +12,27 @@
         <div v-for="account in accounts" :key="account.id" class="card">
           <h3>{{ account.type }} Account</h3>
           <p>Balance: ${{ account.balance.toFixed(2) }}</p>
-          <p>Account status: {{account.status.toLowerCase()}}</p>
+          <p>Account status: {{ account.status.toLowerCase() }}</p>
         </div>
       </div>
       <p v-else>No accounts found.</p>
-      <p v-if="error" class="error">{{ error }}</p>
+      <p v-if="accountsError" class="error">{{ accountsError }}</p>
       <router-link to="/accounts" class="view-all">View All Accounts</router-link>
     </section>
 
     <!-- Transactions Section -->
     <section class="section">
       <h2>Recent Transactions</h2>
-      <ul class="list">
+      <ul class="list" v-if="transactions.length">
         <li v-for="tx in transactions" :key="tx.id">
-          {{ tx.description }} — ${{ tx.amount }} on {{ tx.date }}
+          {{ tx.details || "no details for this transaction" }} — ${{"Amount: "  + tx.amount }} on {{ formatDate(tx.createdAt) }} to "to do later"
         </li>
       </ul>
+      <p v-else>No transactions found.</p>
+      <p v-if="transactionsError" class="error">{{ transactionsError }}</p>
       <router-link to="/transactions" class="view-all">View All Transactions</router-link>
     </section>
 
-    <!-- Loans Section -->
     <section class="section">
       <h2>Loans</h2>
       <div class="card-grid">
@@ -50,30 +51,40 @@
 import { onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useAccountsStore } from '@/stores/acccountsStore.js'
+import { useTransactionsStore } from '@/stores/transactionsStore.js'
 
 onMounted(() => {
   document.title = "Home"
 })
 
 const accountsStore = useAccountsStore()
-const { accounts, error } = storeToRefs(accountsStore)
+const transactionsStore = useTransactionsStore()
+
+const { accounts, error: accountsError } = storeToRefs(accountsStore)
+const { transactions, error: transactionsError } = storeToRefs(transactionsStore)
 
 onMounted(() => {
   accountsStore.fetchAccounts()
+  transactionsStore.fetchTransactions()
 })
-
-// Hardcoded sample data for transactions and loans
-const transactions = [
-  { id: 1, description: 'Paid to John Doe', amount: 50.00, date: '2025-06-07' },
-  { id: 2, description: 'Received from ACME Corp', amount: 300.00, date: '2025-06-06' },
-  { id: 3, description: 'Paid to Grocery Store', amount: 120.00, date: '2025-06-05' }
-]
 
 const loans = [
   { id: 1, type: 'Personal', amount: 10000.00, dueDate: '2025-07-01' },
   { id: 2, type: 'Car', amount: 7500.00, dueDate: '2025-08-15' }
 ]
+
+// Helper function to format ISO date string to "YYYY-MM-DD" or more readable format
+function formatDate(isoString) {
+  if (!isoString) return ''
+  const date = new Date(isoString)
+  return date.toLocaleDateString(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  })
+}
 </script>
+
 
 
 

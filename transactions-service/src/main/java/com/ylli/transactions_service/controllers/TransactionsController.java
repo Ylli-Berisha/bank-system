@@ -4,8 +4,13 @@ import com.ylli.shared.base.BaseController;
 import com.ylli.shared.dtos.TransactionDto;
 import com.ylli.transactions_service.services.TransactionsService;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 @Tag(
         name = "Transactions",
@@ -18,6 +23,22 @@ public class TransactionsController extends BaseController<TransactionDto, Strin
     public TransactionsController(TransactionsService service) {
         super(service);
     }
+
+    @GetMapping("/get/user-transactions")
+    public ResponseEntity<List<TransactionDto>> getUserTransactions(@RequestParam String userId) {
+        if (userId == null || userId.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        List<TransactionDto> transactions = service.getUserTransactions(userId);
+
+        if (transactions == null || transactions.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(transactions);
+    }
+
 
 
 }

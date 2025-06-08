@@ -6,6 +6,8 @@ import org.springframework.cloud.openfeign.FallbackFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+
 @Component
 public class AccountsFallbackImpl implements FallbackFactory<AccountsFeignClient> {
     @Override
@@ -29,6 +31,16 @@ public class AccountsFallbackImpl implements FallbackFactory<AccountsFeignClient
 
             @Override
             public ResponseEntity<Void> deleteAccount(String id) {
+                return ResponseEntity.status(503).build();
+            }
+
+            @Override
+            public ResponseEntity<AccountDto> getDefaultAccount() {
+                return ResponseEntity.status(503).build();
+            }
+
+            @Override
+            public ResponseEntity<List<AccountDto>> getUserAccounts(String userId) {
                 return ResponseEntity.status(503).build();
             }
         };

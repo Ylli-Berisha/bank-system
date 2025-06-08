@@ -19,10 +19,12 @@ import java.util.Optional;
 @Service
 public class AccountsServiceImpl extends BaseServiceImpl<Account, AccountDto, String, AccountsRepository, AccountMapper> implements AccountsService {
 
+    private final UsersFeignClient usersFeignClient;
 
     @Autowired
-    public AccountsServiceImpl(AccountsRepository repository, AccountMapper mapper) {
+    public AccountsServiceImpl(AccountsRepository repository, AccountMapper mapper, UsersFeignClient usersFeignClient) {
         super(repository, mapper);
+        this.usersFeignClient = usersFeignClient;
     }
 
     @Override
@@ -36,6 +38,19 @@ public class AccountsServiceImpl extends BaseServiceImpl<Account, AccountDto, St
         }
 
         return mapper.toDtoList(accounts);
+    }
+
+    @Override
+    public AccountDto getDefaultAccount() {
+        var userDto = usersFeignClient.getDefaultUser().getBody();
+        var user = new User();
+
+        if (userDto == null) {
+            throw new IllegalArgumentException("Default user not found");
+        }
+        user.setId(userDto.getId());
+        Account account = repository.findByUser(user).getFirst();
+        return mapper.toDto(account);
     }
 }
 

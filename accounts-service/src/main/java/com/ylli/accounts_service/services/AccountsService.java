@@ -8,4 +8,6 @@ import java.util.List;
 public interface AccountsService extends BaseService<AccountDto, String> {
 
     List<AccountDto> getUserAccounts(String userId);
+
+    AccountDto getDefaultAccount();
 }
