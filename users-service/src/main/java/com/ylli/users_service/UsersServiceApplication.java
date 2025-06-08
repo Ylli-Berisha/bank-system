@@ -7,7 +7,16 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.cloud.openfeign.EnableFeignClients;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.reactive.CorsWebFilter;
+import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
+import org.springframework.web.reactive.config.CorsRegistry;
+import org.springframework.web.reactive.config.WebFluxConfigurer;
+
+import java.util.List;
+
 
 @EnableFeignClients(basePackages = "com.ylli.shared.clients")
 @SpringBootApplication
@@ -34,5 +43,6 @@ public class UsersServiceApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(UsersServiceApplication.class, args);
 	}
+
 
 }

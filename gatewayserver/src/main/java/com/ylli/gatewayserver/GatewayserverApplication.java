@@ -11,11 +11,18 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
+import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.web.server.SecurityWebFilterChain;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.reactive.CorsWebFilter;
+import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
+
+import static org.springframework.security.config.Customizer.withDefaults;
 
 @ComponentScan(basePackages = {
         "com.ylli.gatewayserver",
@@ -36,6 +43,17 @@ public class GatewayserverApplication {
     @Bean
     public RouteLocator customRouteLocator(RouteLocatorBuilder builder) {
         return builder.routes()
+                .route(p -> p
+                        .method(HttpMethod.OPTIONS)
+                        .and()
+                        .path("/**")
+                        .filters(f -> f
+                                .setResponseHeader("Access-Control-Allow-Origin", "http://localhost:5173")
+                                .setResponseHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+                                .setResponseHeader("Access-Control-Allow-Headers", "*")
+                                .setResponseHeader("Access-Control-Allow-Credentials", "true")
+                                .setStatus(200))
+                        .uri("no://op"))
                 .route(p -> p
                         .path("/accounts-service/**")
                         .filters(f -> f
@@ -83,6 +101,7 @@ public class GatewayserverApplication {
                         .uri("lb://users-service"))
                 .build();
     }
+
     @Bean
     public CommandLineRunner logSecurityChains(ApplicationContext ctx) {
         return args -> {
@@ -90,5 +109,20 @@ public class GatewayserverApplication {
             chains.forEach((name, chain) -> System.out.println("Security chain: " + name));
         };
     }
+
+    @Bean
+    public CorsWebFilter corsWebFilter() {
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowedOrigins(List.of("http://localhost:5173"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(List.of("*"));
+        config.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+
+        return new CorsWebFilter(source);
+    }
+
 
 }

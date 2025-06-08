@@ -9,6 +9,9 @@ import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.security.web.server.context.NoOpServerSecurityContextRepository;
 
+import static org.springframework.security.config.Customizer.withDefaults;
+
+
 @Configuration
 @EnableReactiveMethodSecurity
 public class SecurityConfig {
@@ -21,6 +24,7 @@ public class SecurityConfig {
                 .httpBasic(ServerHttpSecurity.HttpBasicSpec::disable)
                 .formLogin(ServerHttpSecurity.FormLoginSpec::disable)
                 .authorizeExchange(exchanges -> exchanges
+                        .pathMatchers(HttpMethod.OPTIONS).permitAll()
                         .pathMatchers(HttpMethod.POST, "/users-service/api/users/auth/**").permitAll()
                         .pathMatchers("/public/**").permitAll()
                         .anyExchange().authenticated()
