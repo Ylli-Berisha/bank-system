@@ -1,7 +1,7 @@
 <template>
   <div class="home-container">
     <header class="header">
-      <h1>Welcome, Ylli 👋</h1>
+      <h1>Welcome, {{ username }} 👋</h1>
       <p>Here’s your banking overview</p>
     </header>
 
@@ -25,7 +25,7 @@
       <h2>Recent Transactions</h2>
       <ul class="list" v-if="transactions.length">
         <li v-for="tx in transactions" :key="tx.id">
-          {{ tx.details || "no details for this transaction" }} — ${{"Amount: "  + tx.amount }} on {{ formatDate(tx.createdAt) }} to "to do later"
+          {{ tx.details || "no details for this transaction" }} — {{"Amount: $"  + tx.amount }} on {{ formatDate(tx.createdAt) }} to "to do later"
         </li>
       </ul>
       <p v-else>No transactions found.</p>
@@ -35,15 +35,18 @@
 
     <section class="section">
       <h2>Loans</h2>
-      <div class="card-grid">
+      <div class="card-grid" v-if="loans.length">
         <div v-for="loan in loans" :key="loan.id" class="card">
           <h3>{{ loan.type }} Loan</h3>
           <p>Amount: ${{ loan.amount }}</p>
-          <p>Due: {{ loan.dueDate }}</p>
+          <p>Due: {{ formatDate(loan.dueDate) }}</p>
         </div>
       </div>
+      <p v-else>No loans found.</p>
+      <p v-if="loansError" class="error">{{ loansError }}</p>
       <router-link to="/loans" class="view-all">View All Loans</router-link>
     </section>
+
   </div>
 </template>
 
@@ -52,6 +55,9 @@ import { onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useAccountsStore } from '@/stores/acccountsStore.js'
 import { useTransactionsStore } from '@/stores/transactionsStore.js'
+import { useLoansStore } from '@/stores/loansStore.js'
+
+const username = localStorage.getItem('username');
 
 onMounted(() => {
   document.title = "Home"
@@ -59,21 +65,18 @@ onMounted(() => {
 
 const accountsStore = useAccountsStore()
 const transactionsStore = useTransactionsStore()
+const loansStore = useLoansStore()
 
 const { accounts, error: accountsError } = storeToRefs(accountsStore)
 const { transactions, error: transactionsError } = storeToRefs(transactionsStore)
+const { loans, error: loansError } = storeToRefs(loansStore)
 
 onMounted(() => {
   accountsStore.fetchAccounts()
   transactionsStore.fetchTransactions()
+  loansStore.fetchLoans()
 })
 
-const loans = [
-  { id: 1, type: 'Personal', amount: 10000.00, dueDate: '2025-07-01' },
-  { id: 2, type: 'Car', amount: 7500.00, dueDate: '2025-08-15' }
-]
-
-// Helper function to format ISO date string to "YYYY-MM-DD" or more readable format
 function formatDate(isoString) {
   if (!isoString) return ''
   const date = new Date(isoString)
@@ -84,6 +87,7 @@ function formatDate(isoString) {
   })
 }
 </script>
+
 
 
 

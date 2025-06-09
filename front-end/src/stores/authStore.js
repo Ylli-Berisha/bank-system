@@ -6,6 +6,7 @@ import client from "../helpers/client.js";
 export const useAuthStore = defineStore('auth', () => {
     const token = ref(localStorage.getItem('token') || null);
     const userId = ref(localStorage.getItem('userId') || null);
+    const username = ref(localStorage.getItem('username') || null);
 
     const logIn = async (user) => {
         try {
@@ -13,8 +14,10 @@ export const useAuthStore = defineStore('auth', () => {
             console.log('Login response:', response.data);
             token.value = response.data.accessToken;
             userId.value = response.data.userObj.id
+            username.value = response.data.userObj.username;
             localStorage.setItem('userId', userId.value);
             localStorage.setItem('token', token.value);
+            localStorage.setItem('username', username.value);
             return true;
         } catch (error) {
             console.error('Login failed:', error);
@@ -28,8 +31,10 @@ export const useAuthStore = defineStore('auth', () => {
             console.log('Sign up response:', response.data);
             token.value = response.data.accessToken;
             userId.value = response.data.userObj.id
+            username.value = response.data.userObj.username;
             localStorage.setItem('userId', userId.value);
             localStorage.setItem('token', token.value);
+            localStorage.setItem('username', username.value);
             return true;
         } catch (error) {
             console.error('Sign up failed:', error);
