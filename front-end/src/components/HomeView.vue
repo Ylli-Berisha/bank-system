@@ -38,8 +38,10 @@
       <div class="card-grid" v-if="loans.length">
         <div v-for="loan in loans" :key="loan.id" class="card">
           <h3>{{ loan.type }} Loan</h3>
-          <p>Amount: ${{ loan.amount }}</p>
-          <p>Due: {{ formatDate(loan.dueDate) }}</p>
+          <p>Amount taken: ${{ loan.amount }}</p>
+          <p>Due: {{ formatDate(loan.endDate) }}</p>
+          <p>Interest rate: {{ loan.interestRate }}%</p>
+          <p><b>Due amount: {{loan.amount + (loan.amount * loan.interestRate / 100)}}$</b></p>
         </div>
       </div>
       <p v-else>No loans found.</p>

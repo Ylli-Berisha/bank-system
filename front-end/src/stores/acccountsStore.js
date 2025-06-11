@@ -1,32 +1,70 @@
-import {ref} from "vue";
+import { ref } from "vue";
 import client from "@/helpers/client.js";
-import {defineStore} from "pinia";
+import { defineStore } from "pinia";
 
 export const useAccountsStore = defineStore('accounts', () => {
     const accounts = ref([]);
+    const accountTypes = ref([]);
     const error = ref(null);
 
     const fetchAccounts = async () => {
         error.value = null;
         const userId = localStorage.getItem('userId');
         if (!userId) {
-            error.value = 'No user ID found please try logging in again';
+            error.value = 'No user ID found. Please try logging in again.';
             return;
         }
         try {
             const response = await client.get(`/accounts-service/api/accounts/get/user-accounts?userId=${userId}`);
             accounts.value = response.data;
-            console.log(accounts.value);
         } catch (err) {
             console.error('Failed to fetch accounts:', err);
-            error.value = 'Failed to fetch accounts';
+            error.value = 'Failed to fetch accounts.';
         }
     };
 
+    const fetchAccountTypes = async () => {
+        error.value = null;
+        try {
+            const response = await client.get('/accounts-service/api/accounts/get/account-types');
+            accountTypes.value = response.data;
+        } catch (err) {
+            console.error('Failed to fetch account types:', err);
+            error.value = 'Failed to fetch account types.';
+            accountTypes.value = [];
+        }
+    };
+
+    const applyForNewAccount = async (accountData) => {
+        error.value = null;
+
+        const userId = localStorage.getItem('userId');
+        if (!userId) {
+            error.value = 'No user ID found. Please try logging in again.';
+            throw new Error(error.value);
+        }
+
+        const safeData = {
+            ...accountData,
+            status: 'PENDING_APPROVAL',
+            userId
+        };
+
+        try {
+            await client.post(`/accounts-service/api/accounts/apply-for-account`, safeData);
+        } catch (err) {
+            console.error('Failed to create account:', err);
+            error.value = err.response?.data?.message || 'Failed to create account.';
+            throw new Error(error.value);
+        }
+    };
 
     return {
         accounts,
+        accountTypes,
         error,
-        fetchAccounts
+        fetchAccounts,
+        fetchAccountTypes,
+        applyForNewAccount,
     };
 });

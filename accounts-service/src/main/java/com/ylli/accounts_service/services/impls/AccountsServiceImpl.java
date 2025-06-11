@@ -6,8 +6,13 @@ import com.ylli.shared.base.BaseServiceImpl;
 import com.ylli.shared.clients.UsersFeignClient;
 import com.ylli.shared.dtos.AccountDto;
 import com.ylli.accounts_service.mappers.AccountMapper;
+import com.ylli.shared.dtos.UserDto;
+import com.ylli.shared.enums.AccountStatus;
+import com.ylli.shared.enums.AccountType;
 import com.ylli.shared.models.Account;
 import com.ylli.shared.models.User;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +24,7 @@ import java.util.Optional;
 @Service
 public class AccountsServiceImpl extends BaseServiceImpl<Account, AccountDto, String, AccountsRepository, AccountMapper> implements AccountsService {
 
+    private static final Logger log = LoggerFactory.getLogger(AccountsServiceImpl.class);
     private final UsersFeignClient usersFeignClient;
 
     @Autowired
@@ -51,6 +57,44 @@ public class AccountsServiceImpl extends BaseServiceImpl<Account, AccountDto, St
         user.setId(userDto.getId());
         Account account = repository.findByUser(user).getFirst();
         return mapper.toDto(account);
+    }
+
+    @Override
+    public List<String> getAccountTypes() {
+        List<AccountType> types = List.of(AccountType.values());
+        return types.stream()
+                .map(AccountType::name)
+                .toList();
+    }
+
+    @Override
+    public List<String> getAccountStatuses() {
+        List<AccountStatus> statuses = List.of(AccountStatus.values());
+        return statuses.stream()
+                .map(AccountStatus::name)
+                .toList();
+    }
+
+    @Override
+    public Boolean applyForNewAccount(AccountDto accountDto) {
+        UserDto user = usersFeignClient.getUser(accountDto.getUserId()).getBody();
+        if (user == null) {
+            throw new IllegalArgumentException("User not found with ID: " + accountDto.getUserId());
+        }
+
+        try {
+            Account account = mapper.toEntity(accountDto);
+//            User userEntity = new User();
+//            userEntity.setId(user.getId());
+//            account.setUser(userEntity);
+            repository.save(account);
+
+            return true;
+        }
+        catch (Exception e) {
+            log.error("applyForNewAccount error", e);
+            return false;
+        }
     }
 }
 

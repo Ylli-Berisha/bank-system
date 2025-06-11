@@ -3,6 +3,7 @@ import LoginView from '@/components/LoginView.vue';
 import HomeView from "@/components/HomeView.vue";
 import SignUpView from "@/components/SignUpView.vue";
 import {useAuthStore} from "@/stores/authStore.js";
+import AccountsView from "@/components/AccountsView.vue";
 
 const routes = [
     {
@@ -22,7 +23,14 @@ const routes = [
         name: 'SignUp',
         component: SignUpView,
         meta: { requiresAuth: false }
+    },
+    {
+        path: '/accounts',
+        name: 'Accounts',
+        component: AccountsView,
+        meta: { requiresAuth: true }
     }
+
 
 ];
 

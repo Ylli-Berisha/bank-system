@@ -10,4 +10,10 @@ public interface AccountsService extends BaseService<AccountDto, String> {
     List<AccountDto> getUserAccounts(String userId);
 
     AccountDto getDefaultAccount();
+
+    List<String> getAccountTypes();
+
+    List<String> getAccountStatuses();
+
+    Boolean applyForNewAccount(AccountDto accountDto);
 }

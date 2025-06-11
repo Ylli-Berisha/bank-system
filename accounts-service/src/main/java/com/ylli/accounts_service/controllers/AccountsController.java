@@ -3,6 +3,7 @@ package com.ylli.accounts_service.controllers;
 import com.ylli.shared.base.BaseController;
 import com.ylli.accounts_service.services.AccountsService;
 import com.ylli.shared.dtos.AccountDto;
+import com.ylli.shared.enums.AccountStatus;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,6 +41,43 @@ public class AccountsController extends BaseController<AccountDto, String, Accou
         }
         return ResponseEntity.ok(account);
     }
+
+    @GetMapping("/get/account-types")
+    @Operation(summary = "Get all account types")
+    public ResponseEntity<List<String>> getAccountTypes() {
+        List<String> accountTypes = service.getAccountTypes();
+        if (accountTypes == null || accountTypes.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(accountTypes);
+    }
+
+    @PostMapping("/apply-for-account")
+    @Operation(summary = "Apply for a new account")
+    public ResponseEntity<Void> applyForNewAccount(@RequestBody AccountDto accountDto) {
+        if (accountDto == null || accountDto.getUserId().isBlank() || accountDto.getStatus() != AccountStatus.PENDING_APPROVAL) {
+            return ResponseEntity.badRequest().build();
+        }
+        Boolean bool = service.applyForNewAccount(accountDto);
+        if (bool == Boolean.FALSE) {
+            return ResponseEntity.status(500).build();
+        }
+        return ResponseEntity.ok().build();
+
+
+    }
+
+//    @GetMapping("/get/account-statuses")
+//    @Operation(summary = "Get all account statuses")
+//    public ResponseEntity<List<String>> getAccountStatuses() {
+//        List<String> accountStatuses = service.getAccountStatuses();
+//        if (accountStatuses == null || accountStatuses.isEmpty()) {
+//            return ResponseEntity.notFound().build();
+//        }
+//        return ResponseEntity.ok(accountStatuses);
+//    }
+
+
 
 
 }
