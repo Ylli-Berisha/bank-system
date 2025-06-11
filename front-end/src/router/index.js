@@ -4,6 +4,7 @@ import HomeView from "@/components/HomeView.vue";
 import SignUpView from "@/components/SignUpView.vue";
 import {useAuthStore} from "@/stores/authStore.js";
 import AccountsView from "@/components/AccountsView.vue";
+import TransactionsView from "@/components/TransactionsView.vue";
 
 const routes = [
     {
@@ -28,6 +29,12 @@ const routes = [
         path: '/accounts',
         name: 'Accounts',
         component: AccountsView,
+        meta: { requiresAuth: true }
+    },
+    {
+        path: '/transactions',
+        name: 'Transactions',
+        component: TransactionsView,
         meta: { requiresAuth: true }
     }
 

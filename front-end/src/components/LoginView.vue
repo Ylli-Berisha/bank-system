@@ -54,7 +54,7 @@
       </div>
 
       <div class="register-link">
-        Don't have an account? <a href="#">Sign up</a>
+        <RouterLink to="/sign-up">Don't have an account? Sign up</RouterLink>
       </div>
     </div>
   </div>

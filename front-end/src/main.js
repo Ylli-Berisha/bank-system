@@ -8,4 +8,6 @@ const app = createApp(App);
 app.use(createPinia());
 app.use(router);
 
+import './assets/styles/base.css';
+
 app.mount('#app');

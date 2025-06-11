@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Tag(
@@ -39,6 +40,28 @@ public class TransactionsController extends BaseController<TransactionDto, Strin
         return ResponseEntity.ok(transactions);
     }
 
+    @GetMapping("/filter/user-transactions")
+    public ResponseEntity<List<TransactionDto>> filterUserTransactions(
+            @RequestParam String userId,
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate,
+            @RequestParam(required = false)BigDecimal minAmount,
+            @RequestParam(required = false) BigDecimal maxAmount,
+            @RequestParam(required = false) String query
+    ){
+        if (userId == null || userId.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+        List<TransactionDto> transactions = service.filterUserTransactions(
+                userId, type, status, startDate, endDate, minAmount, maxAmount, query
+        );
+        if (transactions == null || transactions.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(transactions);
+    }
 
 
 }

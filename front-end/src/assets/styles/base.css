@@ -1,0 +1,131 @@
+/* src/assets/styles/base.css */
+
+/* --- GLOBAL BASE STYLES --- */
+body {
+    margin: 0;
+    font-family: 'Inter', 'Segoe UI', sans-serif; /* Consistent font application */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: #f0f4fa; /* A very light consistent background for the entire app */
+    color: #334e68; /* Default text color */
+}
+
+/* --- PAGE CONTAINER (used for main page layouts) --- */
+.page-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 2.5rem;
+    background-color: #f8fafd; /* Slightly lighter background than body for content area */
+    box-shadow: 0 0 25px rgba(0, 0, 0, 0.05); /* Subtle overall shadow */
+    border-radius: 12px;
+}
+
+/* --- HEADER STYLES (common to all major views) --- */
+.header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.header h1 {
+    font-size: 2.5rem;
+    color: #1a2b4c;
+    margin-bottom: 0.5rem;
+}
+
+.header p {
+    font-size: 1.1rem;
+    color: #607d8b;
+}
+
+/* --- SECTION STYLES (common for major content blocks) --- */
+.section {
+    margin-top: 3rem;
+    padding: 1.5rem;
+    background-color: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+    font-size: 1.8rem;
+    color: #1a2b4c;
+    margin-bottom: 0.8rem;
+}
+
+.section-description {
+    color: #607d8b;
+    margin-bottom: 1.5rem;
+    font-size: 1rem;
+}
+
+/* --- CARD GRID LAYOUT (common for displaying lists of items like accounts or transactions) --- */
+.card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); /* Responsive grid columns */
+    gap: 1.2rem; /* Gap between cards */
+    margin-top: 1.5rem;
+}
+
+/* --- INDIVIDUAL CARD STYLING (common base for items within a grid) --- */
+.card {
+    background-color: #ffffff;
+    padding: 1.5rem;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border-left: 5px solid #cfd8dc; /* Neutral default left border, specific cards can override */
+    display: flex; /* Makes card content a flex container */
+    flex-direction: column; /* Stacks content vertically */
+}
+
+.card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+/* --- ERROR MESSAGE STYLING --- */
+.error {
+    color: #d9534f;
+    background-color: #ffeaea;
+    padding: 0.8rem 1rem;
+    border-radius: 8px;
+    margin-top: 1.5rem;
+    border: 1px solid #d9534f;
+    text-align: center;
+    font-weight: 500;
+}
+
+/* --- EMPTY STATE MESSAGE STYLING --- */
+.empty-state-message {
+    text-align: center;
+    color: #607d8b;
+    font-size: 1.1rem;
+    padding: 2rem;
+    background-color: #f0f4f8;
+    border-radius: 8px;
+    margin-top: 1.5rem;
+}
+
+/* --- GENERIC BUTTON BASE STYLES --- */
+button {
+    font-family: 'Inter', 'Segoe UI', sans-serif; /* Consistent button font */
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+/* --- COMMON TEXT COLORS (for dynamic text) --- */
+.text-green {
+    color: #28a745;
+}
+.text-red {
+    color: #dc3545;
+}
+.text-blue {
+    color: #007bff;
+}
+.text-orange {
+    color: #f39c12;
+}
+.text-gray {
+    color: #95a5a6;
+}

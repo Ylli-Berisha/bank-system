@@ -75,7 +75,7 @@ const { loans, error: loansError } = storeToRefs(loansStore)
 
 onMounted(() => {
   accountsStore.fetchAccounts()
-  transactionsStore.fetchTransactions()
+  transactionsStore.fetchAllTransactions();
   loansStore.fetchLoans()
 })
 

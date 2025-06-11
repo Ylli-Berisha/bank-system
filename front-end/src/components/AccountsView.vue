@@ -1,9 +1,8 @@
 <template>
-  <div class="accounts-container">
-    <header class="header">
-      <h1>Your Accounts</h1>
-      <p>Detailed overview of your banking accounts</p>
-    </header>
+  <div class="page-container"> <header class="header">
+    <h1>Your Accounts</h1>
+    <p>Detailed overview of your banking accounts</p>
+  </header>
 
     <section class="create-account-section">
       <h2 class="section-title">New Account Application</h2>
@@ -44,7 +43,7 @@
           </div>
 
           <div class="status-box">
-            <strong>Status:</strong> Pending Approval Until Approved By Admin
+            <strong>Status:</strong> Pending Approval
           </div>
 
           <button type="submit" class="submit-application-btn">
@@ -57,7 +56,7 @@
     </section>
 
     <section class="section">
-      <h2>Active Accounts</h2>
+      <h2 class="section-title">Active Accounts</h2>
       <div v-if="activeAccounts.length" class="card-grid">
         <div v-for="account in activeAccounts" :key="account.id" class="card">
           <h3>{{ account.type }} Account</h3>
@@ -68,11 +67,10 @@
           <button @click="openFreezeConfirmModal(account.id)" class="freeze-btn">Freeze</button>
         </div>
       </div>
-      <p v-else>No active accounts found.</p>
-    </section>
+      <p v-else class="empty-state-message">No active accounts found.</p> </section>
 
     <section class="section frozen-section">
-      <h2>Frozen Accounts</h2>
+      <h2 class="section-title">Frozen Accounts</h2>
       <div v-if="frozenAccounts.length" class="card-grid">
         <div v-for="account in frozenAccounts" :key="account.id" class="card frozen">
           <h3>{{ account.type }} Account</h3>
@@ -83,11 +81,10 @@
           <button @click="openUnfreezeConfirmModal(account.id)" class="unfreeze-btn">Unfreeze</button>
         </div>
       </div>
-      <p v-else>No frozen accounts found.</p>
-    </section>
+      <p v-else class="empty-state-message">No frozen accounts found.</p> </section>
 
     <section class="section pending-section">
-      <h2>Pending Accounts</h2>
+      <h2 class="section-title">Pending Accounts</h2>
       <div v-if="pendingAccounts.length" class="card-grid">
         <div v-for="account in pendingAccounts" :key="account.id" class="card pending">
           <h3>{{ account.type }} Account</h3>
@@ -97,8 +94,7 @@
           <p><strong>Account id:</strong> {{ account.id }}</p>
         </div>
       </div>
-      <p v-else>No pending accounts found.</p>
-    </section>
+      <p v-else class="empty-state-message">No pending accounts found.</p> </section>
 
     <p v-if="accountsError" class="error">{{ accountsError }}</p>
 
@@ -115,7 +111,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useAccountsStore } from '@/stores/acccountsStore.js'
-import ConfirmationModal from '@/components/ConfirmModal.vue'; // Your modal component
+import ConfirmationModal from '@/components/ConfirmModal.vue';
 
 const accountsStore = useAccountsStore()
 const {
@@ -259,101 +255,9 @@ async function unfreeze(accountId) {
 </script>
 
 <style scoped>
-.accounts-container {
-  max-width: 1000px;
-  margin: 0 auto;
-  padding: 2.5rem;
-  font-family: 'Inter', 'Segoe UI', sans-serif;
-  background-color: #f8fafd;
-  color: #334e68;
-  box-shadow: 0 0 25px rgba(0, 0, 0, 0.05);
-  border-radius: 12px;
-}
+/* Only component-specific styles remain here */
 
-.header {
-  text-align: center;
-  margin-bottom: 3rem;
-}
-
-h1 {
-  font-size: 2.5rem;
-  color: #1a2b4c;
-  margin-bottom: 0.5rem;
-}
-
-.header p {
-  font-size: 1.1rem;
-  color: #607d8b;
-}
-
-.section {
-  margin-top: 3rem;
-  padding: 1.5rem;
-  background-color: #ffffff;
-  border-radius: 10px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-}
-
-.section-title {
-  font-size: 1.8rem;
-  color: #1a2b4c;
-  margin-bottom: 0.8rem;
-}
-
-.section-description {
-  color: #607d8b;
-  margin-bottom: 1.5rem;
-  font-size: 1rem;
-}
-
-.card-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 1.2rem;
-  margin-top: 1.5rem;
-}
-
-.card {
-  background-color: #ffffff;
-  padding: 1.5rem;
-  border-radius: 10px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  border-left: 5px solid #2d8cf0;
-}
-
-.card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
-}
-
-.card h3 {
-  color: #1a2b4c;
-  margin-bottom: 0.8rem;
-  font-size: 1.2rem;
-}
-
-.card p {
-  font-size: 0.95rem;
-  line-height: 1.5;
-  color: #546e7a;
-}
-
-.card strong {
-  color: #334e68;
-}
-
-.error {
-  color: #d9534f;
-  background-color: #ffeaea;
-  padding: 0.8rem 1rem;
-  border-radius: 8px;
-  margin-top: 1.5rem;
-  border: 1px solid #d9534f;
-  text-align: center;
-  font-weight: 500;
-}
-
+/* Create New Account Section Styles */
 .create-account-section {
   background-color: #e3f2fd;
   padding: 2.5rem;
@@ -398,10 +302,11 @@ h1 {
 }
 
 .toggle-form-btn.is-open:hover {
-  background-color: #c0392b; /* Darker red */
+  background-color: #c0392b;
   box-shadow: 0 8px 20px rgba(231, 76, 60, 0.3);
 }
 
+/* Form Styles */
 .create-form-card {
   background-color: #ffffff;
   padding: 2rem;
@@ -493,22 +398,23 @@ h1 {
 }
 
 .submit-application-btn:hover {
-  background-color: #229a54; /* Darker green */
+  background-color: #229a54;
   transform: translateY(-2px);
   box-shadow: 0 8px 20px rgba(39, 174, 96, 0.3);
 }
 
+/* Transition for form appearance */
 .fade-slide-enter-active,
 .fade-slide-leave-active {
   transition: all 0.4s ease;
-  overflow: hidden; /* Prevent content overflow during slide */
+  overflow: hidden;
 }
 
 .fade-slide-enter-from,
 .fade-slide-leave-to {
   opacity: 0;
   transform: translateY(20px);
-  max-height: 0; /* Collapse height */
+  max-height: 0;
   padding-top: 0;
   padding-bottom: 0;
   margin-top: 0;
@@ -519,21 +425,31 @@ h1 {
 .fade-slide-leave-from {
   opacity: 1;
   transform: translateY(0);
-  max-height: 500px; /* An arbitrary height large enough for the form */
-  padding-top: 2rem; /* Restore padding */
-  padding-bottom: 2rem; /* Restore padding */
-  margin-top: 2rem; /* Restore margin */
-  margin-bottom: 0; /* Restore margin */
+  max-height: 500px;
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+  margin-top: 2rem;
+  margin-bottom: 0;
 }
 
+/* Account card specific styles */
+.card {
+  border-left-color: #2d8cf0; /* Default border color for active accounts */
+}
+.pending-section .card.pending {
+  background-color: #fffde7;
+  border-left-color: #f1c40f;
+  box-shadow: 0 5px 15px rgba(241, 196, 15, 0.1);
+}
 
-/* General button styles for consistency */
-button {
-  font-family: 'Inter', 'Segoe UI', sans-serif;
+.frozen-section .card.frozen {
+  background-color: #f7f9fb;
+  border-left-color: #95a5a6;
+  box-shadow: 0 5px 15px rgba(149, 165, 166, 0.1);
 }
 
 .freeze-btn {
-  background-color: #f39c12; /* Orange for freeze */
+  background-color: #f39c12;
   border: none;
   padding: 8px 12px;
   color: white;
@@ -550,7 +466,7 @@ button {
 }
 
 .unfreeze-btn {
-  background-color: #3498db; /* Blue for unfreeze */
+  background-color: #3498db;
   border: none;
   padding: 8px 12px;
   color: white;
@@ -564,17 +480,5 @@ button {
 .unfreeze-btn:hover {
   background-color: #2980b9;
   transform: translateY(-1px);
-}
-
-.pending-section .card.pending {
-  background-color: #fffde7;
-  border-left-color: #f1c40f;
-  box-shadow: 0 5px 15px rgba(241, 196, 15, 0.1);
-}
-
-.frozen-section .card.frozen {
-  background-color: #f7f9fb; /* Very light gray */
-  border-left-color: #95a5a6; /* Neutral gray */
-  box-shadow: 0 5px 15px rgba(149, 165, 166, 0.1);
 }
 </style>
