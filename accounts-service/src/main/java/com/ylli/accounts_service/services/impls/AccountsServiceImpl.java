@@ -89,15 +89,50 @@ public class AccountsServiceImpl extends BaseServiceImpl<Account, AccountDto, St
 //            account.setUser(userEntity);
             repository.save(account);
 
-            return true;
-        }
-        catch (Exception e) {
+            return Boolean.TRUE;
+        } catch (Exception e) {
             log.error("applyForNewAccount error", e);
-            return false;
+            return Boolean.FALSE;
+        }
+    }
+
+    @Override
+    public Boolean freezeAccount(String accountId) throws RuntimeException {
+        Account account = repository.findById(accountId)
+                .orElseThrow(() -> new IllegalArgumentException("Account not found with ID: " + accountId));
+
+        if (account.getStatus() != AccountStatus.ACTIVE) {
+            log.warn("Account with ID {} is already frozen", accountId);
+            return Boolean.FALSE;
+        }
+
+        try {
+            account.setStatus(AccountStatus.FROZEN);
+            repository.save(account);
+            return Boolean.TRUE;
+        } catch (Exception e) {
+            log.error("Error freezing account with ID {}", accountId, e);
+            throw new RuntimeException("Failed to freeze account", e);
+        }
+    }
+
+    @Override
+    public Boolean unfreezeAccount(String accountId) {
+        Account account = repository.findById(accountId).orElseThrow(() -> new IllegalArgumentException("Account not found with ID: " + accountId));
+        if (account.getStatus() != AccountStatus.FROZEN) {
+            log.warn("Account with ID {} is not frozen", accountId);
+            return Boolean.FALSE;
+        }
+        try {
+            account.setStatus(AccountStatus.ACTIVE);
+            repository.save(account);
+            return Boolean.TRUE;
+        } catch (Exception e) {
+            log.error("Error unfreezing account with ID {}", accountId, e);
+            throw new RuntimeException("Failed to unfreeze account", e);
         }
     }
 }
-
 
 
 //@Service

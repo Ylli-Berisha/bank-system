@@ -59,6 +59,32 @@ export const useAccountsStore = defineStore('accounts', () => {
         }
     };
 
+    // Freeze an account by ID
+    const freezeAccount = async (accountId) => {
+        error.value = null;
+        try {
+            await client.patch(`/accounts-service/api/accounts/${accountId}/freeze`);
+            // Refresh accounts after freezing
+            await fetchAccounts();
+        } catch (err) {
+            console.error('Failed to freeze account:', err);
+            error.value = err.response?.data?.message || 'Failed to freeze account.';
+            throw new Error(error.value);
+        }
+    };
+
+    const unfreezeAccount = async (accountId) => {
+        error.value = null;
+        try {
+            await client.patch(`/accounts-service/api/accounts/${accountId}/unfreeze`);
+            await fetchAccounts();
+        } catch (err) {
+            console.error('Failed to unfreeze account:', err);
+            error.value = err.response?.data?.message || 'Failed to unfreeze account.';
+            throw new Error(error.value);
+        }
+    };
+
     return {
         accounts,
         accountTypes,
@@ -66,5 +92,7 @@ export const useAccountsStore = defineStore('accounts', () => {
         fetchAccounts,
         fetchAccountTypes,
         applyForNewAccount,
+        freezeAccount,
+        unfreezeAccount,
     };
 });

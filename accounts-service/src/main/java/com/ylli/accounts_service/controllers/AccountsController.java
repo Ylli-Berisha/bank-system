@@ -4,9 +4,11 @@ import com.ylli.shared.base.BaseController;
 import com.ylli.accounts_service.services.AccountsService;
 import com.ylli.shared.dtos.AccountDto;
 import com.ylli.shared.enums.AccountStatus;
+import com.ylli.shared.exceptions.ResourceNotFoundException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -36,7 +38,7 @@ public class AccountsController extends BaseController<AccountDto, String, Accou
     @GetMapping("/get/default-account")
     public ResponseEntity<AccountDto> getDefaultAccount() {
         var account = service.getDefaultAccount();
-        if(account == null) {
+        if (account == null) {
             return ResponseEntity.notFound().build();
         }
         return ResponseEntity.ok(account);
@@ -63,8 +65,46 @@ public class AccountsController extends BaseController<AccountDto, String, Accou
             return ResponseEntity.status(500).build();
         }
         return ResponseEntity.ok().build();
+    }
 
+    @PatchMapping("/{id}/freeze")
+    @Operation(summary = "Freeze an account")
+    public ResponseEntity<?> freezeAccount(@PathVariable String id) {
+        if (id == null || id.isEmpty()) {
+            return ResponseEntity.badRequest().body("Account ID must be provided.");
+        }
 
+        try {
+            boolean success = service.freezeAccount(id);
+            if (!success) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).body("Account already frozen.");
+            }
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Account not found.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Server error.");
+        }
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/{id}/unfreeze")
+    @Operation(summary = "Unfreeze an account")
+    public ResponseEntity<?> unfreezeAccount(@PathVariable String id) {
+        if (id == null || id.isEmpty()) {
+            return ResponseEntity.badRequest().body("Account ID must be provided.");
+        }
+
+        try {
+            boolean success = service.unfreezeAccount(id);
+            if (!success) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).body("Account is not frozen.");
+            }
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Account not found.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Server error.");
+        }
+        return ResponseEntity.ok().build();
     }
 
 //    @GetMapping("/get/account-statuses")
@@ -78,11 +118,7 @@ public class AccountsController extends BaseController<AccountDto, String, Accou
 //    }
 
 
-
-
 }
-
-
 
 
 //@RestController
