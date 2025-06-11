@@ -77,7 +77,7 @@
               {{ transaction.type.toLowerCase() }}
             </span>
             <span class="transaction-amount" :class="transactionAmountClass(transaction.type)">
-              ${{ transaction.amount.toFixed(2) }}
+              ${{ transaction.amount ? transaction.amount.toFixed(2) : '0.00' }}
             </span>
           </div>
 
@@ -97,16 +97,93 @@
         </div>
       </div>
     </section>
+
+    <hr class="section-divider">
+
+    <section class="section create-transaction-section">
+      <h2 class="section-title">Create New Transaction</h2>
+      <p class="section-description">Initiate a new deposit, withdrawal, or transfer.</p>
+
+      <form @submit.prevent="submitTransaction" class="transaction-form">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="newAccountId">Your Account:</label>
+            <select id="newAccountId" v-model="newTransactionForm.accountId" class="form-input" required>
+              <option value="" disabled>Select your account</option>
+              <option v-for="account in userAccounts" :key="account.id" :value="account.id">
+                {{ account.type }} (ID: {{ account.id.substring(0, 8) }}...) - Balance: ${{ account.balance ? account.balance.toFixed(2) : '0.00' }}
+              </option>
+            </select>
+            <span v-if="formErrors.accountId" class="error-message">{{ formErrors.accountId }}</span>
+          </div>
+
+          <div class="form-group">
+            <label for="newType">Transaction Type:</label>
+            <select id="newType" v-model="newTransactionForm.type" @change="handleTypeChange" class="form-input" required>
+              <option value="" disabled>Select type</option>
+              <option v-for="type in transactionTypes" :key="type" :value="type">{{ type.toLowerCase() }}</option>
+            </select>
+            <span v-if="formErrors.type" class="error-message">{{ formErrors.type }}</span>
+          </div>
+
+          <div class="form-group">
+            <label for="newAmount">Amount:</label>
+            <input type="number" id="newAmount" v-model.number="newTransactionForm.amount" class="form-input" required min="0.01" step="0.01" />
+            <span v-if="formErrors.amount" class="error-message">{{ formErrors.amount }}</span>
+          </div>
+
+          <div class="form-group" v-if="newTransactionForm.type === 'TRANSFER'">
+            <label for="newRecipientAccountId">Recipient Account ID:</label>
+            <input type="text" id="newRecipientAccountId" v-model="newTransactionForm.recipientAccountId" class="form-input" placeholder="Enter recipient account ID" />
+            <span v-if="formErrors.recipientAccountId" class="error-message">{{ formErrors.recipientAccountId }}</span>
+          </div>
+
+          <div class="form-group form-group-full">
+            <label for="newDetails">Details (optional):</label>
+            <textarea id="newDetails" v-model="newTransactionForm.details" class="form-input" maxlength="255" rows="2"></textarea>
+            <span v-if="formErrors.details" class="error-message">{{ formErrors.details }}</span>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" :disabled="loading" class="submit-btn">
+            {{ loading ? 'Processing...' : 'Create Transaction' }}
+          </button>
+          <button type="button" @click="resetForm" class="reset-btn" :disabled="loading">Reset Form</button>
+        </div>
+
+        <div v-if="transactionCreationError" class="error-message transaction-error">{{ transactionCreationError }}</div>
+        <div v-if="transactionCreationSuccess" class="success-message transaction-success">{{ transactionCreationSuccess }}</div>
+      </form>
+    </section>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, watch, reactive } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useTransactionsStore } from '@/stores/transactionsStore.js';
+import { useAuthStore } from '@/stores/authStore.js';
+import { useAccountsStore } from '@/stores/acccountsStore.js'; // Import the accounts store
 
 const transactionsStore = useTransactionsStore();
+const accountsStore = useAccountsStore();
 const { transactions, error, loading } = storeToRefs(transactionsStore);
+
+const { accounts: userAccounts } = storeToRefs(accountsStore);
+
+
+const newTransactionForm = reactive({
+  accountId: '',
+  type: '',
+  amount: null,
+  details: '',
+  recipientAccountId: '',
+});
+
+const formErrors = reactive({});
+const transactionCreationError = ref(null);
+const transactionCreationSuccess = ref(null);
 
 const filters = ref({
   startDate: '',
@@ -125,6 +202,7 @@ let searchDebounceTimer = null;
 
 onMounted(async () => {
   document.title = "Transactions";
+  await fetchUserAccounts();
   await applyFilters();
 });
 
@@ -140,6 +218,97 @@ watch(filters, (newFilters, oldFilters) => {
     applyFilters();
   }
 }, { deep: true });
+
+async function fetchUserAccounts() {
+  await accountsStore.fetchAccounts();
+  if (userAccounts.value.length > 0) {
+    newTransactionForm.accountId = userAccounts.value[0].id;
+  }
+}
+
+function validateForm() {
+  formErrors.accountId = '';
+  formErrors.type = '';
+  formErrors.amount = '';
+  formErrors.recipientAccountId = '';
+  formErrors.details = '';
+  transactionCreationError.value = null;
+  transactionCreationSuccess.value = null;
+
+  let isValid = true;
+
+  if (!newTransactionForm.accountId) {
+    formErrors.accountId = 'Your account is required.';
+    isValid = false;
+  }
+  if (!newTransactionForm.type) {
+    formErrors.type = 'Transaction type is required.';
+    isValid = false;
+  }
+  if (newTransactionForm.amount === null || newTransactionForm.amount <= 0) {
+    formErrors.amount = 'Amount must be positive.';
+    isValid = false;
+  }
+  if (newTransactionForm.type === 'TRANSFER' && !newTransactionForm.recipientAccountId) {
+    formErrors.recipientAccountId = 'Recipient account ID is required for transfers.';
+    isValid = false;
+  }
+  if (newTransactionForm.details && newTransactionForm.details.length > 255) {
+    formErrors.details = 'Details cannot exceed 255 characters.';
+    isValid = false;
+  }
+
+  return isValid;
+}
+
+async function submitTransaction() {
+  if (!validateForm()) {
+    return;
+  }
+
+  loading.value = true;
+  try {
+    const payload = {
+      accountId: newTransactionForm.accountId,
+      type: newTransactionForm.type,
+      amount: newTransactionForm.amount,
+      details: newTransactionForm.details || null,
+      recipientAccountId: newTransactionForm.type === 'TRANSFER' ? (newTransactionForm.recipientAccountId || null) : null,
+    };
+
+    await transactionsStore.createTransaction(payload);
+    transactionCreationSuccess.value = 'Transaction created successfully!';
+    resetForm();
+    await applyFilters();
+  } catch (err) {
+    transactionCreationError.value = transactionsStore.error;
+    console.error('Error submitting new transaction:', err);
+  } finally {
+    loading.value = false;
+  }
+}
+
+function handleTypeChange() {
+  if (newTransactionForm.type !== 'TRANSFER') {
+    newTransactionForm.recipientAccountId = '';
+  }
+  if (formErrors.recipientAccountId && newTransactionForm.type !== 'TRANSFER') {
+    formErrors.recipientAccountId = '';
+  }
+}
+
+function resetForm() {
+  Object.assign(newTransactionForm, {
+    accountId: userAccounts.value.length > 0 ? userAccounts.value[0].id : '',
+    type: '',
+    amount: null,
+    details: '',
+    recipientAccountId: '',
+  });
+  Object.keys(formErrors).forEach(key => formErrors[key] = '');
+  transactionCreationError.value = null;
+  transactionCreationSuccess.value = null;
+}
 
 async function applyFilters() {
   const currentFilters = filters.value;
@@ -219,7 +388,202 @@ function transactionStatusClass(status) {
   return '';
 }
 </script>
+
 <style scoped>
+/* Base Layout & Typography */
+.page-container {
+  padding: 2.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  font-family: 'Inter', sans-serif; /* Assuming Inter font is available */
+  background-color: #f0f2f5; /* Light grey background for the page */
+  color: #334e68; /* Primary dark text color */
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.header h1 {
+  font-size: 2.8rem;
+  color: #263238; /* Darker heading color */
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+}
+
+.header p {
+  font-size: 1.1rem;
+  color: #607d8b; /* Lighter text for descriptions */
+}
+
+/* Common Section Styling */
+.section {
+  background-color: #ffffff;
+  padding: 2.5rem;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08); /* More pronounced shadow for sections */
+  margin-bottom: 2.5rem;
+}
+
+.section-title {
+  font-size: 2rem;
+  color: #263238;
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.section-description {
+  font-size: 1rem;
+  color: #78909c;
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+/* --- Transaction Creation Form Styles --- */
+.create-transaction-section {
+  /* Already uses .section styling, no need for redundant padding */
+  padding: 2.5rem;
+}
+
+.transaction-form {
+  margin-top: 1.5rem;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* Responsive grid for form fields */
+  gap: 1.5rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  font-size: 0.9rem;
+  color: #546e7a;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.form-input {
+  padding: 0.8rem 1rem;
+  border: 1px solid #cfd8dc;
+  border-radius: 8px;
+  font-size: 1rem;
+  color: #455a64;
+  background-color: #ffffff;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  width: 100%;
+  box-sizing: border-box; /* Ensures padding and border are included in the element's total width and height */
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #3498db; /* Blue accent on focus */
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2); /* Soft blue glow on focus */
+}
+
+.form-input::placeholder {
+  color: #90a4ae;
+}
+
+.form-group-full {
+  grid-column: 1 / -1; /* Makes the element span across all columns in the grid */
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.submit-btn,
+.reset-btn {
+  padding: 0.9rem 2rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Subtle shadow for buttons */
+}
+
+.submit-btn {
+  background-color: #28a745; /* Green for submit */
+  color: #ffffff;
+}
+
+.submit-btn:hover {
+  background-color: #218838;
+  transform: translateY(-1px); /* Slight lift effect on hover */
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+}
+
+.submit-btn:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+.reset-btn {
+  background-color: #6c757d; /* Grey for reset */
+  color: #ffffff;
+}
+
+.reset-btn:hover {
+  background-color: #5a6268;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+}
+
+.reset-btn:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+.error-message {
+  color: #d32f2f; /* Red for errors */
+  background-color: #ffebee; /* Light red background */
+  padding: 0.8rem 1.2rem;
+  border-radius: 8px;
+  border: 1px solid #d32f2f;
+  margin-top: 0.5rem; /* Reduced top margin for individual field errors */
+  font-size: 0.95rem;
+  text-align: left; /* Align error text to the left */
+}
+
+.transaction-error, .transaction-success {
+  margin-top: 1.5rem; /* Larger margin for global messages */
+  text-align: center;
+}
+
+.success-message {
+  color: #2e7d32; /* Green for success */
+  background-color: #e8f5e9; /* Light green background */
+  padding: 0.8rem 1.2rem;
+  border-radius: 8px;
+  border: 1px solid #2e7d32;
+  font-size: 0.95rem;
+}
+
+/* Horizontal Rule for Section Separation */
+.section-divider {
+  border: 0;
+  height: 1px;
+  background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(189, 189, 189, 0.75), rgba(0, 0, 0, 0));
+  margin: 3.5rem 0; /* More spacing for section divider */
+}
+
+/* --- Filter Section Styles (Existing) --- */
 .filter-section {
   background-color: #f7f9fb;
   padding: 2rem;
@@ -301,6 +665,7 @@ function transactionStatusClass(status) {
   box-shadow: 0 6px 15px rgba(149, 165, 166, 0.3);
 }
 
+/* --- Loading and Empty State Messages --- */
 .loading-message {
   text-align: center;
   color: #607d8b;
@@ -331,13 +696,36 @@ function transactionStatusClass(status) {
   100% { transform: rotate(360deg); }
 }
 
+.empty-state-message {
+  text-align: center;
+  color: #78909c;
+  font-size: 1.1rem;
+  padding: 2rem;
+  background-color: #f7f9fb;
+  border-radius: 8px;
+  margin-top: 1.5rem;
+  border: 1px solid #cfd8dc;
+}
+
+/* --- Transaction Card Grid Styles (Existing) --- */
 .card-grid {
+  display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 1.5rem;
 }
 
 .card {
-  border-left: 5px solid #cfd8dc;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06); /* Lighter shadow for cards */
+  padding: 1.8rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border-left: 5px solid #cfd8dc; /* Default left border */
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
 }
 
 .card-header {
@@ -361,15 +749,24 @@ function transactionStatusClass(status) {
 .type-deposit {
   background-color: #e8f5e9;
   color: #2e7d32;
+  border-left-color: #2e7d32; /* Match card border to type */
 }
 .type-withdrawal {
   background-color: #ffebee;
   color: #c62828;
+  border-left-color: #c62828; /* Match card border to type */
 }
 .type-transfer {
   background-color: #e1f5fe;
   color: #0277bd;
+  border-left-color: #0277bd; /* Match card border to type */
 }
+
+/* Apply type color to card left border */
+.card.type-deposit { border-left-color: #2e7d32; }
+.card.type-withdrawal { border-left-color: #c62828; }
+.card.type-transfer { border-left-color: #0277bd; }
+
 
 .transaction-amount {
   font-size: 1.4rem;
@@ -419,4 +816,9 @@ function transactionStatusClass(status) {
   background-color: #e0e0e0;
   color: #616161;
 }
+
+/* Text color helpers */
+.text-green { color: #2e7d32; }
+.text-red { color: #c62828; }
+.text-blue { color: #0277bd; }
 </style>

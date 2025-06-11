@@ -107,6 +107,27 @@ public class AccountsController extends BaseController<AccountDto, String, Accou
         return ResponseEntity.ok().build();
     }
 
+    @GetMapping("/get/by-id-and-user-id")
+    @Operation(summary = "Get account by ID and user ID")
+    public ResponseEntity<AccountDto> getAccountByIdAndUserId(
+            @RequestParam String id,
+            @RequestParam String userId
+    ) {
+        if (id == null || id.isEmpty() || userId == null || userId.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+        AccountDto account;
+        try {
+            account = service.getByIdAndUserId(id, userId);
+        }catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
+        catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(null);
+        }
+        return ResponseEntity.ok(account);
+    }
+
 //    @GetMapping("/get/account-statuses")
 //    @Operation(summary = "Get all account statuses")
 //    public ResponseEntity<List<String>> getAccountStatuses() {

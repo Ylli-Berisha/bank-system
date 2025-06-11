@@ -43,6 +43,21 @@ public class AccountsFallbackImpl implements FallbackFactory<AccountsFeignClient
             public ResponseEntity<List<AccountDto>> getUserAccounts(String userId) {
                 return ResponseEntity.status(503).build();
             }
+
+            @Override
+            public ResponseEntity<AccountDto> getAccountByIdAndUserId(String id, String userId) {
+                return ResponseEntity.status(503).build();
+            }
+
+            @Override
+            public ResponseEntity<AccountDto> getById(String id) {
+                return ResponseEntity.status(503).build();
+            }
+
+            @Override
+            public ResponseEntity<AccountDto> update(String id, AccountDto dto) {
+                return ResponseEntity.status(503).build();
+            }
         };
     }
 }

@@ -41,7 +41,7 @@
           <p>Amount taken: ${{ loan.amount }}</p>
           <p>Due: {{ formatDate(loan.endDate) }}</p>
           <p>Interest rate: {{ loan.interestRate }}%</p>
-          <p><b>Due amount: {{loan.amount + (loan.amount * loan.interestRate / 100)}}$</b></p>
+          <p><b>Due amount: ${{loan.amount + (loan.amount * loan.interestRate / 100)}}</b></p>
         </div>
       </div>
       <p v-else>No loans found.</p>

@@ -4,6 +4,7 @@ import com.ylli.shared.base.BaseServiceImpl;
 import com.ylli.shared.clients.AccountsFeignClient;
 import com.ylli.shared.dtos.AccountDto;
 import com.ylli.shared.dtos.TransactionDto;
+import com.ylli.shared.enums.AccountStatus;
 import com.ylli.shared.enums.TransactionStatus;
 import com.ylli.shared.enums.TransactionType;
 import com.ylli.shared.models.Account;
@@ -14,6 +15,7 @@ import com.ylli.transactions_service.mappers.TransactionMapper;
 import com.ylli.transactions_service.repositories.TransactionsRepository;
 import com.ylli.transactions_service.services.TransactionsService;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -113,4 +115,100 @@ public class TransactionsServiceImpl extends BaseServiceImpl<Transaction, Transa
 
         return mapper.toDtoList(transactions);
     }
+
+    @Override
+    @Transactional
+    public TransactionDto createTransaction(TransactionDto transactionDto, String userId) {
+        String sourceAccountId = transactionDto.getAccountId();
+        if (sourceAccountId == null || sourceAccountId.isBlank()) {
+            throw new IllegalArgumentException("Source account ID is required.");
+        }
+
+        AccountDto sourceAccountDto = accountsFeignClient.getAccountByIdAndUserId(sourceAccountId, userId).getBody();
+        if (sourceAccountDto == null) {
+            throw new IllegalArgumentException("Source account not found or does not belong to the authenticated user.");
+        }
+        if (sourceAccountDto.getStatus() != AccountStatus.ACTIVE) {
+            throw new IllegalStateException("Source account is not active.");
+        }
+
+        if (transactionDto.getAmount() == null || transactionDto.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Transaction amount must be positive.");
+        }
+
+        Transaction newTransaction = new Transaction();
+        newTransaction.setType(transactionDto.getType());
+        newTransaction.setAmount(transactionDto.getAmount());
+        newTransaction.setDetails(transactionDto.getDetails());
+
+        Account sourceAccountEntity = new Account();
+        sourceAccountEntity.setId(sourceAccountDto.getId());
+        newTransaction.setAccount(sourceAccountEntity);
+
+        newTransaction.setCreatedAt(LocalDateTime.now());
+
+        switch (newTransaction.getType()) {
+            case DEPOSIT:
+                sourceAccountDto.setBalance(sourceAccountDto.getBalance().add(newTransaction.getAmount()));
+                newTransaction.setStatus(TransactionStatus.COMPLETED);
+                newTransaction.setRecipientAccount(null);
+                break;
+
+            case WITHDRAWAL:
+                if (sourceAccountDto.getBalance().compareTo(newTransaction.getAmount()) < 0) {
+                    newTransaction.setStatus(TransactionStatus.FAILED);
+                    repository.save(newTransaction);
+                    throw new IllegalStateException("Insufficient funds in source account for withdrawal.");
+                }
+                sourceAccountDto.setBalance(sourceAccountDto.getBalance().subtract(newTransaction.getAmount()));
+                newTransaction.setStatus(TransactionStatus.COMPLETED);
+                newTransaction.setRecipientAccount(null);
+                break;
+
+            case TRANSFER:
+                String recipientAccountId = transactionDto.getRecipientAccountId();
+                if (recipientAccountId == null || recipientAccountId.isBlank()) {
+                    throw new IllegalArgumentException("Recipient account ID is required for transfers.");
+                }
+                if (sourceAccountId.equals(recipientAccountId)) {
+                    throw new IllegalArgumentException("Cannot transfer to the same account.");
+                }
+
+                AccountDto recipientAccountDto = accountsFeignClient.getById(recipientAccountId).getBody();
+                if (recipientAccountDto == null) {
+                    throw new IllegalArgumentException("Recipient account not found.");
+                }
+                if (recipientAccountDto.getStatus() != AccountStatus.ACTIVE) {
+                    throw new IllegalStateException("Recipient account is not active.");
+                }
+
+                if (sourceAccountDto.getBalance().compareTo(newTransaction.getAmount()) < 0) {
+                    newTransaction.setStatus(TransactionStatus.FAILED);
+                    repository.save(newTransaction);
+                    throw new IllegalStateException("Insufficient funds in source account for transfer.");
+                }
+
+                sourceAccountDto.setBalance(sourceAccountDto.getBalance().subtract(newTransaction.getAmount()));
+                recipientAccountDto.setBalance(recipientAccountDto.getBalance().add(newTransaction.getAmount()));
+
+                Account recipientAccountEntity = new Account();
+                recipientAccountEntity.setId(recipientAccountDto.getId());
+                newTransaction.setRecipientAccount(recipientAccountEntity);
+
+                newTransaction.setStatus(TransactionStatus.COMPLETED);
+
+                accountsFeignClient.update(recipientAccountDto.getId(), recipientAccountDto);
+                break;
+
+            default:
+                throw new IllegalArgumentException("Unsupported transaction type: " + newTransaction.getType());
+        }
+
+        accountsFeignClient.update(sourceAccountDto.getId(), sourceAccountDto);
+
+        Transaction savedTransaction = repository.save(newTransaction);
+
+        return mapper.toDto(savedTransaction);
+    }
+
 }

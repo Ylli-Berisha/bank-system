@@ -4,11 +4,13 @@ import com.ylli.shared.base.BaseController;
 import com.ylli.shared.dtos.TransactionDto;
 import com.ylli.transactions_service.services.TransactionsService;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.persistence.EntityNotFoundException;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -64,4 +66,28 @@ public class TransactionsController extends BaseController<TransactionDto, Strin
     }
 
 
+
+    @PostMapping("/create-new")
+    public ResponseEntity<TransactionDto> createTransaction(
+            @Validated @RequestBody TransactionDto transactionDto,
+            @RequestHeader("X-User-ID") String userId
+    ) {
+        try {
+            TransactionDto createdTransaction = service.createTransaction(transactionDto, userId);
+            return new ResponseEntity<>(createdTransaction, HttpStatus.CREATED);
+        } catch (IllegalArgumentException e) {
+            System.err.println("Bad Request for transaction creation: " + e.getMessage());
+            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+        } catch (IllegalStateException e) {
+            System.err.println("Conflict during transaction creation: " + e.getMessage());
+            return new ResponseEntity<>(null, HttpStatus.CONFLICT);
+        } catch (EntityNotFoundException e) {
+            System.err.println("Entity not found during transaction creation: " + e.getMessage());
+            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            System.err.println("Internal Server Error during transaction creation: " + e.getMessage());
+            e.printStackTrace();
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 }

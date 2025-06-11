@@ -132,6 +132,19 @@ public class AccountsServiceImpl extends BaseServiceImpl<Account, AccountDto, St
             throw new RuntimeException("Failed to unfreeze account", e);
         }
     }
+
+    @Override
+    public AccountDto getByIdAndUserId(String id, String userId) {
+        User user = new User();
+        user.setId(userId);
+
+        Account account = repository.findById(id).orElseThrow(() -> new IllegalArgumentException("Account not found with ID: " + id));
+        if (!account.getUser().getId().equals(userId)) {
+            throw new IllegalArgumentException("Account does not belong to the user with ID: " + userId);
+        }
+
+        return mapper.toDto(account);
+    }
 }
 
 

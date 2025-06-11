@@ -7,13 +7,13 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.security.core.context.SecurityContextImpl;
+import org.springframework.security.core.userdetails.UserDetails; // Added import for UserDetails
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
 import reactor.core.publisher.Mono;
 
-import java.util.List;
 
 @Slf4j
 @Component
@@ -36,71 +36,55 @@ public class JwtAuthenticationWebFilter implements WebFilter {
         String token = authHeader.substring(7);
         Authentication authToken = new UsernamePasswordAuthenticationToken(token, token);
 
-        Mono<Void> result = authenticationManager.authenticate(authToken)
-                .doOnSubscribe(s ->
-                        System.out.println("Starting authentication for token: " + token))
-                .map(authenticated -> {
-                    if (authenticated.isAuthenticated()) {
-                        System.out.println("Authenticated token: " + authenticated);
-                    } else {
-                        System.out.println("Authentication failed for token: " + authenticated);
-                    }
-                    return authenticated;
-                })
-                .doOnError(e -> {
-                    System.out.println("Authentication error: " + e.getMessage());
+        return authenticationManager.authenticate(authToken)
+                .doOnSuccess(authenticated -> {
+                    log.debug("Token authenticated successfully: {}", authenticated.isAuthenticated());
                 })
                 .flatMap(authenticated -> {
-                    System.out.println("Authenticated token in filter: " + authenticated);
-
-                    Authentication authToUse;
-
-                    if (authenticated instanceof UsernamePasswordAuthenticationToken
-                            && authenticated.isAuthenticated()
-                            && !authenticated.getAuthorities().isEmpty()) {
-                        authToUse = authenticated;
+                    String userId = null;
+                    if (authenticated.getPrincipal() instanceof String) {
+                        userId = (String) authenticated.getPrincipal();
+                        log.debug("Extracted userId from String principal: {}", userId);
+                    } else if (authenticated.getPrincipal() instanceof UserDetails) {
+                        userId = ((UserDetails) authenticated.getPrincipal()).getUsername();
+                        log.debug("Extracted userId from UserDetails principal: {}", userId);
+                    } else if (authenticated.getPrincipal() instanceof org.springframework.security.oauth2.jwt.Jwt) {
+                        userId = ((org.springframework.security.oauth2.jwt.Jwt) authenticated.getPrincipal()).getSubject();
+                        log.debug("Extracted userId from Jwt principal: {}", userId);
                     } else {
-                        authToUse = new UsernamePasswordAuthenticationToken(
-                                authenticated.getPrincipal(),
-                                authenticated.getCredentials(),
-                                authenticated.getAuthorities() != null ? authenticated.getAuthorities() : List.of()
-                        );
-                        System.out.println("Reconstructed Authentication token: " + authToUse);
+                        log.warn("Authenticated principal type not recognized for userId extraction: {}", authenticated.getPrincipal().getClass().getName());
                     }
 
-                    return chain.filter(exchange)
+                    ServerWebExchange modifiedExchange = exchange; // Initialize with original exchange
+
+                    if (userId != null) {
+                        final String finalUserId = userId;
+                        modifiedExchange = exchange.mutate()
+                                .request(builder -> builder.header("X-User-ID", finalUserId))
+                                .build();
+                        log.debug("Added X-User-ID header: {}", userId);
+                    } else {
+                        log.warn("Could not determine userId from authenticated principal. Proceeding without X-User-ID header.");
+                    }
+
+                    return chain.filter(modifiedExchange)
                             .contextWrite(ReactiveSecurityContextHolder.withSecurityContext(
-                                    Mono.just(new SecurityContextImpl(authToUse))
+                                    Mono.just(new SecurityContextImpl(authenticated))
                             ));
+                })
+                .onErrorResume(e -> {
+                    log.error("Authentication failed during JWT filter: {}", e.getMessage(), e);
+                    return unauthorizedResponse(exchange);
                 });
-
-// Force the subscription (only for debugging!)
-//        result.subscribe();
-
-        return result;
-
-
-
-//                .switchIfEmpty(Mono.defer(() -> {
-//                    System.out.println("Authentication failed: Mono empty");
-//                    return unauthorizedResponse(exchange);
-//                }))
-//                .onErrorResume(e -> {
-//                    System.out.println("Authentication error: " + e.getMessage());
-//                    return unauthorizedResponse(exchange);
-//                })
-
     }
-
 
     private Mono<Void> unauthorizedResponse(ServerWebExchange exchange) {
         if (!exchange.getResponse().isCommitted()) {
             exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
             return exchange.getResponse().setComplete();
         } else {
-            System.out.println("Response already committed — cannot return 401.");
+            log.warn("Response already committed - cannot return 401.");
             return Mono.empty();
         }
     }
-
 }

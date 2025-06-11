@@ -60,7 +60,7 @@ public class UserServiceImpl extends BaseServiceImpl<User, UserDto, String, User
         user.setRoles(Set.of(UserRole.ROLE_USER));
 
         var savedUser = repository.save(user);
-        var token = jwtUtil.generateToken(savedUser.getUsername(), savedUser.getRoles());
+        var token = jwtUtil.generateToken(savedUser.getId(), savedUser.getRoles());
         log.info("User signed up successfully: {}", savedUser.getUsername());
 
         return new SignUpResponseDto(
@@ -85,7 +85,7 @@ public class UserServiceImpl extends BaseServiceImpl<User, UserDto, String, User
 //            throw new IllegalArgumentException("Invalid username or password");
         }
 
-        String accessToken = jwtUtil.generateToken(user.getUsername(), user.getRoles());
+        String accessToken = jwtUtil.generateToken(user.getId(), user.getRoles());
 //        String refreshToken = jwtUtil.generateRefreshToken(user.getUsername());
 
         UserDto userDto = mapper.toDto(user);

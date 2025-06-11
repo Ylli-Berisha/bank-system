@@ -20,4 +20,6 @@ public interface TransactionsService extends BaseService<TransactionDto, String>
             BigDecimal maxAmount,
             String query
     );
+
+    TransactionDto createTransaction(TransactionDto transactionDto, String userId);
 }
