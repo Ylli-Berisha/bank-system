@@ -10,6 +10,10 @@ import java.util.List;
 
 public interface LoansService extends BaseService<LoanDto, Long> {
     List<LoanDto> getUserLoans(String userId, LoanStatus loanStatus);
+
     List<String> getLoanTypes();
+
     Boolean applyForLoan(String accountId, LoanApplicationRequestDto loanApplicationRequestDto, String userId);
+
+    List<LoanDto> filterUserLoans(String userId, String loanTypeString, String statusString, String startDateString, String endDateString, Double minAmount, Double maxAmount, String query);
 }

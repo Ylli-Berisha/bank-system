@@ -12,11 +12,11 @@
       <div class="filter-controls-grid">
         <div class="filter-group">
           <label for="startDate">From Date:</label>
-          <input type="date" id="startDate" v-model="filters.startDate" class="filter-input" />
+          <input type="date" id="startDate" v-model="filters.startDate" class="filter-input"/>
         </div>
         <div class="filter-group">
           <label for="endDate">To Date:</label>
-          <input type="date" id="endDate" v-model="filters.endDate" class="filter-input" />
+          <input type="date" id="endDate" v-model="filters.endDate" class="filter-input"/>
         </div>
 
         <div class="filter-group">
@@ -31,22 +31,28 @@
           <label for="transactionStatus">Status:</label>
           <select id="transactionStatus" v-model="filters.status" class="filter-input">
             <option value="">All Statuses</option>
-            <option v-for="status in transactionStatuses" :key="status" :value="status">{{ status.toLowerCase() }}</option>
+            <option v-for="status in transactionStatuses" :key="status" :value="status">{{
+                status.toLowerCase()
+              }}
+            </option>
           </select>
         </div>
 
         <div class="filter-group">
           <label for="minAmount">Min Amount:</label>
-          <input type="number" id="minAmount" v-model.number="filters.minAmount" class="filter-input" placeholder="e.g., 10.00" />
+          <input type="number" id="minAmount" v-model.number="filters.minAmount" class="filter-input"
+                 placeholder="e.g., 10.00"/>
         </div>
         <div class="filter-group">
           <label for="maxAmount">Max Amount:</label>
-          <input type="number" id="maxAmount" v-model.number="filters.maxAmount" class="filter-input" placeholder="e.g., 500.00" />
+          <input type="number" id="maxAmount" v-model.number="filters.maxAmount" class="filter-input"
+                 placeholder="e.g., 500.00"/>
         </div>
 
         <div class="filter-group filter-group-search">
           <label for="searchQuery">Search:</label>
-          <input type="text" id="searchQuery" v-model="filters.query" class="filter-input" placeholder="By description or ID" />
+          <input type="text" id="searchQuery" v-model="filters.query" class="filter-input"
+                 placeholder="By description or ID"/>
         </div>
 
         <div class="filter-buttons">
@@ -59,18 +65,13 @@
       <h2 class="section-title">All Transactions</h2>
       <p class="section-description">Review deposits, withdrawals, and transfers.</p>
 
-      <div v-if="loading" class="loading-message">
-        <div class="spinner"></div>
-        Fetching transactions...
-      </div>
-
       <div v-if="error" class="error">{{ error }}</div>
 
-      <div v-if="!loading && transactions.length === 0" class="empty-state-message">
+      <div v-if="transactions.length === 0 && !error" class="empty-state-message">
         No transactions found matching your criteria.
       </div>
 
-      <div v-else-if="!loading" class="card-grid">
+      <div v-else class="card-grid">
         <div v-for="transaction in transactions" :key="transaction.id" class="card">
           <div class="card-header">
             <span class="transaction-type" :class="transactionTypeClass(transaction.type)">
@@ -111,7 +112,8 @@
             <select id="newAccountId" v-model="newTransactionForm.accountId" class="form-input" required>
               <option value="" disabled>Select your account</option>
               <option v-for="account in userAccounts" :key="account.id" :value="account.id">
-                {{ account.type }} (ID: {{ account.id.substring(0, 8) }}...) - Balance: ${{ account.balance ? account.balance.toFixed(2) : '0.00' }}
+                {{ account.type }} (ID: {{ account.id.substring(0, 8) }}...) - Balance:
+                ${{ account.balance ? account.balance.toFixed(2) : '0.00' }}
               </option>
             </select>
             <span v-if="formErrors.accountId" class="error-message">{{ formErrors.accountId }}</span>
@@ -119,7 +121,8 @@
 
           <div class="form-group">
             <label for="newType">Transaction Type:</label>
-            <select id="newType" v-model="newTransactionForm.type" @change="handleTypeChange" class="form-input" required>
+            <select id="newType" v-model="newTransactionForm.type" @change="handleTypeChange" class="form-input"
+                    required>
               <option value="" disabled>Select type</option>
               <option v-for="type in transactionTypes" :key="type" :value="type">{{ type.toLowerCase() }}</option>
             </select>
@@ -128,49 +131,58 @@
 
           <div class="form-group">
             <label for="newAmount">Amount:</label>
-            <input type="number" id="newAmount" v-model.number="newTransactionForm.amount" class="form-input" required min="0.01" step="0.01" />
+            <input type="number" id="newAmount" v-model.number="newTransactionForm.amount" class="form-input" required
+                   min="0.01" step="0.01"/>
             <span v-if="formErrors.amount" class="error-message">{{ formErrors.amount }}</span>
           </div>
 
           <div class="form-group" v-if="newTransactionForm.type === 'TRANSFER'">
             <label for="newRecipientAccountId">Recipient Account ID:</label>
-            <input type="text" id="newRecipientAccountId" v-model="newTransactionForm.recipientAccountId" class="form-input" placeholder="Enter recipient account ID" />
+            <input type="text" id="newRecipientAccountId" v-model="newTransactionForm.recipientAccountId"
+                   class="form-input" placeholder="Enter recipient account ID"/>
             <span v-if="formErrors.recipientAccountId" class="error-message">{{ formErrors.recipientAccountId }}</span>
           </div>
 
           <div class="form-group form-group-full">
             <label for="newDetails">Details (optional):</label>
-            <textarea id="newDetails" v-model="newTransactionForm.details" class="form-input" maxlength="255" rows="2"></textarea>
+            <textarea id="newDetails" v-model="newTransactionForm.details" class="form-input" maxlength="255"
+                      rows="2"></textarea>
             <span v-if="formErrors.details" class="error-message">{{ formErrors.details }}</span>
           </div>
         </div>
 
         <div class="form-actions">
-          <button type="submit" :disabled="loading" class="submit-btn">
-            {{ loading ? 'Processing...' : 'Create Transaction' }}
+          <button type="submit" class="submit-btn">
+            Create Transaction
           </button>
-          <button type="button" @click="resetForm" class="reset-btn" :disabled="loading">Reset Form</button>
+          <button type="button" @click="resetForm" class="reset-btn">Reset Form</button>
         </div>
 
-        <div v-if="transactionCreationError" class="error-message transaction-error">{{ transactionCreationError }}</div>
-        <div v-if="transactionCreationSuccess" class="success-message transaction-success">{{ transactionCreationSuccess }}</div>
+        <div v-if="transactionCreationError" class="error-message transaction-error">{{
+            transactionCreationError
+          }}
+        </div>
+        <div v-if="transactionCreationSuccess" class="success-message transaction-success">{{
+            transactionCreationSuccess
+          }}
+        </div>
       </form>
     </section>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, watch, reactive } from 'vue';
-import { storeToRefs } from 'pinia';
-import { useTransactionsStore } from '@/stores/transactionsStore.js';
-import { useAuthStore } from '@/stores/authStore.js';
-import { useAccountsStore } from '@/stores/acccountsStore.js'; // Import the accounts store
+import {ref, onMounted, watch, reactive} from 'vue';
+import {storeToRefs} from 'pinia';
+import {useTransactionsStore} from '@/stores/transactionsStore.js';
+import {useAuthStore} from '@/stores/authStore.js';
+import {useAccountsStore} from '@/stores/acccountsStore.js';
 
 const transactionsStore = useTransactionsStore();
 const accountsStore = useAccountsStore();
-const { transactions, error, loading } = storeToRefs(transactionsStore);
+const {transactions, error} = storeToRefs(transactionsStore); // Removed 'loading' from destructuring
 
-const { accounts: userAccounts } = storeToRefs(accountsStore);
+const {accounts: userAccounts} = storeToRefs(accountsStore);
 
 
 const newTransactionForm = reactive({
@@ -217,7 +229,7 @@ watch(filters, (newFilters, oldFilters) => {
   } else {
     applyFilters();
   }
-}, { deep: true });
+}, {deep: true});
 
 async function fetchUserAccounts() {
   await accountsStore.fetchAccounts();
@@ -266,7 +278,6 @@ async function submitTransaction() {
     return;
   }
 
-  loading.value = true;
   try {
     const payload = {
       accountId: newTransactionForm.accountId,
@@ -283,8 +294,6 @@ async function submitTransaction() {
   } catch (err) {
     transactionCreationError.value = transactionsStore.error;
     console.error('Error submitting new transaction:', err);
-  } finally {
-    loading.value = false;
   }
 }
 
@@ -395,9 +404,9 @@ function transactionStatusClass(status) {
   padding: 2.5rem;
   max-width: 1200px;
   margin: 0 auto;
-  font-family: 'Inter', sans-serif; /* Assuming Inter font is available */
-  background-color: #f0f2f5; /* Light grey background for the page */
-  color: #334e68; /* Primary dark text color */
+  font-family: 'Inter', sans-serif;
+  background-color: #f0f2f5;
+  color: #334e68;
 }
 
 .header {
@@ -407,14 +416,14 @@ function transactionStatusClass(status) {
 
 .header h1 {
   font-size: 2.8rem;
-  color: #263238; /* Darker heading color */
+  color: #263238;
   margin-bottom: 0.5rem;
   font-weight: 700;
 }
 
 .header p {
   font-size: 1.1rem;
-  color: #607d8b; /* Lighter text for descriptions */
+  color: #607d8b;
 }
 
 /* Common Section Styling */
@@ -422,7 +431,7 @@ function transactionStatusClass(status) {
   background-color: #ffffff;
   padding: 2.5rem;
   border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08); /* More pronounced shadow for sections */
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
   margin-bottom: 2.5rem;
 }
 
@@ -443,7 +452,6 @@ function transactionStatusClass(status) {
 
 /* --- Transaction Creation Form Styles --- */
 .create-transaction-section {
-  /* Already uses .section styling, no need for redundant padding */
   padding: 2.5rem;
 }
 
@@ -453,7 +461,7 @@ function transactionStatusClass(status) {
 
 .form-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* Responsive grid for form fields */
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 1.5rem;
 }
 
@@ -478,13 +486,13 @@ function transactionStatusClass(status) {
   background-color: #ffffff;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
   width: 100%;
-  box-sizing: border-box; /* Ensures padding and border are included in the element's total width and height */
+  box-sizing: border-box;
 }
 
 .form-input:focus {
   outline: none;
-  border-color: #3498db; /* Blue accent on focus */
-  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2); /* Soft blue glow on focus */
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
 }
 
 .form-input::placeholder {
@@ -492,7 +500,7 @@ function transactionStatusClass(status) {
 }
 
 .form-group-full {
-  grid-column: 1 / -1; /* Makes the element span across all columns in the grid */
+  grid-column: 1 / -1;
 }
 
 .form-actions {
@@ -511,17 +519,17 @@ function transactionStatusClass(status) {
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Subtle shadow for buttons */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .submit-btn {
-  background-color: #28a745; /* Green for submit */
+  background-color: #28a745;
   color: #ffffff;
 }
 
 .submit-btn:hover {
   background-color: #218838;
-  transform: translateY(-1px); /* Slight lift effect on hover */
+  transform: translateY(-1px);
   box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
 }
 
@@ -533,7 +541,7 @@ function transactionStatusClass(status) {
 }
 
 .reset-btn {
-  background-color: #6c757d; /* Grey for reset */
+  background-color: #6c757d;
   color: #ffffff;
 }
 
@@ -551,24 +559,24 @@ function transactionStatusClass(status) {
 }
 
 .error-message {
-  color: #d32f2f; /* Red for errors */
-  background-color: #ffebee; /* Light red background */
+  color: #d32f2f;
+  background-color: #ffebee;
   padding: 0.8rem 1.2rem;
   border-radius: 8px;
   border: 1px solid #d32f2f;
-  margin-top: 0.5rem; /* Reduced top margin for individual field errors */
+  margin-top: 0.5rem;
   font-size: 0.95rem;
-  text-align: left; /* Align error text to the left */
+  text-align: left;
 }
 
 .transaction-error, .transaction-success {
-  margin-top: 1.5rem; /* Larger margin for global messages */
+  margin-top: 1.5rem;
   text-align: center;
 }
 
 .success-message {
-  color: #2e7d32; /* Green for success */
-  background-color: #e8f5e9; /* Light green background */
+  color: #2e7d32;
+  background-color: #e8f5e9;
   padding: 0.8rem 1.2rem;
   border-radius: 8px;
   border: 1px solid #2e7d32;
@@ -580,7 +588,7 @@ function transactionStatusClass(status) {
   border: 0;
   height: 1px;
   background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(189, 189, 189, 0.75), rgba(0, 0, 0, 0));
-  margin: 3.5rem 0; /* More spacing for section divider */
+  margin: 3.5rem 0;
 }
 
 /* --- Filter Section Styles (Existing) --- */
@@ -666,35 +674,7 @@ function transactionStatusClass(status) {
 }
 
 /* --- Loading and Empty State Messages --- */
-.loading-message {
-  text-align: center;
-  color: #607d8b;
-  font-size: 1.1rem;
-  padding: 2rem;
-  background-color: #e3f2fd;
-  border-radius: 8px;
-  margin-top: 1.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  border: 1px solid #90caf9;
-  font-weight: 500;
-}
-
-.spinner {
-  border: 4px solid rgba(0, 0, 0, 0.1);
-  border-left-color: #3498db;
-  border-radius: 50%;
-  width: 24px;
-  height: 24px;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
+/* Removed .loading-message and .spinner styles as they are no longer used */
 
 .empty-state-message {
   text-align: center;
@@ -717,10 +697,10 @@ function transactionStatusClass(status) {
 .card {
   background-color: #ffffff;
   border-radius: 12px;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06); /* Lighter shadow for cards */
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
   padding: 1.8rem;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
-  border-left: 5px solid #cfd8dc; /* Default left border */
+  border-left: 5px solid #cfd8dc;
 }
 
 .card:hover {
@@ -749,23 +729,32 @@ function transactionStatusClass(status) {
 .type-deposit {
   background-color: #e8f5e9;
   color: #2e7d32;
-  border-left-color: #2e7d32; /* Match card border to type */
+  border-left-color: #2e7d32;
 }
+
 .type-withdrawal {
   background-color: #ffebee;
   color: #c62828;
-  border-left-color: #c62828; /* Match card border to type */
+  border-left-color: #c62828;
 }
+
 .type-transfer {
   background-color: #e1f5fe;
   color: #0277bd;
-  border-left-color: #0277bd; /* Match card border to type */
+  border-left-color: #0277bd;
 }
 
-/* Apply type color to card left border */
-.card.type-deposit { border-left-color: #2e7d32; }
-.card.type-withdrawal { border-left-color: #c62828; }
-.card.type-transfer { border-left-color: #0277bd; }
+.card.type-deposit {
+  border-left-color: #2e7d32;
+}
+
+.card.type-withdrawal {
+  border-left-color: #c62828;
+}
+
+.card.type-transfer {
+  border-left-color: #0277bd;
+}
 
 
 .transaction-amount {
@@ -808,17 +797,27 @@ function transactionStatusClass(status) {
   background-color: #ffebee;
   color: #d32f2f;
 }
+
 .status-reversed {
   background-color: #f3e5f5;
   color: #8e24aa;
 }
+
 .status-cancelled {
   background-color: #e0e0e0;
   color: #616161;
 }
 
 /* Text color helpers */
-.text-green { color: #2e7d32; }
-.text-red { color: #c62828; }
-.text-blue { color: #0277bd; }
+.text-green {
+  color: #2e7d32;
+}
+
+.text-red {
+  color: #c62828;
+}
+
+.text-blue {
+  color: #0277bd;
+}
 </style>

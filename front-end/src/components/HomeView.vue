@@ -76,7 +76,7 @@ const { loans, error: loansError } = storeToRefs(loansStore)
 onMounted(() => {
   accountsStore.fetchAccounts()
   transactionsStore.fetchAllTransactions();
-  loansStore.fetchLoans()
+  loansStore.fetchAllLoans()
 })
 
 function formatDate(isoString) {

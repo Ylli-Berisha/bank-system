@@ -8,7 +8,7 @@ export const useLoansStore = defineStore('loans', () => {
     const loanTypes = ref([])
     const createError = ref(null)
 
-    const fetchLoans = async (status = null) => {
+    const fetchAllLoans = async (status = null) => {
         error.value = null
 
         let url = `/transactions-service/api/loans/get/user-loans`;
@@ -35,6 +35,41 @@ export const useLoansStore = defineStore('loans', () => {
         }
     }
 
+    const fetchFilteredLoans = async (filters = {}) => {
+        error.value = null
+        loans.value = []
+        try {
+            const params = new URLSearchParams()
+
+            for (const key in filters) {
+                const value = filters[key]
+                if (value !== undefined && value !== null && value !== '') {
+                    params.append(key, value)
+                }
+            }
+
+
+            const url = `/transactions-service/api/loans/filter/user-loans?${params.toString()}`
+            const response = await client.get(url)
+
+            if (response.status === 204) {
+                loans.value = []
+            } else {
+                loans.value = response.data
+            }
+            console.log("Fetched filtered loans:", loans.value)
+
+        } catch (err) {
+            console.error('Failed to fetch filtered loans:', err)
+            if (err.response && (err.response.status === 404 || err.response.status === 204)) {
+                loans.value = []
+                error.value = 'No loans found matching your criteria.'
+            } else {
+                error.value = 'Failed to fetch filtered loans. Please try again.'
+            }
+        }
+    }
+
     const fetchLoanTypes = async () => {
         error.value = null
         try {
@@ -55,7 +90,7 @@ export const useLoansStore = defineStore('loans', () => {
         try {
             const url = `/transactions-service/api/loans/apply?accountId=${accountId}`;
             const response = await client.post(url, loanApplicationDetails);
-            await fetchLoans();
+            await fetchAllLoans();
             return response.data;
         } catch (err) {
             console.error('Failed to apply for new loan:', err);
@@ -73,7 +108,8 @@ export const useLoansStore = defineStore('loans', () => {
         error,
         loanTypes,
         createError,
-        fetchLoans,
+        fetchAllLoans,
+        fetchFilteredLoans,
         fetchLoanTypes,
         applyForNewLoan
     }

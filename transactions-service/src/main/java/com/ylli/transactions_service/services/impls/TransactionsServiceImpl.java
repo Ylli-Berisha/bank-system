@@ -61,11 +61,10 @@ public class TransactionsServiceImpl extends BaseServiceImpl<Transaction, Transa
             String statusString,
             String startDate,
             String endDate,
-            BigDecimal minAmount, // These can be null from the frontend
-            BigDecimal maxAmount, // These can be null from the frontend
+            BigDecimal minAmount,
+            BigDecimal maxAmount,
             String query
     ) {
-        // 1. Parse/Convert Parameters from Frontend
         LocalDateTime parsedStartDateTime = null;
         if (startDate != null && !startDate.isEmpty()) {
             parsedStartDateTime = LocalDate.parse(startDate).atStartOfDay();

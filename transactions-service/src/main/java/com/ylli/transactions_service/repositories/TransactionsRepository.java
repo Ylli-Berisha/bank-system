@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
-public interface TransactionsRepository extends JpaRepository<Transaction, String>, JpaSpecificationExecutor<Transaction> { // IMPORTANT: Add JpaSpecificationExecutor!
+public interface TransactionsRepository extends JpaRepository<Transaction, String>, JpaSpecificationExecutor<Transaction> {
     List<Transaction> findByAccount(Account account);
 
 //    @Query("SELECT t FROM transactions t JOIN t.account a JOIN a.user u WHERE " +

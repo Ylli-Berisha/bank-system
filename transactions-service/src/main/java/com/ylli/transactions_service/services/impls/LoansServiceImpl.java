@@ -11,6 +11,7 @@ import com.ylli.shared.models.Account;
 import com.ylli.shared.models.Loan;
 import com.ylli.shared.models.Transaction;
 import com.ylli.shared.models.User;
+import com.ylli.transactions_service.configs.LoanSpecifications;
 import com.ylli.transactions_service.mappers.LoansMapper;
 import com.ylli.transactions_service.repositories.LoansRepository;
 import com.ylli.transactions_service.services.LoansService;
@@ -118,5 +119,63 @@ public class LoansServiceImpl extends BaseServiceImpl<Loan, LoanDto, Long, Loans
             log.error("An unexpected error occurred during loan application for account ID {}. Error: {}", accountId, e.getMessage(), e);
             throw new RuntimeException("An unexpected error occurred during loan application.", e);
         }
+    }
+
+    @Override
+    public List<LoanDto> filterUserLoans(
+            String userId,
+            String loanTypeString,
+            String statusString,
+            String startDateString,
+            String endDateString,
+            Double minAmount,
+            Double maxAmount,
+            String query
+    ) {
+        LocalDate parsedStartDate = null;
+        if (startDateString != null && !startDateString.isEmpty()) {
+            parsedStartDate = LocalDate.parse(startDateString);
+        }
+
+        LocalDate parsedEndDate = null;
+        if (endDateString != null && !endDateString.isEmpty()) {
+            parsedEndDate = LocalDate.parse(endDateString);
+        }
+
+        LoanStatus parsedStatus = null;
+        if (statusString != null && !statusString.isEmpty()) {
+            try {
+                parsedStatus = LoanStatus.valueOf(statusString.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                System.err.println("Warning: Received invalid LoanStatus string: " + statusString);
+            }
+        }
+
+        LoanType parsedLoanType = null;
+        if (loanTypeString != null && !loanTypeString.isEmpty()) {
+            try {
+                parsedLoanType = LoanType.valueOf(loanTypeString.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                System.err.println("Warning: Received invalid LoanType string: " + loanTypeString);
+            }
+        }
+
+        Double actualMinAmount = (minAmount != null) ? minAmount : 0.0;
+        Double actualMaxAmount = (maxAmount != null) ? maxAmount : Double.MAX_VALUE;
+
+        List<Loan> loans = repository.findAll(
+                LoanSpecifications.withFilters(
+                        userId,
+                        parsedLoanType,
+                        parsedStatus,
+                        parsedStartDate,
+                        parsedEndDate,
+                        actualMinAmount,
+                        actualMaxAmount,
+                        query
+                )
+        );
+
+        return mapper.toDtoList(loans);
     }
 }

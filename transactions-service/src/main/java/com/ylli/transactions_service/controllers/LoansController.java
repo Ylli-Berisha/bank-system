@@ -92,4 +92,28 @@ public class LoansController extends BaseController<LoanDto, Long, LoansService>
             return new ResponseEntity<>("An internal server error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+    @GetMapping("/filter/user-loans")
+    public ResponseEntity<List<LoanDto>> getFilteredLoans(
+            @RequestHeader("X-User-ID") String userId,
+            @RequestParam(name = "loanType", required = false) String loanType,
+            @RequestParam(name = "status", required = false) String status,
+            @RequestParam(name = "startDate", required = false) String startDate,
+            @RequestParam(name = "endDate", required = false) String endDate,
+            @RequestParam(name = "minAmount", required = false) Double minAmount,
+            @RequestParam(name = "maxAmount", required = false) Double maxAmount,
+            @RequestParam(name = "query", required = false) String query
+    ) {
+        List<LoanDto> filteredLoans = service.filterUserLoans(
+                userId,
+                loanType,
+                status,
+                startDate,
+                endDate,
+                minAmount,
+                maxAmount,
+                query
+        );
+        return ResponseEntity.ok(filteredLoans);
+    }
 }
