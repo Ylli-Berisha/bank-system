@@ -2,6 +2,8 @@ package com.ylli.shared.models;
 
 import com.ylli.shared.base.BaseEntity;
 import com.ylli.shared.enums.LoanStatus;
+import com.ylli.shared.enums.LoanType;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
@@ -46,15 +48,31 @@ public class Loan extends BaseEntity<Long> {
     @NotNull(message = "Loan status cannot be null")
     private LoanStatus status;
 
-    @Column(nullable = false)
-    @NotNull(message = "Start date cannot be null")
+    @NotNull(message = "Loan type cannot be null")
+    @Schema(
+            description = "Type of the loan (e.g., PERSONAL_LOAN, AUTO_LOAN), value is enumerated",
+            example = "PERSONAL_LOAN"
+    )
+    private LoanType loanType;
+
+    @Column
+//    @NotNull(message = "Start date cannot be null")
     @PastOrPresent(message = "Start date must be in the past or present")
     private LocalDate startDate;
 
-    @Column(nullable = false)
-    @NotNull(message = "End date cannot be null")
+    @Column
+//    @NotNull(message = "End date cannot be null")
     @Future(message = "End date must be in the future")
     private LocalDate endDate;
+
+    @Schema(
+            description = "Actual date when the loan was fully paid off (only applicable for PAID_OFF status)",
+            example = "2024-03-15",
+            nullable = true
+    )
+    private LocalDate paidOffDate;
+
+    private int termInMonths;
 
     @Override
     public Long getId() {

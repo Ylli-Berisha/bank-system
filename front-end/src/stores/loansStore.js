@@ -5,27 +5,76 @@ import { defineStore } from 'pinia'
 export const useLoansStore = defineStore('loans', () => {
     const loans = ref([])
     const error = ref(null)
+    const loanTypes = ref([])
+    const createError = ref(null)
 
-    const fetchLoans = async () => {
+    const fetchLoans = async (status = null) => {
         error.value = null
-        const userId = localStorage.getItem('userId')
-        if (!userId) {
-            error.value = 'No user ID found. Please try logging in again.'
-            return
+
+        let url = `/transactions-service/api/loans/get/user-loans`;
+        const params = new URLSearchParams();
+
+        if (status) {
+            params.append('status', status);
+        }
+
+        if (params.toString()) {
+            url += `?${params.toString()}`;
         }
 
         try {
-            const response = await client.get(`/transactions-service/api/loans/get/user-loans?userId=${userId}`)
+            const response = await client.get(url)
             loans.value = response.data
         } catch (err) {
             console.error('Failed to fetch loans:', err)
-            error.value = 'Failed to fetch loans.'
+            if (err.response && err.response.data && err.response.data.message) {
+                error.value = `Failed to fetch loans: ${err.response.data.message}`
+            } else {
+                error.value = 'Failed to fetch loans due to an unexpected error.'
+            }
+        }
+    }
+
+    const fetchLoanTypes = async () => {
+        error.value = null
+        try {
+            const response = await client.get(`/transactions-service/api/loans/get/loan-types`)
+            loanTypes.value = response.data
+        } catch (err) {
+            console.error('Failed to fetch loan types:', err)
+            if (err.response && err.response.data && err.response.data.message) {
+                error.value = `Failed to fetch loan types: ${err.response.data.message}`
+            } else {
+                error.value = 'Failed to fetch loan types due to an unexpected error.'
+            }
+        }
+    }
+
+    const applyForNewLoan = async (accountId, loanApplicationDetails) => {
+        createError.value = null
+        try {
+            const url = `/transactions-service/api/loans/apply?accountId=${accountId}`;
+            const response = await client.post(url, loanApplicationDetails);
+            await fetchLoans();
+            return response.data;
+        } catch (err) {
+            console.error('Failed to apply for new loan:', err);
+            if (err.response && err.response.data && err.response.data.message) {
+                createError.value = err.response.data.message;
+            } else {
+                createError.value = 'Failed to apply for loan due to an unexpected error.';
+            }
+            throw err;
         }
     }
 
     return {
         loans,
         error,
-        fetchLoans
+        loanTypes,
+        createError,
+        fetchLoans,
+        fetchLoanTypes,
+        applyForNewLoan
     }
 })

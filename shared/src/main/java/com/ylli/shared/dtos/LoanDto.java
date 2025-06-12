@@ -2,6 +2,7 @@ package com.ylli.shared.dtos;
 
 import com.ylli.shared.base.IdentifiableDto;
 import com.ylli.shared.enums.LoanStatus;
+import com.ylli.shared.enums.LoanType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
@@ -57,6 +58,13 @@ public class LoanDto implements IdentifiableDto<Long> {
     )
     private LoanStatus status;
 
+    @NotNull(message = "Loan type cannot be null")
+    @Schema(
+            description = "Type of the loan (e.g., PERSONAL_LOAN, AUTO_LOAN), value is enumerated",
+            example = "PERSONAL_LOAN"
+    )
+    private LoanType loanType;
+
     @NotNull(message = "Start date cannot be null")
     @PastOrPresent(message = "Start date must be in the past or present")
     @Schema(
@@ -72,6 +80,13 @@ public class LoanDto implements IdentifiableDto<Long> {
             example = "2024-01-01"
     )
     private LocalDate endDate;
+
+    @Schema(
+            description = "Actual date when the loan was fully paid off (only applicable for PAID_OFF status)",
+            example = "2024-03-15",
+            nullable = true
+    )
+    private LocalDate paidOffDate;
 
     @NotNull(message = "Created date cannot be null")
     @Schema(
