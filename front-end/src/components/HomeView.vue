@@ -5,7 +5,6 @@
       <p>Here’s your banking overview</p>
     </header>
 
-    <!-- Accounts Section -->
     <section class="section">
       <h2>Accounts</h2>
       <div class="card-grid" v-if="accounts.length">
@@ -20,7 +19,6 @@
       <router-link to="/accounts" class="view-all">View All Accounts</router-link>
     </section>
 
-    <!-- Transactions Section -->
     <section class="section">
       <h2>Recent Transactions</h2>
       <ul class="list" v-if="transactions.length">
@@ -49,12 +47,18 @@
       <router-link to="/loans" class="view-all">View All Loans</router-link>
     </section>
 
+    <section class="logout-section">
+      <button @click="handleLogout" class="logout-button">Logout</button>
+    </section>
+
   </div>
 </template>
 
 <script setup>
 import { onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
+import { useRouter } from 'vue-router'; // Import useRouter
+import { useAuthStore } from '@/stores/authStore'; // Import useAuthStore
 import { useAccountsStore } from '@/stores/acccountsStore.js'
 import { useTransactionsStore } from '@/stores/transactionsStore.js'
 import { useLoansStore } from '@/stores/loansStore.js'
@@ -68,6 +72,8 @@ onMounted(() => {
 const accountsStore = useAccountsStore()
 const transactionsStore = useTransactionsStore()
 const loansStore = useLoansStore()
+const authStore = useAuthStore(); // Initialize the auth store
+const router = useRouter(); // Initialize the router
 
 const { accounts, error: accountsError } = storeToRefs(accountsStore)
 const { transactions, error: transactionsError } = storeToRefs(transactionsStore)
@@ -88,12 +94,12 @@ function formatDate(isoString) {
     day: 'numeric'
   })
 }
+
+const handleLogout = () => {
+  authStore.logOut(); // Call the logout method from the store
+  router.push('/login'); // Redirect to the login page after logout
+};
 </script>
-
-
-
-
-
 
 <style scoped>
 .home-container {
@@ -157,5 +163,28 @@ h2 {
   color: #1450a3;
   text-decoration: underline;
   font-weight: bold;
+}
+
+/* Styles for Logout Button */
+.logout-section {
+  text-align: center;
+  margin-top: 3rem;
+}
+
+.logout-button {
+  background-color: #dc3545;
+  color: white;
+  padding: 0.8rem 2rem;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1.1em;
+  font-weight: bold;
+  transition: background-color 0.2s ease-in-out, transform 0.2s ease-in-out;
+}
+
+.logout-button:hover {
+  background-color: #c82333;
+  transform: translateY(-2px);
 }
 </style>

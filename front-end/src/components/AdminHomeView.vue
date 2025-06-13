@@ -1,18 +1,13 @@
 <template>
   <div class="home-container">
     <header class="header">
-      <h1>Welcome, Admin! 👋</h1>
+      <h1>Welcome, {{ username }}! 👋</h1>
       <p>Select a management area to begin:</p>
     </header>
 
     <section class="section">
       <h2>Admin Tools</h2>
       <div class="card-grid">
-<!--        <router-link to="/admin/users" class="card admin-card">-->
-<!--          <h3>👥 User Management</h3>-->
-<!--          <p>View, create, and manage user accounts.</p>-->
-<!--        </router-link>-->
-
         <router-link to="/admin/accounts" class="card admin-card">
           <h3>💳 Account Management</h3>
           <p>Oversee and manage customer bank accounts.</p>
@@ -33,30 +28,36 @@
           <p>Review audits and actions performed by users and accounts.</p>
         </router-link>
 
-<!--        <router-link to="/admin/settings" class="card admin-card">-->
-<!--          <h3>⚙️ System Settings</h3>-->
-<!--          <p>Configure bank-wide parameters and features.</p>-->
-<!--        </router-link>-->
-
       </div>
+    </section>
+
+    <section class="logout-section">
+      <button @click="handleLogout" class="logout-button">Logout</button>
     </section>
 
   </div>
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
+import { onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { useAuthStore } from '@/stores/authStore';
 
 onMounted(() => {
   document.title = "Admin Dashboard"
 })
 
-// No store imports needed as we're not displaying dynamic data here.
-// The respective admin views (e.g., AdminAccountsView) will fetch their own data.
+const authStore = useAuthStore();
+const router = useRouter();
+const username = localStorage.getItem('username');
+
+const handleLogout = () => {
+  authStore.logOut();
+  router.push('/login');
+};
 </script>
 
 <style scoped>
-/* Reusing the same styles as your homepage for consistency */
 .home-container {
   max-width: 1000px;
   margin: 0 auto;
@@ -83,33 +84,29 @@ h2 {
 .card-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem; /* This will now primarily control vertical spacing between cards */
+  gap: 1rem;
 }
 
-/* Base card style from your homepage */
 .card {
   background-color: #ffffff;
   padding: 1rem 1.5rem;
   border-radius: 10px;
   box-shadow: 0 0 8px rgba(0, 55, 123, 0.1);
-  /* The flex property here is overridden by .admin-card for this specific layout */
-  flex: 1 1 250px; /* Original - allows cards to wrap and take up space */
-  text-decoration: none; /* Remove underline for router-link */
-  color: #1a2b4c; /* Ensure text color is consistent */
-  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out; /* Smooth hover effect */
-  display: flex; /* For better alignment of content within the card */
+  flex: 1 1 250px;
+  text-decoration: none;
+  color: #1a2b4c;
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  display: flex;
   flex-direction: column;
   justify-content: space-between;
 }
 
-/* Specific styling for admin navigation cards */
 .admin-card {
-  /* NEW: Forces each card to take 100% width, making them stack one per row */
   flex: 0 0 100%;
 }
 
 .admin-card h3 {
-  color: #1450a3; /* Heading color for admin cards */
+  color: #1450a3;
   margin-bottom: 0.5rem;
 }
 
@@ -118,15 +115,12 @@ h2 {
   color: #555;
 }
 
-/* Hover effect for admin cards */
 .admin-card:hover {
   transform: translateY(-5px);
   box-shadow: 0 5px 15px rgba(0, 55, 123, 0.2);
   cursor: pointer;
 }
 
-/* The .list and .view-all styles are not needed here as they relate to data display,
-   but I've kept them in the <style> tag as a block for clarity, they just won't be used. */
 .list {
   list-style: none;
   padding-left: 0;
@@ -151,5 +145,27 @@ h2 {
   color: #1450a3;
   text-decoration: underline;
   font-weight: bold;
+}
+
+.logout-section {
+  text-align: center;
+  margin-top: 3rem;
+}
+
+.logout-button {
+  background-color: #dc3545;
+  color: white;
+  padding: 0.8rem 2rem;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1.1em;
+  font-weight: bold;
+  transition: background-color 0.2s ease-in-out, transform 0.2s ease-in-out;
+}
+
+.logout-button:hover {
+  background-color: #c82333;
+  transform: translateY(-2px);
 }
 </style>

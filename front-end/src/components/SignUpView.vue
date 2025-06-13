@@ -131,7 +131,7 @@
       </form>
 
       <div class="login-link">
-        Already have an account? <a href="#">Sign in</a>
+        <RouterLink to="/login">Already have an account? Sign in</RouterLink>
       </div>
     </div>
   </div>

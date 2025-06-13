@@ -371,6 +371,7 @@ function formatDate(isoString) {
 }
 
 function maskAccount(accountId) {
+  console.log("masking account ID:", accountId);
   return accountId ? '****' + accountId.slice(-4) : '—';
 }
 
