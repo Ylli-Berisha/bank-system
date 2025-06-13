@@ -52,6 +52,7 @@ public class UserServiceImpl extends BaseServiceImpl<User, UserDto, String, User
         user.setFirstName(dto.getFirstName());
         user.setLastName(dto.getLastName());
         user.setEmail(dto.getEmail());
+        user.setUsername(dto.getUsername());
         user.setPassword(passwordEncoder.encode(dto.getPassword()));
         user.setPhoneNumber(dto.getPhoneNumber());
         user.setAddress(dto.getAddress());

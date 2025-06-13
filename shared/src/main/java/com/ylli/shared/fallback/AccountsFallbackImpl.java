@@ -15,6 +15,11 @@ public class AccountsFallbackImpl implements FallbackFactory<AccountsFeignClient
         return new AccountsFeignClient() {
 
             @Override
+            public ResponseEntity<List<AccountDto>> getAll() {
+                return ResponseEntity.status(503).build();
+            }
+
+            @Override
             public ResponseEntity<AccountDto> getAccount(String id) {
                 return ResponseEntity.status(503).build();
             }
@@ -56,6 +61,21 @@ public class AccountsFallbackImpl implements FallbackFactory<AccountsFeignClient
 
             @Override
             public ResponseEntity<AccountDto> update(String id, AccountDto dto) {
+                return ResponseEntity.status(503).build();
+            }
+
+            @Override
+            public ResponseEntity<?> freezeAccount(String id) {
+                return ResponseEntity.status(503).build();
+            }
+
+            @Override
+            public ResponseEntity<?> unfreezeAccount(String id) {
+                return ResponseEntity.status(503).build();
+            }
+
+            @Override
+            public ResponseEntity<?> freezeAccountFromAdmin(String id) {
                 return ResponseEntity.status(503).build();
             }
         };

@@ -45,7 +45,7 @@ public class LoansServiceImpl extends BaseServiceImpl<Loan, LoanDto, Long, Loans
         List<AccountDto> accounts = accountsFeignClient.getUserAccounts(userId).getBody();
 
         if (accounts == null || accounts.isEmpty()) {
-            throw new EntityNotFoundException("User with ID " + userId + " has no accounts.");
+            return List.of();
         }
 
         List<Loan> allUserLoans = new ArrayList<>();

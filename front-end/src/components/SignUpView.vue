@@ -36,6 +36,18 @@
         </div>
 
         <div class="form-group">
+          <label for="username">Username</label>
+          <div class="input-wrapper">
+            <i class="fas fa-user-circle"></i> <input
+              type="text"
+              id="username"
+              v-model="username"
+              placeholder="Choose a username"
+              required
+          />
+          </div>
+        </div>
+        <div class="form-group">
           <label for="email">Email</label>
           <div class="input-wrapper">
             <i class="fas fa-envelope"></i>
@@ -139,6 +151,7 @@ const router = useRouter();
 
 const firstName = ref('');
 const lastName = ref('');
+const username = ref('');
 const email = ref('');
 const password = ref('');
 const phone = ref('');
@@ -150,20 +163,22 @@ const loading = ref(false);
 
 const handleSignUp = async () => {
   error.value = null;
-  // loading.value = true;
+  // loading.value = true; // Uncomment if you want to use loading state
 
   try {
     await authStore.signUp({
       firstName: firstName.value,
       lastName: lastName.value,
+      username: username.value,
       email: email.value,
       password: password.value,
-      phone: phone.value,
+      phoneNumber: phone.value,
       address: address.value,
-      birthdate: birthdate.value
+      birthDate: birthdate.value
     });
     await router.push('/');
   } catch (err) {
+    console.error('Sign up error:', err);
     error.value = err.response?.data?.message || 'Sign up failed. Please try again.';
   } finally {
     loading.value = false;

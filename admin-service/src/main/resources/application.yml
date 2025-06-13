@@ -47,6 +47,10 @@ eureka:
     service-url:
       defaultZone: http://localhost:8070/eureka/
 
+feign:
+  okhttp:
+    enabled: true
+
 info:
   app:
     name: "admin-service"

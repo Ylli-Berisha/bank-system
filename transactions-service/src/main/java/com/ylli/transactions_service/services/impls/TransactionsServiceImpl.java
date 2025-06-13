@@ -39,7 +39,7 @@ public class TransactionsServiceImpl extends BaseServiceImpl<Transaction, Transa
 
         List<Transaction> transactions = new ArrayList<>();
         if (accounts == null || accounts.isEmpty()) {
-            throw new EntityNotFoundException("User with ID " + userId + " has no accounts.");
+            return List.of();
         }
         for (AccountDto account : accounts) {
             var tempAccount = new Account();

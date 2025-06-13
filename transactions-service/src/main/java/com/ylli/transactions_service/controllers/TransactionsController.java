@@ -36,7 +36,7 @@ public class TransactionsController extends BaseController<TransactionDto, Strin
         List<TransactionDto> transactions = service.getUserTransactions(userId);
 
         if (transactions == null || transactions.isEmpty()) {
-            return ResponseEntity.notFound().build();
+            return new ResponseEntity<>(List.of(), HttpStatus.OK);
         }
 
         return ResponseEntity.ok(transactions);

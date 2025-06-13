@@ -7,6 +7,8 @@ import java.util.List;
 
 public interface AccountsService extends BaseService<AccountDto, String> {
 
+    List<AccountDto> getAll();
+
     List<AccountDto> getUserAccounts(String userId);
 
     AccountDto getDefaultAccount();
@@ -22,4 +24,6 @@ public interface AccountsService extends BaseService<AccountDto, String> {
     Boolean unfreezeAccount(String accountId);
 
     AccountDto getByIdAndUserId(String id, String userId);
+
+    Boolean validateAdmin(String userId);
 }

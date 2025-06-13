@@ -42,7 +42,7 @@ public class LoansController extends BaseController<LoanDto, Long, LoansService>
 
         } catch (EntityNotFoundException e) {
             System.err.println("User or Account not found for ID: " + userId + ". Error: " + e.getMessage());
-            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(List.of(), HttpStatus.OK);
         } catch (Exception e) {
             System.err.println("Internal Server Error during fetching user loans for ID: " + userId + ". Error: " + e.getMessage());
             e.printStackTrace();

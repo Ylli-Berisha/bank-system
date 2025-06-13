@@ -12,6 +12,9 @@ import java.util.List;
 
 @FeignClient(name = "accounts-service", url = "http://localhost:8080", path = "/api/accounts", fallbackFactory = AccountsFallbackImpl.class)
 public interface AccountsFeignClient {
+    @GetMapping("/get/all")
+    ResponseEntity<List<AccountDto>> getAll();
+
     @GetMapping("/get/{id}")
     ResponseEntity<AccountDto> getAccount(@PathVariable("id") String id);
 
@@ -41,5 +44,14 @@ public interface AccountsFeignClient {
 
     @PutMapping("/update/{id}")
     ResponseEntity<AccountDto> update(@PathVariable String id, @Valid @RequestBody AccountDto dto);
+
+    @PatchMapping("/{id}/freeze")
+    ResponseEntity<?> freezeAccount(@PathVariable String id);
+
+    @PatchMapping("/{id}/unfreeze")
+    ResponseEntity<?> unfreezeAccount(@PathVariable String id);
+
+    @PutMapping("/{id}/freeze-from-admin")
+    ResponseEntity<?> freezeAccountFromAdmin(@PathVariable String id);
 }
 

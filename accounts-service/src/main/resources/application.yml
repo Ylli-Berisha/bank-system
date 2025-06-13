@@ -39,6 +39,10 @@ management:
         enabled: true
 
 
+feign:
+    okhttp:
+        enabled: true
+
 eureka:
   instance:
     preferIpAddress: true

@@ -20,6 +20,7 @@ client.interceptors.response.use(
     (response) => response,
     (error) => {
         if (error.response && error.response.status === 401) {
+            console.log("invalidating token due to 401 response");
             localStorage.removeItem('token');
         }
         return Promise.reject(error);

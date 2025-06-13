@@ -9,6 +9,7 @@ import com.ylli.accounts_service.mappers.AccountMapper;
 import com.ylli.shared.dtos.UserDto;
 import com.ylli.shared.enums.AccountStatus;
 import com.ylli.shared.enums.AccountType;
+import com.ylli.shared.enums.UserRole;
 import com.ylli.shared.models.Account;
 import com.ylli.shared.models.User;
 import org.slf4j.Logger;
@@ -31,6 +32,11 @@ public class AccountsServiceImpl extends BaseServiceImpl<Account, AccountDto, St
     public AccountsServiceImpl(AccountsRepository repository, AccountMapper mapper, UsersFeignClient usersFeignClient) {
         super(repository, mapper);
         this.usersFeignClient = usersFeignClient;
+    }
+
+    @Override
+    public List<AccountDto> getAll() {
+        return mapper.toDtoList(repository.findAll());
     }
 
     @Override
@@ -144,6 +150,16 @@ public class AccountsServiceImpl extends BaseServiceImpl<Account, AccountDto, St
         }
 
         return mapper.toDto(account);
+    }
+
+    @Override
+    public Boolean validateAdmin(String userId) {
+        UserDto userDto = usersFeignClient.getUser(userId).getBody();
+        if (userDto == null || !userDto.getRoles().contains(UserRole.ROLE_ADMIN)) {
+            log.warn("User with ID {} is not an admin", userId);
+            throw new IllegalArgumentException("User is not an admin");
+        }
+        return Boolean.TRUE;
     }
 }
 

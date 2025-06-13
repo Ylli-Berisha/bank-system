@@ -27,12 +27,26 @@ public class AccountsController extends BaseController<AccountDto, String, Accou
         super(accountsService);
     }
 
+    @GetMapping("/get/all")
+    @Operation(summary = "Get all accounts")
+    public ResponseEntity<List<AccountDto>> getAll() {
+        List<AccountDto> accounts = service.getAll();
+        if (accounts == null || accounts.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(accounts);
+    }
+
     @GetMapping("/get/user-accounts")
-    public List<AccountDto> getUserAccounts(@RequestParam String userId) {
+    public ResponseEntity<List<AccountDto>> getUserAccounts(@RequestParam String userId) {
         if (userId == null || userId.isEmpty()) {
             throw new IllegalArgumentException("User ID cannot be null or empty");
         }
-        return service.getUserAccounts(userId);
+        List<AccountDto> accounts = service.getUserAccounts(userId);
+        if (accounts == null || accounts.isEmpty()) {
+            return ResponseEntity.ok(List.of());
+        }
+        return ResponseEntity.ok(accounts);
     }
 
     @GetMapping("/get/default-account")
@@ -86,6 +100,27 @@ public class AccountsController extends BaseController<AccountDto, String, Accou
         }
         return ResponseEntity.ok().build();
     }
+//
+//    @PutMapping("/{id}/freeze-from-admin")
+//    @Operation(summary = "Freeze an account from admin")
+//    public ResponseEntity<?> freezeAccountFromAdmin(@PathVariable String id, @RequestHeader("X-User-ID") String userId) {
+//        service.validateAdmin(userId);
+//        if (id == null || id.isEmpty()) {
+//            return ResponseEntity.badRequest().body("Account ID must be provided.");
+//        }
+//
+//        try {
+//            boolean success = service.freezeAccount(id);
+//            if (!success) {
+//                return ResponseEntity.status(HttpStatus.CONFLICT).body("Account already frozen.");
+//            }
+//        } catch (ResourceNotFoundException e) {
+//            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Account not found.");
+//        } catch (Exception e) {
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Server error.");
+//        }
+//        return ResponseEntity.ok().build();
+//    }
 
     @PatchMapping("/{id}/unfreeze")
     @Operation(summary = "Unfreeze an account")
@@ -127,6 +162,29 @@ public class AccountsController extends BaseController<AccountDto, String, Accou
         }
         return ResponseEntity.ok(account);
     }
+
+
+
+
+//    @GetMapping("/get/by-status")
+//    @Operation(summary = "Get accounts by status")
+//    public ResponseEntity<List<AccountDto>> getAccountsByStatus(@RequestParam String status) {
+//        if (status == null) {
+//            return ResponseEntity.badRequest().build();
+//        }
+//        AccountStatus accountStatus;
+//        try {
+//            accountStatus = AccountStatus.valueOf(status.toUpperCase());
+//        }
+//        catch (IllegalArgumentException e) {
+//            return ResponseEntity.badRequest().body(null);
+//        }
+//        List<AccountDto> accounts = service.getByStatus(accountStatus);
+//        if (accounts == null || accounts.isEmpty()) {
+//            return ResponseEntity.notFound().build();
+//        }
+//        return ResponseEntity.ok(accounts);
+//    }
 
 //    @GetMapping("/get/account-statuses")
 //    @Operation(summary = "Get all account statuses")

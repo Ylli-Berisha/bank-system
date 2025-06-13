@@ -82,7 +82,7 @@ const authStore = useAuthStore();
 
 const handleLogin = async () => {
   error.value = null;
-  // loading.value = true;
+  loading.value = true;
 
   try {
     await authStore.logIn({
@@ -90,7 +90,17 @@ const handleLogin = async () => {
       password: password.value,
       rememberMe: rememberMe.value
     });
-    await router.push('/');
+
+    if (authStore.userHasRole('ROLE_ADMIN')) {
+      router.push('/admin');
+    } else if (authStore.userHasRole('ROLE_USER')) {
+      router.push('/');
+    } else {
+      console.warn('Logged in user has an unrecognized role. Logging out for security.');
+      authStore.logOut();
+      router.push('/login?error=unrecognized_role');
+    }
+
   } catch (err) {
     error.value = err.response?.data?.message || 'Login failed. Please try again.';
   } finally {
@@ -107,7 +117,6 @@ const handleLogin = async () => {
 }
 </style>
 <style scoped>
-/* Keep your existing styles or add new ones */
 .error-message {
   color: red;
   margin-top: 10px;
@@ -229,10 +238,9 @@ body {
   box-sizing: border-box;
 }
 
-/* Adjust input padding to avoid overlap */
 .input-wrapper input {
   width: 100%;
-  padding: 16px 45px 16px 45px; /* left and right padding for icons */
+  padding: 16px 45px 16px 45px;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
   font-size: 16px;

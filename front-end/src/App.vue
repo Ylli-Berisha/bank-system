@@ -7,7 +7,7 @@ const authStore = useAuthStore();
 const router = useRouter();
 
 onMounted(() => {
-  if (!authStore.isTokenValid()) {
+  if (!authStore.isTokenValid) {
     authStore.logOut();
     router.push('/login');
   }
