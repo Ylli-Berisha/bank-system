@@ -19,9 +19,9 @@ public interface AccountsService extends BaseService<AccountDto, String> {
 
     Boolean applyForNewAccount(AccountDto accountDto);
 
-    Boolean freezeAccount(String accountId);
+    Boolean freezeAccount(String accountId, String userId);
 
-    Boolean unfreezeAccount(String accountId);
+    Boolean unfreezeAccount(String accountId, String userId);
 
     AccountDto getByIdAndUserId(String id, String userId);
 

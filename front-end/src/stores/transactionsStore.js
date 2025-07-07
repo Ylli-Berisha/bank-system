@@ -20,7 +20,7 @@ export const useTransactionsStore = defineStore('transactions', () => {
         }
 
         try {
-            const url = `/transactions-service/api/transactions/get/user-transactions?userId=${userId}`;
+            const url = `/transactions-service/api/transactions/get/user-transactions`;
             const response = await client.get(url);
 
             if (response.status === 204) {
@@ -56,8 +56,6 @@ export const useTransactionsStore = defineStore('transactions', () => {
 
         try {
             const params = new URLSearchParams();
-            params.append('userId', userId);
-
             for (const key in filters) {
                 const value = filters[key];
                 if (value !== undefined && value !== null && value !== '') {

@@ -131,15 +131,21 @@ const newAccount = ref({
 })
 
 const activeAccounts = computed(() =>
-    accounts.value.filter(acc => acc.status === 'ACTIVE')
+    Array.isArray(accounts.value)
+        ? accounts.value.filter(acc => acc.status === 'ACTIVE')
+        : []
 )
 
 const frozenAccounts = computed(() =>
-    accounts.value.filter(acc => acc.status === 'FROZEN')
+    Array.isArray(accounts.value)
+        ? accounts.value.filter(acc => acc.status === 'FROZEN')
+        : []
 )
 
 const pendingAccounts = computed(() =>
-    accounts.value.filter(acc => acc.status === 'PENDING_APPROVAL')
+    Array.isArray(accounts.value)
+        ? accounts.value.filter(acc => acc.status === 'PENDING_APPROVAL')
+        : []
 )
 
 const showConfirmationModal = ref(false)

@@ -15,7 +15,7 @@ export const useAccountsStore = defineStore('accounts', () => {
             return;
         }
         try {
-            const response = await client.get(`/accounts-service/api/accounts/get/user-accounts?userId=${userId}`);
+            const response = await client.get(`/accounts-service/api/accounts/get/user-accounts`);
             accounts.value = response.data;
             // --- ADD THIS CONSOLE LOG ---
             console.log('Accounts Store: Fetched accounts data:', accounts.value);
@@ -70,7 +70,7 @@ export const useAccountsStore = defineStore('accounts', () => {
         try {
             await client.patch(`/accounts-service/api/accounts/${accountId}/freeze`);
             await fetchAccounts();
-            console.log(`Accounts Store: Account ${accountId} frozen. Refreshed accounts.`); // Added log
+            console.log(`Accounts Store: Account ${accountId} frozen. Refreshed accounts.`);
         } catch (err) {
             console.error('Failed to freeze account:', err);
             error.value = err.response?.data?.message || 'Failed to freeze account.';
@@ -83,7 +83,7 @@ export const useAccountsStore = defineStore('accounts', () => {
         try {
             await client.patch(`/accounts-service/api/accounts/${accountId}/unfreeze`);
             await fetchAccounts();
-            console.log(`Accounts Store: Account ${accountId} un-frozen. Refreshed accounts.`); // Added log
+            console.log(`Accounts Store: Account ${accountId} un-frozen. Refreshed accounts.`);
         } catch (err) {
             console.error('Failed to unfreeze account:', err);
             error.value = err.response?.data?.message || 'Failed to unfreeze account.';

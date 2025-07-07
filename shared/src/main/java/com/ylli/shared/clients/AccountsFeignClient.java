@@ -31,12 +31,12 @@ public interface AccountsFeignClient {
     ResponseEntity<AccountDto> getDefaultAccount();
 
     @GetMapping("/get/user-accounts")
-    ResponseEntity<List<AccountDto>> getUserAccounts(@RequestParam String userId);
+    ResponseEntity<List<AccountDto>> getUserAccounts(@RequestHeader("X-User-Id") String userId);
 
     @GetMapping("/get/by-id-and-user-id")
     ResponseEntity<AccountDto> getAccountByIdAndUserId(
             @RequestParam String id,
-            @RequestParam String userId
+            @RequestHeader("X-User-Id") String userId
     );
 
     @GetMapping("/get/{id}")

@@ -6,11 +6,11 @@ import java.util.List;
 
 public interface AdminAccountsService {
 
-    List<AccountDto> getAllAccounts();
+    List<AccountDto> getAllAccounts(String userId);
 
-    Boolean freezeAccount(String accountId);
+    Boolean freezeAccount(String accountId, String userId);
 
-    Boolean unfreezeAccount(String accountId);
+    Boolean unfreezeAccount(String accountId, String userId);
 
-    void approveAccount(String accountId);
+    void approveAccount(String accountId, String userId);
 }

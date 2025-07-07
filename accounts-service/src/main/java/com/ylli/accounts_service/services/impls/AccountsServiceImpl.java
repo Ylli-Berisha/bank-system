@@ -103,9 +103,14 @@ public class AccountsServiceImpl extends BaseServiceImpl<Account, AccountDto, St
     }
 
     @Override
-    public Boolean freezeAccount(String accountId) throws RuntimeException {
+    public Boolean freezeAccount(String accountId, String userId) throws RuntimeException {
         Account account = repository.findById(accountId)
                 .orElseThrow(() -> new IllegalArgumentException("Account not found with ID: " + accountId));
+
+        if (!account.getUser().getId().equals(userId)) {
+            log.warn("User with ID {} does not own account with ID {}", userId, accountId);
+            throw new IllegalArgumentException("User does not own the account with ID: " + accountId);
+        }
 
         if (account.getStatus() != AccountStatus.ACTIVE) {
             log.warn("Account with ID {} is already frozen", accountId);
@@ -123,12 +128,17 @@ public class AccountsServiceImpl extends BaseServiceImpl<Account, AccountDto, St
     }
 
     @Override
-    public Boolean unfreezeAccount(String accountId) {
+    public Boolean unfreezeAccount(String accountId, String userId) throws RuntimeException {
         Account account = repository.findById(accountId).orElseThrow(() -> new IllegalArgumentException("Account not found with ID: " + accountId));
         if (account.getStatus() != AccountStatus.FROZEN) {
             log.warn("Account with ID {} is not frozen", accountId);
             return Boolean.FALSE;
         }
+        if (!account.getUser().getId().equals(userId)) {
+            log.warn("User with ID {} does not own account with ID {}", userId, accountId);
+            throw new IllegalArgumentException("User does not own the account with ID: " + accountId);
+        }
+
         try {
             account.setStatus(AccountStatus.ACTIVE);
             repository.save(account);

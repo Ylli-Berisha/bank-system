@@ -2,8 +2,10 @@ package com.ylli.admin_service.services.impls;
 
 import com.ylli.admin_service.services.AdminAccountsService;
 import com.ylli.shared.clients.AccountsFeignClient;
+import com.ylli.shared.clients.UsersFeignClient;
 import com.ylli.shared.dtos.AccountDto;
 import com.ylli.shared.enums.AccountStatus;
+import com.ylli.shared.enums.UserRole;
 import feign.FeignException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatusCode;
@@ -15,15 +17,18 @@ import java.util.List;
 public class AdminAccountsServiceImpl implements AdminAccountsService {
 
     private final AccountsFeignClient accountsFeignClient;
+    private final UsersFeignClient usersFeignClient;
 
     @Autowired
-    public AdminAccountsServiceImpl(AccountsFeignClient accountsFeignClient) {
+    public AdminAccountsServiceImpl(AccountsFeignClient accountsFeignClient, UsersFeignClient usersFeignClient) {
         this.accountsFeignClient = accountsFeignClient;
+        this.usersFeignClient = usersFeignClient;
     }
 
 
     @Override
-    public List<AccountDto> getAllAccounts() {
+    public List<AccountDto> getAllAccounts(String userId) {
+        validateAdmin(userId);
         try {
             List<AccountDto> accounts = accountsFeignClient.getAll().getBody();
             if (accounts == null || accounts.isEmpty()) {
@@ -38,7 +43,8 @@ public class AdminAccountsServiceImpl implements AdminAccountsService {
     }
 
     @Override
-    public Boolean freezeAccount(String accountId) {
+    public Boolean freezeAccount(String accountId, String userId) {
+        validateAdmin(userId);
         try {
             HttpStatusCode code = accountsFeignClient.freezeAccountFromAdmin(accountId).getStatusCode();
             if (code.is2xxSuccessful()) {
@@ -54,7 +60,8 @@ public class AdminAccountsServiceImpl implements AdminAccountsService {
     }
 
     @Override
-    public Boolean unfreezeAccount(String accountId) {
+    public Boolean unfreezeAccount(String accountId, String userId) {
+        validateAdmin(userId);
         try {
             HttpStatusCode code = accountsFeignClient.unfreezeAccount(accountId).getStatusCode();
             if (code.is2xxSuccessful()) {
@@ -70,7 +77,8 @@ public class AdminAccountsServiceImpl implements AdminAccountsService {
     }
 
     @Override
-    public void approveAccount(String accountId) {
+    public void approveAccount(String accountId, String userId) {
+        validateAdmin(userId);
         try {
             AccountDto account = accountsFeignClient.getById(accountId).getBody();
             if (account == null) {
@@ -85,6 +93,16 @@ public class AdminAccountsServiceImpl implements AdminAccountsService {
             throw new IllegalArgumentException("Error approving account: " + e.getMessage(), e);
         } catch (Exception e) {
             throw new RuntimeException("An unexpected error occurred while approving the account: " + e.getMessage(), e);
+        }
+    }
+
+    public void validateAdmin(String userId) {
+        var user = usersFeignClient.getUser(userId).getBody();
+        if (user.getRoles() == null || user.getRoles().isEmpty()) {
+            throw new IllegalArgumentException("User with ID " + userId + " does not have any roles");
+        }
+        if (!user.getRoles().contains(UserRole.ROLE_ADMIN)) {
+            throw new IllegalArgumentException("User with ID " + userId + " is not an admin");
         }
     }
 }
