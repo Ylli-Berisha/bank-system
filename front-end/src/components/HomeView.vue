@@ -72,15 +72,15 @@ onMounted(() => {
 const accountsStore = useAccountsStore()
 const transactionsStore = useTransactionsStore()
 const loansStore = useLoansStore()
-const authStore = useAuthStore(); // Initialize the auth store
-const router = useRouter(); // Initialize the router
+const authStore = useAuthStore();
+const router = useRouter();
 
 const { accounts, error: accountsError } = storeToRefs(accountsStore)
 const { transactions, error: transactionsError } = storeToRefs(transactionsStore)
 const { loans, error: loansError } = storeToRefs(loansStore)
 
 onMounted(() => {
-  accountsStore.fetchAccounts()
+  accountsStore.fetchTopAccounts()
   transactionsStore.fetchAllTransactions();
   loansStore.fetchAllLoans()
 })
@@ -96,8 +96,8 @@ function formatDate(isoString) {
 }
 
 const handleLogout = () => {
-  authStore.logOut(); // Call the logout method from the store
-  router.push('/login'); // Redirect to the login page after logout
+  authStore.logOut();
+  router.push('/login');
 };
 </script>
 

@@ -15,7 +15,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 @Tag(
         name = "Accounts",
@@ -182,6 +184,24 @@ public class AccountsController extends BaseController<AccountDto, String, Accou
         }
         return ResponseEntity.ok(account);
     }
+
+    @Operation(summary = "Get top user accounts", description = "Get the top accounts of the logged in user")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Top accounts retrieved successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid user ID", content = @Content)
+    })
+    @GetMapping("/get/top-accounts")
+    public ResponseEntity<List<AccountDto>> getTopAccounts(@RequestHeader("X-User-ID") String userId) {
+        System.out.println("Received request to get top accounts for user ID: " + userId);
+        if (userId == null || userId.isBlank()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        List<AccountDto> topAccounts = Optional.ofNullable(service.getTopAccounts(userId)).orElse(Collections.emptyList());
+        return ResponseEntity.ok(topAccounts);
+    }
+
+
 
 
 

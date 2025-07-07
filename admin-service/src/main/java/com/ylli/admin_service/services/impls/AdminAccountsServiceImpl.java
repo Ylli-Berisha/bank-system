@@ -6,13 +6,16 @@ import com.ylli.shared.clients.UsersFeignClient;
 import com.ylli.shared.dtos.AccountDto;
 import com.ylli.shared.enums.AccountStatus;
 import com.ylli.shared.enums.UserRole;
+import com.ylli.shared.exceptions.ResourceNotFoundException;
 import feign.FeignException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+@Slf4j
 @Service
 public class AdminAccountsServiceImpl implements AdminAccountsService {
 
@@ -93,6 +96,27 @@ public class AdminAccountsServiceImpl implements AdminAccountsService {
             throw new IllegalArgumentException("Error approving account: " + e.getMessage(), e);
         } catch (Exception e) {
             throw new RuntimeException("An unexpected error occurred while approving the account: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public void rejectAccount(String accountId, String userId) {
+        validateAdmin(userId);
+        try {
+            AccountDto account = accountsFeignClient.getById(accountId).getBody();
+            if (account == null) {
+                throw new ResourceNotFoundException("Account with ID " + accountId + " not found");
+            }
+            if (account.getStatus() != AccountStatus.PENDING_APPROVAL){
+                throw new IllegalStateException("Account with ID " + accountId + " is not pending approval");
+            }
+            account.setStatus(AccountStatus.REJECTED);
+            accountsFeignClient.update(accountId, account);
+        }catch (FeignException e){
+            throw new IllegalArgumentException("Error rejecting account: " + e.getMessage(), e);
+        } catch (Exception e) {
+            log.error("An unexpected error occurred while rejecting the account: {}", e.getMessage(), e);
+            throw e;
         }
     }
 

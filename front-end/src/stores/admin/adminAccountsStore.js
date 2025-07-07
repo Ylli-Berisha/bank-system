@@ -86,6 +86,24 @@ export const useAdminAccountsStore = defineStore('adminAccounts', () => {
         }
     }
 
+    const rejectAccount = async (accountId) => {
+        error.value = null
+        try {
+            const url = `/admin-service/api/accounts/reject/account/${accountId}`
+            const response = await client.patch(url)
+            return response.status === 200
+        } catch (err) {
+            if (err.response && err.response.data && err.response.data.message) {
+                error.value = `Failed to reject account: ${err.response.data.message}`
+            } else if (err.response && err.response.status) {
+                error.value = `Failed to reject account. Server responded with status ${err.response.status}: ${err.response.statusText}`
+            } else {
+                error.value = 'Failed to reject account due to a network error or unexpected issue.'
+            }
+            throw err
+        }
+    }
+
     return {
         accounts,
         error,
@@ -93,5 +111,6 @@ export const useAdminAccountsStore = defineStore('adminAccounts', () => {
         freezeAccount,
         unfreezeAccount,
         approveAccount,
+        rejectAccount,
     }
 })

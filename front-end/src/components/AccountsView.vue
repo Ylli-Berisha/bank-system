@@ -94,7 +94,23 @@
           <p><strong>Account id:</strong> {{ account.id }}</p>
         </div>
       </div>
-      <p v-else class="empty-state-message">No pending accounts found.</p> </section>
+      <p v-else class="empty-state-message">No pending accounts found.</p>
+    </section>
+
+    <section class="section rejected-section">
+      <h2 class="section-title">Rejected Accounts</h2>
+      <div v-if="rejectedAccounts.length" class="card-grid">
+        <div v-for="account in rejectedAccounts" :key="account.id" class="card rejected">
+          <h3>{{ account.type }} Account</h3>
+          <p><strong>Balance:</strong> ${{ account.balance.toFixed(2) }}</p>
+          <p><strong>Status:</strong> {{ account.status.toLowerCase() }}</p>
+          <p><strong>Created:</strong> {{ formatDate(account.createdAt) }}</p>
+          <p><strong>Account ID:</strong> {{ account.id }}</p>
+        </div>
+      </div>
+      <p v-else class="empty-state-message">No rejected accounts found.</p>
+    </section>
+
 
     <p v-if="accountsError" class="error">{{ accountsError }}</p>
 
@@ -147,6 +163,13 @@ const pendingAccounts = computed(() =>
         ? accounts.value.filter(acc => acc.status === 'PENDING_APPROVAL')
         : []
 )
+
+const rejectedAccounts = computed(() =>
+    Array.isArray(accounts.value)
+        ? accounts.value.filter(acc => acc.status === 'REJECTED')
+        : []
+)
+
 
 const showConfirmationModal = ref(false)
 const confirmationModalTitle = ref('')
@@ -487,4 +510,11 @@ async function unfreeze(accountId) {
   background-color: #2980b9;
   transform: translateY(-1px);
 }
+
+.rejected-section .card.rejected {
+  background-color: #fdecea;
+  border-left-color: #e74c3c;
+  box-shadow: 0 5px 15px rgba(231, 76, 60, 0.1);
+}
+
 </style>

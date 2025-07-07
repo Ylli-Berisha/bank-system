@@ -13,4 +13,6 @@ public interface AdminAccountsService {
     Boolean unfreezeAccount(String accountId, String userId);
 
     void approveAccount(String accountId, String userId);
+
+    void rejectAccount(String accountId, String userId);
 }

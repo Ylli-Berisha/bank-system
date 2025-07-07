@@ -17,9 +17,7 @@ export const useAccountsStore = defineStore('accounts', () => {
         try {
             const response = await client.get(`/accounts-service/api/accounts/get/user-accounts`);
             accounts.value = response.data;
-            // --- ADD THIS CONSOLE LOG ---
             console.log('Accounts Store: Fetched accounts data:', accounts.value);
-            // --------------------------
         } catch (err) {
             console.error('Failed to fetch accounts:', err);
             error.value = 'Failed to fetch accounts.';
@@ -91,6 +89,21 @@ export const useAccountsStore = defineStore('accounts', () => {
         }
     };
 
+    const fetchTopAccounts = async () => {
+        error.value = null;
+        try {
+            const response = await client.get(`/accounts-service/api/accounts/get/top-accounts`)
+            accounts.value = response.data;
+        }catch (error) {
+            console.error('Failed to fetch top accounts:', error);
+            if (error.response && error.response.data && error.response.data.message) {
+                error.value = `Failed to fetch top accounts: ${error.response.data.message}`;
+            } else {
+                error.value = 'Failed to fetch top accounts due to an unexpected error.';
+            }
+        }
+    }
+
 
     return {
         accounts,
@@ -101,5 +114,6 @@ export const useAccountsStore = defineStore('accounts', () => {
         applyForNewAccount,
         freezeAccount,
         unfreezeAccount,
+        fetchTopAccounts,
     };
 });

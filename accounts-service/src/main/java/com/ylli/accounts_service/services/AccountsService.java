@@ -25,5 +25,5 @@ public interface AccountsService extends BaseService<AccountDto, String> {
 
     AccountDto getByIdAndUserId(String id, String userId);
 
-    Boolean validateAdmin(String userId);
+    List<AccountDto> getTopAccounts (String userId);
 }

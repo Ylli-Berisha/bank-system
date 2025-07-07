@@ -53,7 +53,9 @@
           <p><strong>Account ID:</strong> {{ account.id }}</p>
           <div class="card-actions">
             <button @click="openApproveConfirmModal(account.id)" class="approve-btn">Approve</button>
+            <button @click="openRejectConfirmModal(account.id)" class="reject-btn">Reject</button>
           </div>
+
         </div>
       </div>
       <p v-else class="empty-state-message">No pending accounts found.</p>
@@ -159,6 +161,13 @@ function openApproveConfirmModal(accountId) {
   showConfirmationModal.value = true
 }
 
+function openRejectConfirmModal(accountId) {
+  confirmationModalTitle.value = 'Are you sure you want to reject this account?';
+  currentActionType.value = 'reject';
+  currentAccountId.value = accountId;
+  showConfirmationModal.value = true;
+}
+
 async function handleConfirmationModalConfirm() {
   try {
     if (currentActionType.value === 'freeze' && currentAccountId.value) {
@@ -166,17 +175,19 @@ async function handleConfirmationModalConfirm() {
     } else if (currentActionType.value === 'unfreeze' && currentAccountId.value) {
       await unfreeze(currentAccountId.value);
     } else if (currentActionType.value === 'approve' && currentAccountId.value) {
-      await approve(currentAccountId.value); // Call the new approve method
+      await approve(currentAccountId.value);
+    } else if (currentActionType.value === 'reject' && currentAccountId.value) {
+      await reject(currentAccountId.value);
     }
   } catch (err) {
     console.error("Error during modal action:", err);
-    // Optionally, set an error message here to display in the UI
     accountsError.value = `Action failed: ${err.message || 'Unknown error'}`;
   } finally {
     resetConfirmationModalState();
-    await adminAccountsStore.getAllAccounts(); // Re-fetch to update all sections after any action
+    await adminAccountsStore.getAllAccounts();
   }
 }
+
 
 function handleConfirmationModalCancel() {
   resetConfirmationModalState();
@@ -216,6 +227,16 @@ async function approve(accountId) {
     throw err;
   }
 }
+
+async function reject(accountId) {
+  try {
+    await adminAccountsStore.rejectAccount(accountId)
+  } catch (err) {
+    console.error("Error rejecting account:", err)
+    throw err;
+  }
+}
+
 
 function accountStatusClass(status) {
   switch (status) {
@@ -438,4 +459,24 @@ function accountStatusClass(status) {
   transform: translateY(-2px);
   box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
 }
+.reject-btn {
+  background-color: #e74c3c; /* Red */
+  border: none;
+  padding: 12px 20px;
+  color: white;
+  cursor: pointer;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  min-width: 120px;
+  transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.reject-btn:hover {
+  background-color: #c0392b;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+}
+
 </style>

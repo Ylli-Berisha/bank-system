@@ -81,6 +81,7 @@ public class TransactionsServiceImpl extends BaseServiceImpl<Transaction, Transa
                 parsedStatus = TransactionStatus.valueOf(statusString.toUpperCase());
             } catch (IllegalArgumentException e) {
                 System.err.println("Warning: Received invalid TransactionStatus string: " + statusString);
+                throw e;
             }
         }
 
@@ -90,15 +91,14 @@ public class TransactionsServiceImpl extends BaseServiceImpl<Transaction, Transa
                 parsedType = TransactionType.valueOf(typeString.toUpperCase());
             } catch (IllegalArgumentException e) {
                 System.err.println("Warning: Received invalid TransactionType string: " + typeString);
+                throw e;
             }
         }
 
-        // 2. Handle BigDecimal nulls: Ensure they are always non-null when passed to Specification
         BigDecimal actualMinAmount = (minAmount != null) ? minAmount : BigDecimal.ZERO;
         BigDecimal actualMaxAmount = (maxAmount != null) ? maxAmount : new BigDecimal("999999999999999.99");
 
 
-        // 3. Build and Execute the Specification
         List<Transaction> transactions = repository.findAll(
                 TransactionSpecifications.withFilters(
                         userId,

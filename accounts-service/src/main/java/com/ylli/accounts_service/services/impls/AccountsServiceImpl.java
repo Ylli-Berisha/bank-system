@@ -10,8 +10,11 @@ import com.ylli.shared.dtos.UserDto;
 import com.ylli.shared.enums.AccountStatus;
 import com.ylli.shared.enums.AccountType;
 import com.ylli.shared.enums.UserRole;
+import com.ylli.shared.exceptions.AccountLockedException;
+import com.ylli.shared.exceptions.ResourceNotFoundException;
 import com.ylli.shared.models.Account;
 import com.ylli.shared.models.User;
+import jakarta.persistence.EntityNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,7 +61,7 @@ public class AccountsServiceImpl extends BaseServiceImpl<Account, AccountDto, St
         var user = new User();
 
         if (userDto == null) {
-            throw new IllegalArgumentException("Default user not found");
+            throw new ResourceNotFoundException("Default user not found");
         }
         user.setId(userDto.getId());
         Account account = repository.findByUser(user).getFirst();
@@ -85,7 +88,7 @@ public class AccountsServiceImpl extends BaseServiceImpl<Account, AccountDto, St
     public Boolean applyForNewAccount(AccountDto accountDto) {
         UserDto user = usersFeignClient.getUser(accountDto.getUserId()).getBody();
         if (user == null) {
-            throw new IllegalArgumentException("User not found with ID: " + accountDto.getUserId());
+            throw new ResourceNotFoundException("User not found with ID: " + accountDto.getUserId());
         }
 
         try {
@@ -97,7 +100,7 @@ public class AccountsServiceImpl extends BaseServiceImpl<Account, AccountDto, St
 
             return Boolean.TRUE;
         } catch (Exception e) {
-            log.error("applyForNewAccount error", e);
+            log.error("Apply for new account error", e);
             return Boolean.FALSE;
         }
     }
@@ -105,7 +108,7 @@ public class AccountsServiceImpl extends BaseServiceImpl<Account, AccountDto, St
     @Override
     public Boolean freezeAccount(String accountId, String userId) throws RuntimeException {
         Account account = repository.findById(accountId)
-                .orElseThrow(() -> new IllegalArgumentException("Account not found with ID: " + accountId));
+                .orElseThrow(() -> new EntityNotFoundException("Account not found with ID: " + accountId));
 
         if (!account.getUser().getId().equals(userId)) {
             log.warn("User with ID {} does not own account with ID {}", userId, accountId);
@@ -114,7 +117,7 @@ public class AccountsServiceImpl extends BaseServiceImpl<Account, AccountDto, St
 
         if (account.getStatus() != AccountStatus.ACTIVE) {
             log.warn("Account with ID {} is already frozen", accountId);
-            return Boolean.FALSE;
+            throw new IllegalStateException("Account with ID: " + accountId + " is already frozen or not active");
         }
 
         try {
@@ -123,16 +126,16 @@ public class AccountsServiceImpl extends BaseServiceImpl<Account, AccountDto, St
             return Boolean.TRUE;
         } catch (Exception e) {
             log.error("Error freezing account with ID {}", accountId, e);
-            throw new RuntimeException("Failed to freeze account", e);
+            throw e;
         }
     }
 
     @Override
-    public Boolean unfreezeAccount(String accountId, String userId) throws RuntimeException {
-        Account account = repository.findById(accountId).orElseThrow(() -> new IllegalArgumentException("Account not found with ID: " + accountId));
+    public Boolean unfreezeAccount(String accountId, String userId) {
+        Account account = repository.findById(accountId).orElseThrow(() -> new ResourceNotFoundException("Account not found with ID: " + accountId));
         if (account.getStatus() != AccountStatus.FROZEN) {
             log.warn("Account with ID {} is not frozen", accountId);
-            return Boolean.FALSE;
+            throw new IllegalStateException("Account with id: " + accountId + " is not frozen");
         }
         if (!account.getUser().getId().equals(userId)) {
             log.warn("User with ID {} does not own account with ID {}", userId, accountId);
@@ -145,7 +148,7 @@ public class AccountsServiceImpl extends BaseServiceImpl<Account, AccountDto, St
             return Boolean.TRUE;
         } catch (Exception e) {
             log.error("Error unfreezing account with ID {}", accountId, e);
-            throw new RuntimeException("Failed to unfreeze account", e);
+            throw e;
         }
     }
 
@@ -163,94 +166,16 @@ public class AccountsServiceImpl extends BaseServiceImpl<Account, AccountDto, St
     }
 
     @Override
-    public Boolean validateAdmin(String userId) {
-        UserDto userDto = usersFeignClient.getUser(userId).getBody();
-        if (userDto == null || !userDto.getRoles().contains(UserRole.ROLE_ADMIN)) {
-            log.warn("User with ID {} is not an admin", userId);
-            throw new IllegalArgumentException("User is not an admin");
+    public List<AccountDto> getTopAccounts(String userId) {
+        User user = new User();
+        user.setId(userId);
+
+        List<Account> accounts = repository.findTop4ByUserAndStatusOrderByCreatedAtDesc(user, AccountStatus.ACTIVE);
+        if (accounts == null || accounts.isEmpty()) {
+            return List.of();
         }
-        return Boolean.TRUE;
+
+        return mapper.toDtoList(accounts);
     }
+
 }
-
-
-//@Service
-//public class AccountsServiceImpl implements AccountsService {
-//
-//    @Autowired
-//    private AccountsRepository accountsRepository;
-//
-//    @Autowired
-//    private AccountMapper accountMapper;
-//
-//    @Override
-//    public AccountDto getById(String accountId) {
-//        if (accountId == null || accountId.isEmpty()) {
-//            throw new IllegalArgumentException("Account ID cannot be null or empty");
-//        }
-//
-//        Optional<Account> accountOptional = accountsRepository.findById(accountId);
-//        Account account = accountOptional.orElseThrow(() ->
-//                new IllegalArgumentException("Account not found with ID: " + accountId));
-//
-//        return convertToDto(account);
-//    }
-//
-//    @Override
-//    public AccountDto create(AccountDto accountDto) {
-//        if (accountDto == null) {
-//            throw new IllegalArgumentException("Account cannot be null");
-//        }
-//        if (accountDto.getId() == null || accountDto.getId().isEmpty()) {
-//            throw new IllegalArgumentException("Account ID cannot be null or empty");
-//        }
-//        if (accountDto.getBalance() == null || accountDto.getBalance().compareTo(BigDecimal.ZERO) < 0) {
-//            throw new IllegalArgumentException("Account balance cannot be null or negative");
-//        }
-//
-//        Account account = convertToEntity(accountDto);
-//        Account savedAccount = accountsRepository.save(account);
-//        return convertToDto(savedAccount);
-//    }
-//
-//    @Override
-//    public AccountDto update(String id, AccountDto accountDto) {
-//        if (accountDto == null) {
-//            throw new IllegalArgumentException("Account cannot be null");
-//        }
-//        if (accountDto.getId() == null || accountDto.getId().isEmpty()) {
-//            throw new IllegalArgumentException("Account ID cannot be null or empty");
-//        }
-//        if (!accountsRepository.existsById(accountDto.getId())) {
-//            throw new IllegalArgumentException("Account not found with ID: " + accountDto.getId());
-//        }
-//
-//        Account account = convertToEntity(accountDto);
-//        Account savedAccount = accountsRepository.save(account);
-//        return convertToDto(savedAccount);
-//    }
-//
-//    @Override
-//    public AccountDto delete(String accountId) {
-//        if (accountId == null || accountId.isEmpty()) {
-//            throw new IllegalArgumentException("Account ID cannot be null or empty");
-//        }
-//
-//        Optional<Account> accountOptional = accountsRepository.findById(accountId);
-//        if (accountOptional.isEmpty()) {
-//            throw new IllegalArgumentException("Account not found with ID: " + accountId);
-//        }
-//
-//        Account account = accountOptional.get();
-//        accountsRepository.deleteById(accountId);
-//        return convertToDto(account);
-//    }
-//
-//    private AccountDto convertToDto(Account account) {
-//        return accountMapper.toDto(account);
-//    }
-//
-//    private Account convertToEntity(AccountDto accountDto) {
-//        return accountMapper.toEntity(accountDto);
-//    }
-//}

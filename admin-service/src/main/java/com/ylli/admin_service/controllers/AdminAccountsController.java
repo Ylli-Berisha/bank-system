@@ -66,6 +66,26 @@ public class AdminAccountsController {
         return ResponseEntity.ok().build();
     }
 
+    @Operation(summary = "Reject account", description = "Reject a pending account using its ID")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Account rejected successfully"),
+            @ApiResponse(responseCode = "404", description = "Account not found", content = @Content),
+            @ApiResponse(responseCode = "500", description = "Internal server error while rejecting account", content = @Content)
+    })
+    @PatchMapping("/reject/account/{id}")
+    public ResponseEntity<?> rejectAccount(@PathVariable String id, @RequestHeader("X-User-ID") String userId) {
+        try {
+            adminAccountsService.rejectAccount(id, userId);
+        } catch (IllegalArgumentException e) {
+            System.err.println("Error rejecting account: " + e.getMessage());
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            System.err.println("An unexpected error occurred while rejecting the account: " + e.getMessage());
+            return new ResponseEntity<>("An internal server error occurred while rejecting the account.", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return ResponseEntity.ok().build();
+    }
+
 
     /*
     @Operation(summary = "Freeze an account (Admin)", description = "Freeze an account by ID (Admin privilege required)")

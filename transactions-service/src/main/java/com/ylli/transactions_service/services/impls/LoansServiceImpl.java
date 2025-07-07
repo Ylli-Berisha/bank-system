@@ -7,6 +7,7 @@ import com.ylli.shared.dtos.LoanApplicationRequestDto;
 import com.ylli.shared.dtos.LoanDto;
 import com.ylli.shared.enums.LoanStatus;
 import com.ylli.shared.enums.LoanType;
+import com.ylli.shared.exceptions.ResourceNotFoundException;
 import com.ylli.shared.models.Account;
 import com.ylli.shared.models.Loan;
 import com.ylli.shared.models.Transaction;
@@ -82,7 +83,7 @@ public class LoansServiceImpl extends BaseServiceImpl<Loan, LoanDto, Long, Loans
         try {
             AccountDto accountDto = accountsFeignClient.getById(accountId).getBody();
             if (accountDto == null) {
-                throw new EntityNotFoundException("Account with ID " + accountId + " not found.");
+                throw new ResourceNotFoundException("Account with ID " + accountId + " not found.");
             }
             if (!accountDto.getUserId().equals(userId)) {
                 throw new IllegalArgumentException("Account with ID " + accountId + " does not belong to user with ID " + userId);
@@ -148,6 +149,7 @@ public class LoansServiceImpl extends BaseServiceImpl<Loan, LoanDto, Long, Loans
                 parsedStatus = LoanStatus.valueOf(statusString.toUpperCase());
             } catch (IllegalArgumentException e) {
                 System.err.println("Warning: Received invalid LoanStatus string: " + statusString);
+                throw e;
             }
         }
 
@@ -157,6 +159,7 @@ public class LoansServiceImpl extends BaseServiceImpl<Loan, LoanDto, Long, Loans
                 parsedLoanType = LoanType.valueOf(loanTypeString.toUpperCase());
             } catch (IllegalArgumentException e) {
                 System.err.println("Warning: Received invalid LoanType string: " + loanTypeString);
+                throw e;
             }
         }
 
