@@ -4,10 +4,14 @@ import com.ylli.shared.dtos.LoanDto;
 import com.ylli.shared.dtos.TransactionDto;
 import com.ylli.shared.fallback.TransactionsFallbackImpl;
 import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-@FeignClient(name = "transactions-service", path = "/api", fallbackFactory = TransactionsFallbackImpl.class)
+import java.math.BigDecimal;
+import java.util.List;
+
+@FeignClient(name = "transactions-service", url = "http://localhost:8110", path = "/api", fallbackFactory = TransactionsFallbackImpl.class)
 public interface TransactionsFeignClient {
 
     @GetMapping("/transactions/get/{id}")
@@ -33,4 +37,21 @@ public interface TransactionsFeignClient {
 
     @DeleteMapping("/loans/delete/{id}")
     ResponseEntity<Void> deleteLoan(@PathVariable("id") Long id);
+
+    @GetMapping("/transactions/filter/admin-transactions")
+    ResponseEntity<Page<TransactionDto>> filterAdminTransactions(
+            @RequestHeader("X-User-ID") String adminId,
+            @RequestParam(required = false) String userId,
+            @RequestParam(required = false) String username,
+            @RequestParam(required = false) String email,
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate,
+            @RequestParam(required = false) BigDecimal minAmount,
+            @RequestParam(required = false) BigDecimal maxAmount,
+            @RequestParam(required = false) String query,
+            @RequestParam(required = false) int page,
+            @RequestParam(required = false) int size
+    );
 }

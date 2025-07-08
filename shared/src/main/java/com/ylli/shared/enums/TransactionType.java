@@ -9,5 +9,5 @@ public enum TransactionType {
     FEE,
     INTEREST,
     REFUND,
-    REVERSAL
+    REVERSED
 }

@@ -2,20 +2,27 @@ package com.ylli.transactions_service.services.impls;
 
 import com.ylli.shared.base.BaseServiceImpl;
 import com.ylli.shared.clients.AccountsFeignClient;
+import com.ylli.shared.clients.UsersFeignClient;
 import com.ylli.shared.dtos.AccountDto;
 import com.ylli.shared.dtos.TransactionDto;
 import com.ylli.shared.enums.AccountStatus;
 import com.ylli.shared.enums.TransactionStatus;
 import com.ylli.shared.enums.TransactionType;
+import com.ylli.shared.enums.UserRole;
 import com.ylli.shared.models.Account;
 import com.ylli.shared.models.Transaction;
 import com.ylli.shared.models.User;
+import com.ylli.transactions_service.configs.AdminTransactionSpecifications;
 import com.ylli.transactions_service.configs.TransactionSpecifications;
 import com.ylli.transactions_service.mappers.TransactionMapper;
 import com.ylli.transactions_service.repositories.TransactionsRepository;
 import com.ylli.transactions_service.services.TransactionsService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -27,10 +34,12 @@ import java.util.List;
 @Service
 public class TransactionsServiceImpl extends BaseServiceImpl<Transaction, TransactionDto, String, TransactionsRepository, TransactionMapper> implements TransactionsService {
     private final AccountsFeignClient accountsFeignClient;
+    private final UsersFeignClient usersFeignClient;
 
-    public TransactionsServiceImpl(TransactionsRepository transactionsRepository, TransactionMapper transactionMapper, AccountsFeignClient accountsFeignClient){
+    public TransactionsServiceImpl(TransactionsRepository transactionsRepository, TransactionMapper transactionMapper, AccountsFeignClient accountsFeignClient, UsersFeignClient usersFeignClient){
         super(transactionsRepository, transactionMapper);
         this.accountsFeignClient = accountsFeignClient;
+        this.usersFeignClient = usersFeignClient;
     }
 
     @Override
@@ -113,6 +122,85 @@ public class TransactionsServiceImpl extends BaseServiceImpl<Transaction, Transa
         );
 
         return mapper.toDtoList(transactions);
+    }
+
+    @Override
+    public Page<TransactionDto> filterAdminTransactions(
+            String adminId,
+            String userId,
+            String username,
+            String email,
+            String typeString,
+            String statusString,
+            String startDate,
+            String endDate,
+            BigDecimal minAmount,
+            BigDecimal maxAmount,
+            String query,
+            int page,
+            int size
+    ) {
+
+        if (adminId == null || adminId.isBlank()) {
+            throw new IllegalArgumentException("Admin ID is required.");
+        }
+        var adminUser = usersFeignClient.getUser(adminId).getBody();
+        if (adminUser == null || !adminUser.getRoles().contains(UserRole.ROLE_ADMIN)) {
+            throw new IllegalArgumentException("User with ID " + adminId + " is not an admin.");
+        }
+
+        LocalDateTime parsedStartDateTime = null;
+        if (startDate != null && !startDate.isEmpty()) {
+            parsedStartDateTime = LocalDate.parse(startDate).atStartOfDay();
+        }
+
+        LocalDateTime parsedEndDateTime = null;
+        if (endDate != null && !endDate.isEmpty()) {
+            parsedEndDateTime = LocalDate.parse(endDate).atTime(23, 59, 59, 999999999);
+        }
+
+        TransactionStatus parsedStatus = null;
+        if (statusString != null && !statusString.isEmpty()) {
+            try {
+                parsedStatus = TransactionStatus.valueOf(statusString.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                System.err.println("Warning: Received invalid TransactionStatus string: " + statusString);
+                throw e;
+            }
+        }
+
+        TransactionType parsedType = null;
+        if (typeString != null && !typeString.isEmpty()) {
+            try {
+                parsedType = TransactionType.valueOf(typeString.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                System.err.println("Warning: Received invalid TransactionType string: " + typeString);
+                throw e;
+            }
+        }
+
+        BigDecimal actualMinAmount = (minAmount != null) ? minAmount : BigDecimal.ZERO;
+        BigDecimal actualMaxAmount = (maxAmount != null) ? maxAmount : new BigDecimal("999999999999999.99");
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+
+        Page<Transaction> transactionsPage = repository.findAll(
+                AdminTransactionSpecifications.withFilters(
+                        userId,
+                        username,
+                        email,
+                        parsedType,
+                        parsedStatus,
+                        parsedStartDateTime,
+                        parsedEndDateTime,
+                        actualMinAmount,
+                        actualMaxAmount,
+                        query
+                ),
+                pageable
+        );
+
+        return transactionsPage.map(mapper::toDto);
     }
 
     @Override

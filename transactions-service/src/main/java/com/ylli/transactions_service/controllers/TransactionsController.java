@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.media.Content;
 import jakarta.persistence.EntityNotFoundException;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -78,6 +79,46 @@ public class TransactionsController extends BaseController<TransactionDto, Strin
 
         return ResponseEntity.ok(transactions);
     }
+
+    @Operation(summary = "Filter admin transactions", description = "Filter transactions for admin panel based on optional criteria")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Transactions filtered successfully"),
+            @ApiResponse(responseCode = "204", description = "No matching transactions found", content = @Content)
+    })
+    @GetMapping("/filter/admin-transactions")
+    public ResponseEntity<Page<TransactionDto>> filterAdminTransactions(
+            @RequestHeader("X-User-ID") String adminId,
+            @RequestParam(required = false) String userId,
+            @RequestParam(required = false) String username,
+            @RequestParam(required = false) String email,
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate,
+            @RequestParam(required = false) BigDecimal minAmount,
+            @RequestParam(required = false) BigDecimal maxAmount,
+            @RequestParam(required = false) String query,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        if (adminId == null || adminId.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+        if (page < 0 || size <= 0) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        Page<TransactionDto> transactions = service.filterAdminTransactions(
+                adminId, userId, username, email, type, status, startDate, endDate, minAmount, maxAmount, query, page, size
+        );
+
+        if (transactions == null || transactions.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+
+        return ResponseEntity.ok(transactions);
+    }
+
 
     @Operation(summary = "Create new transaction", description = "Create a new transaction for a user")
     @ApiResponses(value = {
