@@ -140,14 +140,7 @@ public class TransactionsServiceImpl extends BaseServiceImpl<Transaction, Transa
             int page,
             int size
     ) {
-
-        if (adminId == null || adminId.isBlank()) {
-            throw new IllegalArgumentException("Admin ID is required.");
-        }
-        var adminUser = usersFeignClient.getUser(adminId).getBody();
-        if (adminUser == null || !adminUser.getRoles().contains(UserRole.ROLE_ADMIN)) {
-            throw new IllegalArgumentException("User with ID " + adminId + " is not an admin.");
-        }
+        validateAdmin(adminId);
 
         LocalDateTime parsedStartDateTime = null;
         if (startDate != null && !startDate.isEmpty()) {
@@ -296,6 +289,60 @@ public class TransactionsServiceImpl extends BaseServiceImpl<Transaction, Transa
         Transaction savedTransaction = repository.save(newTransaction);
 
         return mapper.toDto(savedTransaction);
+    }
+
+    @Override
+    @Transactional
+    public TransactionDto revertTransaction(String transactionId, String adminId) {
+        validateAdmin(adminId);
+
+        Transaction original = repository.findById(transactionId)
+                .orElseThrow(() -> new EntityNotFoundException("Transaction not found"));
+
+        if (original.getType() != TransactionType.TRANSFER || original.getStatus() != TransactionStatus.COMPLETED) {
+            throw new IllegalStateException("Only completed transfers can be reverted");
+        }
+
+        AccountDto sender = accountsFeignClient.getById(original.getAccount().getId()).getBody();
+        AccountDto recipient = accountsFeignClient.getById(original.getRecipientAccount().getId()).getBody();
+
+        assert recipient != null;
+        if (recipient.getBalance().compareTo(original.getAmount()) < 0) {
+            throw new IllegalStateException("Recipient does not have enough balance to revert transfer");
+        }
+
+        recipient.setBalance(recipient.getBalance().subtract(original.getAmount()));
+        sender.setBalance(sender.getBalance().add(original.getAmount()));
+
+        accountsFeignClient.update(sender.getId(), sender);
+        accountsFeignClient.update(recipient.getId(), recipient);
+
+        original.setStatus(TransactionStatus.REVERSED);
+        repository.save(original);
+
+//        Transaction reversal = new Transaction();
+//        reversal.setAccount(original.getAccount());
+//        reversal.setRecipientAccount(original.getRecipientAccount());
+//        reversal.setAmount(original.getAmount());
+//        reversal.setType(TransactionType.TRANSFER);
+//        reversal.setStatus(TransactionStatus.COMPLETED);
+//        reversal.setDetails("Reversal of transaction " + transactionId);
+//        reversal.setCreatedAt(LocalDateTime.now());
+//
+//        repository.save(reversal);
+
+        return mapper.toDto(original);
+    }
+
+
+    private void validateAdmin(String adminId){
+        if (adminId == null || adminId.isBlank()) {
+            throw new IllegalArgumentException("Admin ID is required.");
+        }
+        var adminUser = usersFeignClient.getUser(adminId).getBody();
+        if (adminUser == null || !adminUser.getRoles().contains(UserRole.ROLE_ADMIN)) {
+            throw new IllegalArgumentException("User with ID " + adminId + " is not an admin.");
+        }
     }
 
 }

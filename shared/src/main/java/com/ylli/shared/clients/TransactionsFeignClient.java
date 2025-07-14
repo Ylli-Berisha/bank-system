@@ -54,4 +54,10 @@ public interface TransactionsFeignClient {
             @RequestParam(required = false) int page,
             @RequestParam(required = false) int size
     );
+
+    @PutMapping("/transactions/admin/revert")
+    ResponseEntity<TransactionDto> revertTransaction(
+            @RequestParam String transactionId,
+            @RequestHeader("X-User-ID") String adminId
+    );
 }

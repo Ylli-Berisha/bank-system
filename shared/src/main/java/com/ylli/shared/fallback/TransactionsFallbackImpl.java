@@ -61,6 +61,11 @@ public class TransactionsFallbackImpl implements FallbackFactory<TransactionsFei
                 return ResponseEntity.status(503).build();
             }
 
+            @Override
+            public ResponseEntity<TransactionDto> revertTransaction(String transactionId, String adminId) {
+                return ResponseEntity.status(503).build();
+            }
+
         };
     }
 }

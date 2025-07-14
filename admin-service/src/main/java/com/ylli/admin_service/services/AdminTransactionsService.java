@@ -24,4 +24,6 @@ public interface AdminTransactionsService {
             int size
     );
 
+    TransactionDto revertTransaction(String transactionId, String adminId);
+
 }

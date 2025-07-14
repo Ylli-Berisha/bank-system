@@ -146,4 +146,30 @@ public class TransactionsController extends BaseController<TransactionDto, Strin
             return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+    @PutMapping("/admin/revert")
+    @Operation(summary = "Revert a transaction", description = "Revert a transaction by ID (Admin privilege required)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Transaction reverted successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid transaction ID or user ID", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Transaction not found", content = @Content),
+            @ApiResponse(responseCode = "500", description = "Internal server error while reverting transaction", content = @Content)
+    })
+    public ResponseEntity<TransactionDto> revertTransaction(
+            @RequestParam String transactionId,
+            @RequestHeader("X-User-ID") String adminId
+    ) {
+        if (transactionId == null || transactionId.isEmpty() || adminId == null || adminId.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        try {
+            TransactionDto revertedTransaction = service.revertTransaction(transactionId, adminId);
+            return ResponseEntity.ok(revertedTransaction);
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
 }

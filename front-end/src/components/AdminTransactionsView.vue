@@ -12,12 +12,12 @@
       <div class="filter-controls-grid">
         <div class="filter-group">
           <label for="startDate">From Date:</label>
-          <input type="date" id="startDate" v-model="filters.startDate" class="filter-input" />
+          <input type="date" id="startDate" v-model="filters.startDate" class="filter-input"/>
         </div>
 
         <div class="filter-group">
           <label for="endDate">To Date:</label>
-          <input type="date" id="endDate" v-model="filters.endDate" class="filter-input" />
+          <input type="date" id="endDate" v-model="filters.endDate" class="filter-input"/>
         </div>
 
         <div class="filter-group">
@@ -42,32 +42,38 @@
 
         <div class="filter-group">
           <label for="minAmount">Min Amount:</label>
-          <input type="number" id="minAmount" v-model.number="filters.minAmount" class="filter-input" placeholder="e.g., 50" />
+          <input type="number" id="minAmount" v-model.number="filters.minAmount" class="filter-input"
+                 placeholder="e.g., 50"/>
         </div>
 
         <div class="filter-group">
           <label for="maxAmount">Max Amount:</label>
-          <input type="number" id="maxAmount" v-model.number="filters.maxAmount" class="filter-input" placeholder="e.g., 1000" />
+          <input type="number" id="maxAmount" v-model.number="filters.maxAmount" class="filter-input"
+                 placeholder="e.g., 1000"/>
         </div>
 
         <div class="filter-group">
           <label for="filterUserId">User ID:</label>
-          <input type="text" id="filterUserId" v-model="filters.userId" class="filter-input" placeholder="e.g., usr_78af" />
+          <input type="text" id="filterUserId" v-model="filters.userId" class="filter-input"
+                 placeholder="e.g., usr_78af"/>
         </div>
 
         <div class="filter-group">
           <label for="filterUsername">Username:</label>
-          <input type="text" id="filterUsername" v-model="filters.username" class="filter-input" placeholder="e.g., johndoe" />
+          <input type="text" id="filterUsername" v-model="filters.username" class="filter-input"
+                 placeholder="e.g., johndoe"/>
         </div>
 
         <div class="filter-group">
           <label for="filterEmail">Email:</label>
-          <input type="text" id="filterEmail" v-model="filters.email" class="filter-input" placeholder="e.g., admin@example.com" />
+          <input type="text" id="filterEmail" v-model="filters.email" class="filter-input"
+                 placeholder="e.g., admin@example.com"/>
         </div>
 
         <div class="filter-group filter-group-search">
           <label for="searchQuery">Search:</label>
-          <input type="text" id="searchQuery" v-model="filters.query" class="filter-input" placeholder="By description or ID" />
+          <input type="text" id="searchQuery" v-model="filters.query" class="filter-input"
+                 placeholder="By description or ID"/>
         </div>
 
         <div class="filter-buttons">
@@ -103,21 +109,20 @@
           </div>
 
           <div class="card-body">
-            <p><strong>Account id: </strong> {{transaction.accountId}}</p>
+            <p><strong>Account id: </strong> {{ transaction.accountId }}</p>
             <p><strong>Date:</strong> {{ formatDate(transaction.createdAt) }}</p>
             <p><strong>Status:</strong>
               <span class="status-tag" :class="transactionStatusClass(transaction.status)">
                 {{ transaction.status.toLowerCase() }}
               </span>
             </p>
-<!--            <p><strong>User ID:</strong> {{ transaction.userId || '—' }}</p>-->
-<!--            <p><strong>Username:</strong> {{ transaction.username || '—' }}</p>-->
-<!--            <p><strong>Email:</strong> {{ transaction.email || '—' }}</p>-->
             <p><strong>Details:</strong> {{ transaction.details || '—' }}</p>
-            <p><strong>Recipient:</strong> {{ transaction.recipientAccountId ? maskAccount(transaction.recipientAccountId) : 'None' }}</p>
+            <p><strong>Recipient:</strong>
+              {{ transaction.recipientAccountId ? maskAccount(transaction.recipientAccountId) : 'None' }}</p>
+
             <button
                 v-if="transaction.type === 'TRANSFER' && transaction.status === 'COMPLETED'"
-                @click="revertTransaction(transaction.id)"
+                @click="openRevertModal(transaction.id)"
                 class="revert-btn"
             >
               Revert Transaction
@@ -147,13 +152,22 @@
       </button>
     </section>
 
+    <div v-if="isRevertModalOpen" class="modal-overlay" @click.self="closeRevertModal">
+      <div class="modal-content">
+        <h3>Confirm Revert</h3>
+        <p>Are you sure you want to revert this transaction?</p>
+        <div class="modal-buttons">
+          <button @click="confirmRevert" class="confirm-btn">Yes, Revert</button>
+          <button @click="closeRevertModal" class="cancel-btn">Cancel</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
-
 <script setup>
-import { ref, reactive, watch, onMounted, computed } from 'vue';
-import { useAdminTransactionsStore } from '@/stores/admin/adminTransactionsStore.js';
+import {ref, reactive, computed, watch, onMounted} from 'vue';
+import {useAdminTransactionsStore} from '@/stores/admin/adminTransactionsStore.js';
 
 const transactionsStore = useAdminTransactionsStore();
 
@@ -195,7 +209,7 @@ watch(filters, (newVal, oldVal) => {
     transactionsStore.resetPage();
     fetchTransactions();
   }
-}, { deep: true });
+}, {deep: true});
 
 watch(currentPage, () => {
   fetchTransactions();
@@ -216,16 +230,34 @@ async function fetchTransactions() {
   }
 }
 
-async function revertTransaction(transactionId) {
+
+const isRevertModalOpen = ref(false);
+const selectedTransactionId = ref(null);
+
+function openRevertModal(transactionId) {
+  selectedTransactionId.value = transactionId;
+  isRevertModalOpen.value = true;
+}
+
+function closeRevertModal() {
+  isRevertModalOpen.value = false;
+  selectedTransactionId.value = null;
+}
+
+async function confirmRevert() {
+  if (!selectedTransactionId.value) return;
+
   try {
-    await transactionsStore.revertTransaction(transactionId);
+    await transactionsStore.revertTransaction(selectedTransactionId.value);
     alert('Transaction reverted successfully.');
+    closeRevertModal();
     await fetchTransactions();
   } catch (e) {
     alert('Failed to revert transaction.');
     console.error(e);
   }
 }
+
 
 function goToNextPage() {
   if (transactionsStore.currentPage < transactionsStore.totalPages - 1) {
@@ -292,7 +324,6 @@ function clearFilters() {
   transactionsStore.resetPage();
 }
 </script>
-
 
 <style scoped>
 /* Container */
@@ -592,7 +623,67 @@ function clearFilters() {
   background-color: #3498db;
   color: white;
 }
+
 .pagination-btn.active:hover {
   background-color: #2980b9;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  padding: 1.8rem 2rem;
+  border-radius: 10px;
+  max-width: 400px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.modal-buttons {
+  margin-top: 1.5rem;
+  display: flex;
+  justify-content: space-around;
+}
+
+.confirm-btn {
+  background-color: #d32f2f;
+  color: white;
+  border: none;
+  padding: 0.6rem 1.4rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.3s ease;
+}
+
+.confirm-btn:hover {
+  background-color: #b71c1c;
+}
+
+.cancel-btn {
+  background-color: #78909c;
+  color: white;
+  border: none;
+  padding: 0.6rem 1.4rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.3s ease;
+}
+
+.cancel-btn:hover {
+  background-color: #546e7a;
 }
 </style>

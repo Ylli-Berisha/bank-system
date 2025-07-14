@@ -39,4 +39,6 @@ public interface TransactionsService extends BaseService<TransactionDto, String>
     );
 
     TransactionDto createTransaction(TransactionDto transactionDto, String userId);
+
+    TransactionDto revertTransaction(String transactionId, String adminId);
 }

@@ -1,5 +1,5 @@
-import { defineStore } from 'pinia';
-import { ref, computed } from 'vue';
+import {defineStore} from 'pinia';
+import {ref, computed} from 'vue';
 import client from '@/helpers/client.js';
 
 export const useAdminTransactionsStore = defineStore('adminTransactionsStore', () => {
@@ -39,18 +39,26 @@ export const useAdminTransactionsStore = defineStore('adminTransactionsStore', (
     }
 
     async function revertTransaction(transactionId) {
-        const tx = transactions.value.find(t => t.id === transactionId);
-        if (!tx) {
-            error.value = 'Transaction not found';
-            throw new Error('Transaction not found');
+        error.value = null;
+
+        try {
+            const response = await client.put('/admin-service/api/transactions/revert', null, {
+                params: {transactionId},
+            });
+
+            const index = transactions.value.findIndex(t => t.id === transactionId);
+            if (index !== -1) {
+                transactions.value[index] = response.data;
+            }
+
+            return response.data;
+        } catch (err) {
+            error.value = 'Failed to revert transaction.';
+            console.error(err);
+            throw err;
         }
-        if (tx.type !== 'TRANSFER' || tx.status !== 'COMPLETED') {
-            error.value = 'Transaction cannot be reverted';
-            throw new Error('Transaction cannot be reverted');
-        }
-        tx.status = 'REVERSED';
-        return Promise.resolve();
     }
+
 
     function resetPage() {
         currentPage.value = 0;

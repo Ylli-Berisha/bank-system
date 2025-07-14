@@ -32,6 +32,15 @@ public class AdminTransactionsServiceImpl implements AdminTransactionsService {
         }
     }
 
+    @Override
+    public TransactionDto revertTransaction(String transactionId, String adminId) {
+        try {
+            return transactionsFeignClient.revertTransaction(transactionId, adminId).getBody();
+        } catch (Exception e) {
+            throw new RuntimeException("An error occurred while reverting transaction: " + e.getMessage(), e);
+        }
+    }
+
 //    public void validateAdmin(String adminId) {
 //        var user = usersFeignClient.getUser(adminId).getBody();
 //        if (user.getRoles() == null || user.getRoles().isEmpty()) {
