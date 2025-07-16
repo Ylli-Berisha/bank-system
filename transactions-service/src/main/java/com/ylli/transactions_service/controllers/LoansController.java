@@ -4,6 +4,7 @@ import com.ylli.shared.base.BaseController;
 import com.ylli.shared.dtos.LoanApplicationRequestDto;
 import com.ylli.shared.dtos.LoanDto;
 import com.ylli.shared.enums.LoanStatus;
+import com.ylli.shared.exceptions.ResourceNotFoundException;
 import com.ylli.transactions_service.services.LoansService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -165,5 +166,59 @@ public class LoansController extends BaseController<LoanDto, Long, LoansService>
         }
 
         return ResponseEntity.ok(loans);
+    }
+
+    @Operation(summary = "Accept a pending loan", description = "Accepts a pending loan application by admin")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Loan accepted successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid input or loan cannot be accepted"),
+            @ApiResponse(responseCode = "404", description = "Loan not found"),
+            @ApiResponse(responseCode = "403", description = "Admin validation failed")
+    })
+    @PutMapping("/{loanId}/accept")
+    public ResponseEntity<LoanDto> acceptLoan(
+            @RequestHeader("X-User-ID") String adminId,
+            @PathVariable Long loanId
+    ) {
+        if (adminId == null || adminId.isEmpty() || loanId == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        try {
+            LoanDto acceptedLoan = service.acceptLoan(loanId, adminId);
+            return ResponseEntity.ok(acceptedLoan);
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        } catch (IllegalStateException | IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(null);
+        }
+    }
+
+    @Operation(summary = "Reject a pending loan", description = "Rejects a pending loan application by admin")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Loan rejected successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid input or loan cannot be rejected"),
+            @ApiResponse(responseCode = "404", description = "Loan not found"),
+            @ApiResponse(responseCode = "403", description = "Admin validation failed")
+    })
+    @PutMapping("/{loanId}/reject")
+    public ResponseEntity<LoanDto> rejectLoan(
+            @RequestHeader("X-User-ID") String adminId,
+            @PathVariable Long loanId
+    ) {
+        if (adminId == null || adminId.isEmpty() || loanId == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        try {
+            LoanDto rejectedLoan = service.rejectLoan(loanId, adminId);
+            return ResponseEntity.ok(rejectedLoan);
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        } catch (IllegalStateException | IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(null);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 }

@@ -100,8 +100,8 @@
             </p>
 
             <div class="action-buttons">
-              <button class="btn-accept">Accept</button>
-              <button class="btn-reject">Reject</button>
+              <button class="btn-accept" @click="openAcceptModal(loan.id)">Accept</button>
+              <button class="btn-reject" @click="openRejectModal(loan.id)">Reject</button>
               <button class="btn-propose">Propose Changes</button>
             </div>
           </div>
@@ -140,12 +140,31 @@
         </div>
       </div>
     </section>
+
+    <!-- New Modal Components -->
+    <ConfirmModal
+        v-if="isAcceptModalOpen"
+        :isOpen="isAcceptModalOpen"
+        title="Confirm Loan Acceptance"
+        :confirm="confirmAccept"
+        :cancel="closeModal"
+    />
+
+    <ConfirmModal
+        v-if="isRejectModalOpen"
+        :isOpen="isRejectModalOpen"
+        title="Confirm Loan Rejection"
+        :confirm="confirmReject"
+        :cancel="closeModal"
+    />
+
   </div>
 </template>
 
 <script setup>
-import { reactive, watch, onMounted, computed } from 'vue'
-import { useAdminLoansStore } from '@/stores/admin/adminLoansStore.js'
+import {reactive, watch, onMounted, computed, ref} from 'vue'
+import {useAdminLoansStore} from '@/stores/admin/adminLoansStore.js'
+import ConfirmModal from '@/components/ConfirmModal.vue' // <-- Import your new modal component
 
 const filters = reactive({
   type: '',
@@ -165,54 +184,51 @@ const loanStatuses = ['pending', 'approved', 'rejected', 'active', 'repaid', 'ov
 const adminLoansStore = useAdminLoansStore()
 
 const pendingLoans = computed(() =>
-    adminLoansStore.loans.filter(loan => loan.status === 'PENDING')
+    adminLoansStore.loans.filter(loan => loan.status.toLowerCase() === 'pending')
 )
 
 const filteredLoans = computed(() =>
-    adminLoansStore.paginatedLoans.filter(loan => loan.status !== 'PENDING')
+    adminLoansStore.paginatedLoans.filter(loan => loan.status.toLowerCase() !== 'pending')
 )
 
 function clearFilters() {
-  filters.type = ''
-  filters.status = ''
-  filters.userId = ''
-  filters.username = ''
-  filters.email = ''
-  filters.startDate = ''
-  filters.endDate = ''
-  filters.minAmount = null
-  filters.maxAmount = null
+  Object.assign(filters, {
+    type: '',
+    status: '',
+    userId: '',
+    username: '',
+    email: '',
+    startDate: '',
+    endDate: '',
+    minAmount: null,
+    maxAmount: null,
+  })
   adminLoansStore.resetPage()
 }
 
 function formatLabel(value) {
-  if (!value) return ''
-  return value
-      .replace(/_/g, ' ')
-      .replace(/\b\w/g, c => c.toUpperCase())
+  return value?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) || ''
 }
 
 function fetchLoans() {
   const cleanFilters = {}
-  Object.entries(filters).forEach(([key, val]) => {
-    if (val !== '' && val !== null && val !== undefined) {
-      cleanFilters[key] = val
+  for (const key in filters) {
+    if (filters[key] !== '' && filters[key] !== null) {
+      cleanFilters[key] = filters[key]
     }
-  })
+  }
   adminLoansStore.fetchFilteredLoans(cleanFilters, adminLoansStore.currentPage)
 }
 
 onMounted(() => {
-  document.title = "Admin Loans"
+  document.title = 'Admin Loans'
   fetchLoans()
 })
 
 watch(
     () => [filters, adminLoansStore.currentPage],
-    () => {
-      fetchLoans()
-    },
-    { deep: true }
+    () => fetchLoans(),
+    {deep: true}
 )
 
 function nextPage() {
@@ -221,6 +237,48 @@ function nextPage() {
 
 function prevPage() {
   adminLoansStore.decrementPage()
+}
+
+const isAcceptModalOpen = ref(false)
+const isRejectModalOpen = ref(false)
+const selectedLoanId = ref(null)
+
+function openAcceptModal(loanId) {
+  selectedLoanId.value = loanId
+  isAcceptModalOpen.value = true
+}
+
+function openRejectModal(loanId) {
+  selectedLoanId.value = loanId
+  isRejectModalOpen.value = true
+}
+
+function closeModal() {
+  isAcceptModalOpen.value = false
+  isRejectModalOpen.value = false
+  selectedLoanId.value = null
+}
+
+async function confirmAccept() {
+  try {
+    await adminLoansStore.acceptLoan(selectedLoanId.value)
+    alert('Loan accepted successfully.')
+    closeModal()
+    fetchLoans()
+  } catch (e) {
+    alert('Failed to accept loan.')
+  }
+}
+
+async function confirmReject() {
+  try {
+    await adminLoansStore.rejectLoan(selectedLoanId.value)
+    alert('Loan rejected successfully.')
+    closeModal()
+    fetchLoans()
+  } catch (e) {
+    alert('Failed to reject loan.')
+  }
 }
 </script>
 
@@ -518,6 +576,131 @@ function prevPage() {
   margin-top: 1.5rem;
   border: 1px solid #cfd8dc;
 }
+
+/* Modal Overlay */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+/* Modal Content */
+.modal-content {
+  background: white;
+  padding: 1.8rem 2rem;
+  border-radius: 10px;
+  max-width: 400px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.modal-content h3 {
+  margin-bottom: 0.75rem;
+  font-size: 1.4rem;
+  color: #263238;
+}
+
+.modal-content p {
+  color: #546e7a;
+}
+
+/* Modal Buttons */
+.modal-buttons {
+  margin-top: 1.5rem;
+  display: flex;
+  justify-content: space-around;
+}
+
+.confirm-btn {
+  background-color: #2e7d32; /* green for accept */
+  color: white;
+  border: none;
+  padding: 0.6rem 1.4rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.3s ease;
+}
+
+.confirm-btn:hover {
+  background-color: #1b5e20;
+}
+
+.cancel-btn {
+  background-color: #78909c;
+  color: white;
+  border: none;
+  padding: 0.6rem 1.4rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.3s ease;
+}
+
+.cancel-btn:hover {
+  background-color: #546e7a;
+}
+
+/* Action Buttons inside cards */
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.btn-accept {
+  background-color: #2e7d32;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.btn-accept:hover {
+  background-color: #1b5e20;
+}
+
+.btn-reject {
+  background-color: #c62828;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.btn-reject:hover {
+  background-color: #b71c1c;
+}
+
+.btn-propose {
+  background-color: #607d8b;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.btn-propose:hover {
+  background-color: #455a64;
+}
+
 </style>
 
 

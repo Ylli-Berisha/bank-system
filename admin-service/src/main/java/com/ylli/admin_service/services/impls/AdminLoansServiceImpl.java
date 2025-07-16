@@ -28,4 +28,22 @@ public class AdminLoansServiceImpl implements AdminLoansService {
             throw new RuntimeException("An error occurred while fetching transactions: " + e.getMessage(), e);
         }
     }
+
+    @Override
+    public LoanDto acceptLoan(Long loanId, String adminId) {
+        try {
+            return transactionsFeignClient.acceptLoan(adminId, loanId).getBody();
+        } catch (Exception e) {
+            throw new RuntimeException("An error occurred while accepting loan: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public LoanDto rejectLoan(Long loanId, String adminId) {
+        try {
+            return transactionsFeignClient.rejectLoan(adminId, loanId).getBody();
+        } catch (Exception e) {
+            throw new RuntimeException("An error occurred while rejecting loan: " + e.getMessage(), e);
+        }
+    }
 }

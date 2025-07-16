@@ -103,7 +103,7 @@ public class LoansServiceImpl extends BaseServiceImpl<Loan, LoanDto, Long, Loans
             loan.setAmount(loanApplicationRequestDto.getAmount());
             loan.setLoanType(loanApplicationRequestDto.getLoanType());
             loan.setInterestRate(loanApplicationRequestDto.getInterestRate());
-            LocalDate today = LocalDate.now();
+//            LocalDate today = LocalDate.now();
 //        loan.setEndDate(today.plusMonths(loanApplicationRequestDto.getTermInMonths()));
             loan.setStatus(LoanStatus.PENDING);
 //        loan.setStartDate(today);
@@ -257,6 +257,44 @@ public class LoansServiceImpl extends BaseServiceImpl<Loan, LoanDto, Long, Loans
         );
 
         return loansPage.map(mapper::toDto);
+    }
+
+    @Override
+    @Transactional
+    public LoanDto acceptLoan(Long loanId, String adminId) {
+        validateAdmin(adminId);
+        Loan loan = repository.findById(loanId)
+                .orElseThrow(() -> new ResourceNotFoundException("Loan not found with ID " + loanId));
+
+        if (loan.getStatus() != LoanStatus.PENDING) {
+            throw new IllegalStateException("Only pending loans can be accepted.");
+        }
+
+        loan.setStatus(LoanStatus.APPROVED);
+        loan.setStartDate(LocalDate.now());
+        loan.setEndDate(loan.getStartDate().plusMonths(loan.getTermInMonths()));
+
+        repository.save(loan);
+        return mapper.toDto(loan);
+    }
+
+//    @Override
+    @Transactional
+    public LoanDto rejectLoan(Long loanId, String adminId) {
+        validateAdmin(adminId);
+        Loan loan = repository.findById(loanId)
+                .orElseThrow(() -> new ResourceNotFoundException("Loan not found with ID " + loanId));
+
+        if (loan.getStatus() != LoanStatus.PENDING) {
+            throw new IllegalStateException("Only pending loans can be accepted.");
+        }
+
+        loan.setStatus(LoanStatus.REJECTED);
+//        loan.setStartDate(LocalDate.now());
+//        loan.setEndDate(loan.getStartDate().plusMonths(loan.getTermInMonths()));
+
+        repository.save(loan);
+        return mapper.toDto(loan);
     }
 
 

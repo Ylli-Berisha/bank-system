@@ -2,11 +2,13 @@ package com.ylli.admin_service.controllers;
 
 import com.ylli.admin_service.services.AdminLoansService;
 import com.ylli.shared.dtos.LoanDto;
+import com.ylli.shared.exceptions.ResourceNotFoundException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -50,6 +52,60 @@ public class AdminLoansController {
                  page, size
         );
         return ResponseEntity.ok(loans);
+    }
+
+    @Operation(summary = "Accept a pending loan", description = "Accepts a pending loan application by admin")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Loan accepted successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid input or loan cannot be accepted"),
+            @ApiResponse(responseCode = "404", description = "Loan not found"),
+            @ApiResponse(responseCode = "403", description = "Admin validation failed")
+    })
+    @PutMapping("/{loanId}/accept")
+    public ResponseEntity<LoanDto> acceptLoan(
+            @RequestHeader("X-User-ID") String adminId,
+            @PathVariable Long loanId
+    ) {
+        if (adminId == null || adminId.isEmpty() || loanId == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        try {
+            LoanDto acceptedLoan = adminLoansService.acceptLoan(loanId, adminId);
+            return ResponseEntity.ok(acceptedLoan);
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        } catch (IllegalStateException | IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(null);
+        }
+    }
+
+    @Operation(summary = "Reject a pending loan", description = "Rejects a pending loan application by admin")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Loan rejected successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid input or loan cannot be rejected"),
+            @ApiResponse(responseCode = "404", description = "Loan not found"),
+            @ApiResponse(responseCode = "403", description = "Admin validation failed")
+    })
+    @PutMapping("/{loanId}/reject")
+    public ResponseEntity<LoanDto> rejectLoan(
+            @RequestHeader("X-User-ID") String adminId,
+            @PathVariable Long loanId
+    ) {
+        if (adminId == null || adminId.isEmpty() || loanId == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        try {
+            LoanDto rejectedLoan = adminLoansService.rejectLoan(loanId, adminId);
+            return ResponseEntity.ok(rejectedLoan);
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        } catch (IllegalStateException | IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(null);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
 }

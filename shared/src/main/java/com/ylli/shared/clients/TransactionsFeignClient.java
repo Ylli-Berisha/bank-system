@@ -76,4 +76,16 @@ public interface TransactionsFeignClient {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     );
+
+    @PutMapping("/loans/{loanId}/accept")
+    ResponseEntity<LoanDto> acceptLoan(
+            @RequestHeader("X-User-ID") String adminId,
+            @PathVariable Long loanId
+    );
+
+    @PutMapping("/loans/{loanId}/reject")
+    ResponseEntity<LoanDto> rejectLoan(
+            @RequestHeader("X-User-ID") String adminId,
+            @PathVariable Long loanId
+    );
 }

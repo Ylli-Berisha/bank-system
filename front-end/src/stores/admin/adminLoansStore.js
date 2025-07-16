@@ -54,6 +54,42 @@ export const useAdminLoansStore = defineStore('adminLoansStore', () => {
         }
     }
 
+    async function acceptLoan(loanId) {
+        error.value = null
+
+        try {
+            const response = await client.put(`/admin-service/api/loans/${loanId}/accept`)
+            return response.data
+        } catch (err) {
+            if (err.response && err.response.data && err.response.data.message) {
+                error.value = `Failed to accept loan: ${err.response.data.message}`
+            } else if (err.response && err.response.status) {
+                error.value = `Failed to accept loan. Server responded with status ${err.response.status}: ${err.response.statusText}`
+            } else {
+                error.value = 'Failed to accept loan due to a network error or unexpected issue.'
+            }
+            throw err
+        }
+    }
+
+    async function rejectLoan(loanId) {
+        error.value = null
+
+        try {
+            const response = await client.put(`/admin-service/api/loans/${loanId}/reject`)
+            return response.data
+        } catch (err) {
+            if (err.response && err.response.data && err.response.data.message) {
+                error.value = `Failed to reject loan: ${err.response.data.message}`
+            } else if (err.response && err.response.status) {
+                error.value = `Failed to reject loan. Server responded with status ${err.response.status}: ${err.response.statusText}`
+            } else {
+                error.value = 'Failed to reject loan due to a network error or unexpected issue.'
+            }
+            throw err
+        }
+    }
+
     return {
         loans,
         totalPages,
@@ -65,5 +101,7 @@ export const useAdminLoansStore = defineStore('adminLoansStore', () => {
         incrementPage,
         decrementPage,
         paginatedLoans,
+        acceptLoan,
+        rejectLoan,
     }
 })

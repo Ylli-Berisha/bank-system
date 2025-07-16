@@ -22,4 +22,8 @@ public interface AdminLoansService {
             int size
     );
 
+    LoanDto acceptLoan(Long loanId, String adminId);
+
+    LoanDto rejectLoan(Long loanId, String adminId);
+
 }
