@@ -66,6 +66,10 @@ public class TransactionsFallbackImpl implements FallbackFactory<TransactionsFei
                 return ResponseEntity.status(503).build();
             }
 
+            @Override
+            public ResponseEntity<Page<LoanDto>> filterAdminLoans(String adminId, String userId, String username, String email, String type, String status, String startDate, String endDate, BigDecimal minAmount, BigDecimal maxAmount, int page, int size) {
+                return ResponseEntity.status(503).build();
+            }
         };
     }
 }

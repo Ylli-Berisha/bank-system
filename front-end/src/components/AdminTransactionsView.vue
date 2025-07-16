@@ -195,6 +195,7 @@ const error = computed(() => transactionsStore.error);
 let searchDebounceTimer = null;
 
 onMounted(() => {
+  document.title = 'Admin Transactions';
   fetchTransactions();
 });
 

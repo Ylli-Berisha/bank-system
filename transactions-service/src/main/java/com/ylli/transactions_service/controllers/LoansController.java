@@ -11,10 +11,12 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.media.Content;
 import jakarta.persistence.EntityNotFoundException;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
 
@@ -128,5 +130,40 @@ public class LoansController extends BaseController<LoanDto, Long, LoansService>
                 query
         );
         return ResponseEntity.ok(filteredLoans);
+    }
+
+    @Operation(summary = "Filter admin loans", description = "Filter loans for admin panel based on optional criteria")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Loans filtered successfully"),
+            @ApiResponse(responseCode = "204", description = "No matching loans found", content = @Content)
+    })
+    @GetMapping("/filter/admin-loans")
+    public ResponseEntity<Page<LoanDto>> filterAdminLoans(
+            @RequestHeader("X-User-ID") String adminId,
+            @RequestParam(required = false) String userId,
+            @RequestParam(required = false) String username,
+            @RequestParam(required = false) String email,
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate,
+            @RequestParam(required = false) BigDecimal minAmount,
+            @RequestParam(required = false) BigDecimal maxAmount,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        if (adminId == null || adminId.isEmpty() || page < 0 || size <= 0) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        Page<LoanDto> loans = service.filterAdminLoans(
+                adminId, userId, username, email, type, status, startDate, endDate, minAmount, maxAmount, page, size
+        );
+
+        if (loans == null || loans.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+
+        return ResponseEntity.ok(loans);
     }
 }

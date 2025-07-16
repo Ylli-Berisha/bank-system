@@ -11,6 +11,7 @@ import { useAuthStore } from "@/stores/authStore.js";
 import AdminHomeView from "@/components/AdminHomeView.vue";
 import AdminAccountsView from "@/components/AdminAccountsView.vue";
 import AdminTransactionsView from "@/components/AdminTransactionsView.vue";
+import AdminLoansView from "@/components/AdminLoansView.vue";
 
 const ROLE_USER = 'ROLE_USER';
 const ROLE_ADMIN = 'ROLE_ADMIN';
@@ -68,6 +69,12 @@ const routes = [
         path: '/admin/transactions',
         name: 'AdminTransactions',
         component: AdminTransactionsView,
+        meta: { requiresAuth: true, requiredRole: ROLE_ADMIN }
+    },
+    {
+        path:'/admin/loans',
+        name: 'AdminLoans',
+        component: AdminLoansView,
         meta: { requiresAuth: true, requiredRole: ROLE_ADMIN }
     }
 ];

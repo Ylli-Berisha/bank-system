@@ -88,6 +88,14 @@ public class LoanDto implements IdentifiableDto<Long> {
     )
     private LocalDate paidOffDate;
 
+    @NotNull(message = "Loan term in months cannot be null")
+    @Positive(message = "Loan term must be positive")
+    @Schema(
+            description = "Duration of the loan in months",
+            example = "60"
+    )
+    private int termInMonths;
+
     @NotNull(message = "Created date cannot be null")
     @Schema(
             description = "Date and time when the loan was created, value is generated server-side, pass as null or empty",

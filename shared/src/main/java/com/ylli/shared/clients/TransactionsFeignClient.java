@@ -60,4 +60,20 @@ public interface TransactionsFeignClient {
             @RequestParam String transactionId,
             @RequestHeader("X-User-ID") String adminId
     );
+
+    @GetMapping("/loans/filter/admin-loans")
+    ResponseEntity<Page<LoanDto>> filterAdminLoans(
+            @RequestHeader("X-User-ID") String adminId,
+            @RequestParam(required = false) String userId,
+            @RequestParam(required = false) String username,
+            @RequestParam(required = false) String email,
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate,
+            @RequestParam(required = false) BigDecimal minAmount,
+            @RequestParam(required = false) BigDecimal maxAmount,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    );
 }
