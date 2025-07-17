@@ -58,10 +58,11 @@ public class DataInitializer implements CommandLineRunner  {
 
                 Loan loan = new Loan();
                 loan.setAccount(account);
-                loan.setAmount(5000.0);
+                loan.setAmount(BigDecimal.valueOf(5000.0));
                 loan.setInterestRate(5.0);
                 loan.setStatus(LoanStatus.ACTIVE);
                 loan.setStartDate(java.time.LocalDate.now());
+                loan.setMonthlyInstallment(BigDecimal.valueOf(1000));
                 loan.setEndDate(java.time.LocalDate.now().plusYears(1));
 
                 loansRepository.save(loan);

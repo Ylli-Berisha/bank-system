@@ -10,6 +10,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -32,7 +34,7 @@ public class LoanApplicationRequestDto {
             description = "Loan amount",
             example = "10000.00"
     )
-    private Double amount;
+    private BigDecimal amount;
 
     @NotNull(message = "Interest rate cannot be null")
     @PositiveOrZero(message = "Interest rate must be zero or positive")
@@ -42,6 +44,13 @@ public class LoanApplicationRequestDto {
             example = "5.0"
     )
     private Double interestRate;
+
+    @Positive
+    @Schema(
+            description = "Monthly installment amount to be paid for the loan",
+            example = "200.00"
+    )
+    private BigDecimal monthlyInstallment;
 
     @NotNull(message = "Loan term in months cannot be null")
     @Positive(message = "Loan term must be positive")

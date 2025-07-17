@@ -9,6 +9,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -95,6 +96,17 @@ public class LoanDto implements IdentifiableDto<Long> {
             example = "60"
     )
     private int termInMonths;
+
+    @Positive
+    @Schema(
+            description = "Monthly installment amount to be paid for the loan",
+            example = "200.00"
+    )
+    private BigDecimal monthlyInstallment;
+
+    @FutureOrPresent
+    private LocalDate nextInstallmentDate;
+
 
     @NotNull(message = "Created date cannot be null")
     @Schema(

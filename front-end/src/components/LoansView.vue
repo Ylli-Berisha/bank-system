@@ -28,25 +28,28 @@
 
         <div class="filter-group">
           <label for="minAmountFilter">Min Amount:</label>
-          <input type="number" id="minAmountFilter" v-model.number="filters.minAmount" class="filter-input" placeholder="e.g., 100.00" />
+          <input type="number" id="minAmountFilter" v-model.number="filters.minAmount" class="filter-input"
+                 placeholder="e.g., 100.00"/>
         </div>
         <div class="filter-group">
           <label for="maxAmountFilter">Max Amount:</label>
-          <input type="number" id="maxAmountFilter" v-model.number="filters.maxAmount" class="filter-input" placeholder="e.g., 5000.00" />
+          <input type="number" id="maxAmountFilter" v-model.number="filters.maxAmount" class="filter-input"
+                 placeholder="e.g., 5000.00"/>
         </div>
 
         <div class="filter-group">
           <label for="startDateFilter">Start Date:</label>
-          <input type="date" id="startDateFilter" v-model="filters.startDate" class="filter-input" />
+          <input type="date" id="startDateFilter" v-model="filters.startDate" class="filter-input"/>
         </div>
         <div class="filter-group">
           <label for="endDateFilter">End Date:</label>
-          <input type="date" id="endDateFilter" v-model="filters.endDate" class="filter-input" />
+          <input type="date" id="endDateFilter" v-model="filters.endDate" class="filter-input"/>
         </div>
 
         <div class="filter-group filter-group-search">
           <label for="searchQueryFilter">Search:</label>
-          <input type="text" id="searchQueryFilter" v-model="filters.query" class="filter-input" placeholder="By ID or details" />
+          <input type="text" id="searchQueryFilter" v-model="filters.query" class="filter-input"
+                 placeholder="By ID or details"/>
         </div>
 
         <div class="filter-buttons">
@@ -70,10 +73,14 @@
           <p><strong>Interest Rate:</strong> {{ loan.interestRate.toFixed(2) }}%</p>
           <p><strong>Term:</strong> {{ loan.termInMonths }} Months</p>
           <p><strong>Status:</strong> {{ formatStatus(loan.status) }}</p>
+          <p v-if="loan.nextInstallmentDate"><strong>Next Installment Due:</strong>
+            {{ formatDate(loan.nextInstallmentDate) }}</p>
           <p v-if="loan.startDate"><strong>Start Date:</strong> {{ formatDate(loan.startDate) }}</p>
           <p v-if="loan.endDate"><strong>End Date:</strong> {{ formatDate(loan.endDate) }}</p>
           <p v-if="loan.createdAt"><strong>Applied On:</strong> {{ formatDate(loan.createdAt) }}</p>
           <p v-if="loan.paidOffDate"><strong>Paid Off Date:</strong> {{ formatDate(loan.paidOffDate) }}</p>
+          <p v-if="loan.monthlyInstallment !== undefined"><strong>Monthly Installment:</strong>
+            ${{ loan.monthlyInstallment.toFixed(2) }}</p>
           <p><strong>Loan ID:</strong> {{ loan.id }}</p>
         </div>
       </div>
@@ -86,8 +93,20 @@
       <button @click="showForm = !showForm" :class="['toggle-form-btn', { 'is-open': showForm }]">
         <span v-if="!showForm">Apply For New Loan</span>
         <span v-else>Cancel Application</span>
-        <svg v-if="!showForm" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-plus-circle"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
-        <svg v-else xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-x-circle"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+        <svg v-if="!showForm" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+             class="feather feather-plus-circle">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="16"></line>
+          <line x1="8" y1="12" x2="16" y2="12"></line>
+        </svg>
+        <svg v-else xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+             class="feather feather-x-circle">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="15" y1="9" x2="9" y2="15"></line>
+          <line x1="9" y1="9" x2="15" y2="15"></line>
+        </svg>
       </button>
 
       <Transition name="fade-slide">
@@ -164,7 +183,12 @@
 
           <button type="submit" class="submit-application-btn">
             Submit Loan Application
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                 class="feather feather-arrow-right">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
           </button>
           <p v-if="createError" class="error">{{ createError }}</p>
         </form>
@@ -181,10 +205,10 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, reactive } from 'vue'
-import { storeToRefs } from 'pinia'
-import { useLoansStore } from '@/stores/loansStore.js'
-import { useAccountsStore } from '@/stores/acccountsStore.js'
+import {ref, computed, onMounted, watch, reactive} from 'vue'
+import {storeToRefs} from 'pinia'
+import {useLoansStore} from '@/stores/loansStore.js'
+import {useAccountsStore} from '@/stores/acccountsStore.js'
 import ConfirmationModal from '@/components/ConfirmModal.vue';
 
 const loansStore = useLoansStore()
@@ -195,9 +219,7 @@ const {
   error: loansError,
   loanTypes,
   createError,
-  // applyForNewLoan // applyForNewLoan is a method, not a ref, so it's not from storeToRefs
-} = storeToRefs(loansStore) // Removed applyForNewLoan from storeToRefs
-
+} = storeToRefs(loansStore)
 
 const {
   accounts
@@ -217,14 +239,12 @@ const showConfirmationModal = ref(false)
 const confirmationModalTitle = ref('')
 const currentActionType = ref(null)
 
-// Define loan statuses for filter dropdown
 const loanStatuses = ['ACTIVE', 'PENDING', 'PAID_OFF', 'REJECTED', 'DEFAULTED'];
 
-// Reactive object for filters, similar to transactions view
 const filters = reactive({
   startDate: '',
   endDate: '',
-  loanType: '', // Use loanType instead of type for clarity with loans
+  loanType: '',
   status: '',
   minAmount: null,
   maxAmount: null,
@@ -233,17 +253,14 @@ const filters = reactive({
 
 let searchDebounceTimer = null;
 
-// Re-using activeAccountsForSelection as it's useful for the new loan form
 const activeAccountsForSelection = computed(() =>
     accounts.value.filter(acc => acc.status === 'ACTIVE')
 );
 
 onMounted(async () => {
   document.title = "Loans"
-  await accountsStore.fetchAccounts() // Fetch accounts first
-  await loansStore.fetchLoanTypes() // Fetch loan types
-
-  // Apply filters initially to load loans based on default state or any initial URL params if present
+  await accountsStore.fetchAccounts()
+  await loansStore.fetchLoanTypes()
   await applyFilters();
 
   if (loanTypes.value.length > 0) {
@@ -255,7 +272,6 @@ onMounted(async () => {
   }
 })
 
-// Watch filters for changes and apply debouncing for query
 watch(filters, (newFilters, oldFilters) => {
   if (newFilters.query !== oldFilters.query) {
     if (searchDebounceTimer) {
@@ -263,16 +279,14 @@ watch(filters, (newFilters, oldFilters) => {
     }
     searchDebounceTimer = setTimeout(() => {
       applyFilters();
-    }, 500); // 500ms debounce
+    }, 500);
   } else {
-    // If other filters change, apply filters immediately
     applyFilters();
   }
-}, { deep: true }); // Deep watch is needed for reactive objects like filters.value
+}, {deep: true});
 
-// Function to apply filters
 async function applyFilters() {
-  const currentFilters = filters; // filters is already reactive
+  const currentFilters = filters;
 
   const hasActiveFilter = Object.values(currentFilters).some(value => {
     if (typeof value === 'number') {
@@ -284,7 +298,6 @@ async function applyFilters() {
     return false;
   });
 
-  // Create a clean payload for the API call
   const cleanedFilters = {
     loanType: currentFilters.loanType || undefined,
     status: currentFilters.status || undefined,
@@ -302,7 +315,6 @@ async function applyFilters() {
   }
 }
 
-// Function to clear all filters
 function clearFilters() {
   Object.assign(filters, {
     startDate: '',
@@ -313,9 +325,7 @@ function clearFilters() {
     maxAmount: null,
     query: ''
   });
-  // applyFilters() will be called automatically by the watch effect
 }
-
 
 function formatDate(isoString) {
   if (!isoString) return ''
@@ -363,7 +373,6 @@ async function handleConfirmationModalConfirm() {
     console.error("Error during modal action:", err);
   } finally {
     resetConfirmationModalState();
-    // After confirmation, re-fetch loans to update the list, applyFilters will do this
     await applyFilters();
   }
 }
@@ -381,25 +390,22 @@ function resetConfirmationModalState() {
 async function submitLoanApplication() {
   createError.value = null
   try {
-    const loanPayload = { ...newLoan.value };
-
+    const loanPayload = {...newLoan.value};
     await loansStore.applyForNewLoan(selectedSourceAccountId.value, loanPayload);
-
     newLoan.value = {
       loanType: loanTypes.value[0] || '',
       amount: 0.00,
       interestRate: 0.00,
       termInMonths: 1,
+      monthlyInstallment: 0.00,
     };
     selectedSourceAccountId.value = activeAccountsForSelection.value[0]?.id || '';
-
     showForm.value = false;
   } catch (err) {
     throw err;
   }
 }
 
-// Function to dynamically apply status-based classes to loan cards
 function loanStatusClass(status) {
   switch (status) {
     case 'ACTIVE':

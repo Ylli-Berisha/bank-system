@@ -11,6 +11,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Entity(name = "loans")
@@ -36,7 +37,7 @@ public class Loan extends BaseEntity<Long> {
     @Column(nullable = false)
     @NotNull(message = "Amount cannot be null")
     @Positive(message = "Amount must be positive")
-    private Double amount;
+    private BigDecimal amount;
 
     @Column(nullable = false)
     @NotNull(message = "Interest rate cannot be null")
@@ -65,14 +66,21 @@ public class Loan extends BaseEntity<Long> {
     @Future(message = "End date must be in the future")
     private LocalDate endDate;
 
-    @Schema(
-            description = "Actual date when the loan was fully paid off (only applicable for PAID_OFF status)",
-            example = "2024-03-15",
-            nullable = true
-    )
+//    @Schema(
+//            description = "Actual date when the loan was fully paid off (only applicable for PAID_OFF status)",
+//            example = "2024-03-15",
+//            nullable = true
+//    )
     private LocalDate paidOffDate;
 
     private int termInMonths;
+
+    @Column(nullable = false)
+    private BigDecimal monthlyInstallment;
+
+    @Column
+    @FutureOrPresent
+    private LocalDate nextInstallmentDate;
 
     @Override
     public Long getId() {

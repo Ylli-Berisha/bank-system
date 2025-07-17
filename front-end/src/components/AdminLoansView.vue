@@ -95,6 +95,8 @@
             <p><strong>Account:</strong> {{ loan.accountId }}</p>
             <p><strong>Interest Rate:</strong> {{ loan.interestRate }}%</p>
             <p><strong>Duration:</strong> {{ loan.termInMonths }} months</p>
+            <p><strong>Monthly Installment:</strong> ${{ loan.monthlyInstallment?.toFixed(2) }}</p>
+            <p><strong>Next installment: </strong> {{loan.nextInstallmentDate}} </p>
             <p><strong>Status:</strong>
               <span class="status-tag status-pending">{{ formatLabel(loan.status) }}</span>
             </p>
@@ -131,6 +133,8 @@
             <p><strong>Account:</strong> {{ loan.accountId }}</p>
             <p><strong>Interest Rate:</strong> {{ loan.interestRate }}%</p>
             <p><strong>Duration:</strong> {{ loan.termInMonths }} months</p>
+            <p><strong>Monthly Installment:</strong> ${{ loan.monthlyInstallment?.toFixed(2) }}</p>
+            <p><strong>Next installment: </strong> {{formatDate(loan.nextInstallmentDate) || 'N/A'}} </p>
             <p><strong>Status:</strong>
               <span class="status-tag" :class="'status-' + loan.status.toLowerCase()">
                 {{ formatLabel(loan.status) }}
@@ -141,7 +145,6 @@
       </div>
     </section>
 
-    <!-- New Modal Components -->
     <ConfirmModal
         v-if="isAcceptModalOpen"
         :isOpen="isAcceptModalOpen"
@@ -157,14 +160,13 @@
         :confirm="confirmReject"
         :cancel="closeModal"
     />
-
   </div>
 </template>
 
 <script setup>
-import {reactive, watch, onMounted, computed, ref} from 'vue'
-import {useAdminLoansStore} from '@/stores/admin/adminLoansStore.js'
-import ConfirmModal from '@/components/ConfirmModal.vue' // <-- Import your new modal component
+import { reactive, watch, onMounted, computed, ref } from 'vue'
+import { useAdminLoansStore } from '@/stores/admin/adminLoansStore.js'
+import ConfirmModal from '@/components/ConfirmModal.vue'
 
 const filters = reactive({
   type: '',
@@ -228,7 +230,7 @@ onMounted(() => {
 watch(
     () => [filters, adminLoansStore.currentPage],
     () => fetchLoans(),
-    {deep: true}
+    { deep: true }
 )
 
 function nextPage() {
@@ -265,7 +267,7 @@ async function confirmAccept() {
     alert('Loan accepted successfully.')
     closeModal()
     fetchLoans()
-  } catch (e) {
+  } catch {
     alert('Failed to accept loan.')
   }
 }
@@ -276,12 +278,21 @@ async function confirmReject() {
     alert('Loan rejected successfully.')
     closeModal()
     fetchLoans()
-  } catch (e) {
+  } catch {
     alert('Failed to reject loan.')
   }
 }
-</script>
 
+function formatDate(isoString) {
+  if (!isoString) return ''
+  const date = new Date(isoString)
+  return date.toLocaleDateString(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  })
+}
+</script>
 
 <style scoped>
 .page-container {

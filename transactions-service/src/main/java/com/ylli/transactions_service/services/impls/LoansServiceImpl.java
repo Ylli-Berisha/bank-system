@@ -28,8 +28,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -95,6 +95,7 @@ public class LoansServiceImpl extends BaseServiceImpl<Loan, LoanDto, Long, Loans
             if (!accountDto.getUserId().equals(userId)) {
                 throw new IllegalArgumentException("Account with ID " + accountId + " does not belong to user with ID " + userId);
             }
+
             Account account = new Account();
             account.setId(accountDto.getId());
 
@@ -103,11 +104,19 @@ public class LoansServiceImpl extends BaseServiceImpl<Loan, LoanDto, Long, Loans
             loan.setAmount(loanApplicationRequestDto.getAmount());
             loan.setLoanType(loanApplicationRequestDto.getLoanType());
             loan.setInterestRate(loanApplicationRequestDto.getInterestRate());
-//            LocalDate today = LocalDate.now();
-//        loan.setEndDate(today.plusMonths(loanApplicationRequestDto.getTermInMonths()));
+
+            BigDecimal amount = loanApplicationRequestDto.getAmount();
+
+            BigDecimal interestRate = BigDecimal.valueOf(loanApplicationRequestDto.getInterestRate())
+                    .divide(BigDecimal.valueOf(100), 10, RoundingMode.HALF_UP);
+            int termInMonths = loanApplicationRequestDto.getTermInMonths();
+
+            BigDecimal totalWithInterest = amount.multiply(BigDecimal.ONE.add(interestRate));
+            BigDecimal monthlyInstallment = totalWithInterest.divide(BigDecimal.valueOf(termInMonths), 2, RoundingMode.HALF_UP);
+            loan.setMonthlyInstallment(monthlyInstallment);
+            loan.setAmount(totalWithInterest);
             loan.setStatus(LoanStatus.PENDING);
-//        loan.setStartDate(today);
-            loan.setTermInMonths(loanApplicationRequestDto.getTermInMonths());
+            loan.setTermInMonths(termInMonths);
 
             repository.save(loan);
             return true;
@@ -273,6 +282,7 @@ public class LoansServiceImpl extends BaseServiceImpl<Loan, LoanDto, Long, Loans
         loan.setStatus(LoanStatus.APPROVED);
         loan.setStartDate(LocalDate.now());
         loan.setEndDate(loan.getStartDate().plusMonths(loan.getTermInMonths()));
+        loan.setNextInstallmentDate(LocalDate.now().plusMonths(1));
 
         repository.save(loan);
         return mapper.toDto(loan);
