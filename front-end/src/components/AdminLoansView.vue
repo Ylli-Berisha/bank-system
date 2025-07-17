@@ -88,11 +88,12 @@
         >
           <div class="card-header">
             <span class="loan-type">{{ formatLabel(loan.loanType) }}</span>
-            <span class="loan-amount">${{ loan.amount.toFixed(2) }}</span>
+            <span class="loan-amount">${{ loan.leftAmount.toFixed(2) }}</span>
           </div>
 
           <div class="card-body">
             <p><strong>Account:</strong> {{ loan.accountId }}</p>
+            <p><strong>Amount taken: </strong>{{loan.amount}}</p>
             <p><strong>Interest Rate:</strong> {{ loan.interestRate }}%</p>
             <p><strong>Duration:</strong> {{ loan.termInMonths }} months</p>
             <p><strong>Monthly Installment:</strong> ${{ loan.monthlyInstallment?.toFixed(2) }}</p>
@@ -126,11 +127,12 @@
         >
           <div class="card-header">
             <span class="loan-type">{{ formatLabel(loan.type) }}</span>
-            <span class="loan-amount">${{ loan.amount.toFixed(2) }}</span>
+            <span class="loan-amount">${{ loan.leftAmount.toFixed(2) }}</span>
           </div>
 
           <div class="card-body">
             <p><strong>Account:</strong> {{ loan.accountId }}</p>
+            <p><strong>Amount taken: </strong>{{loan.amount}}</p>
             <p><strong>Interest Rate:</strong> {{ loan.interestRate }}%</p>
             <p><strong>Duration:</strong> {{ loan.termInMonths }} months</p>
             <p><strong>Monthly Installment:</strong> ${{ loan.monthlyInstallment?.toFixed(2) }}</p>

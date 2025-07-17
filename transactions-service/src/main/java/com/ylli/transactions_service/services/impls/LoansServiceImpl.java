@@ -26,8 +26,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
@@ -41,11 +43,13 @@ public class LoansServiceImpl extends BaseServiceImpl<Loan, LoanDto, Long, Loans
     private final AccountsFeignClient accountsFeignClient;
     private static final Logger log = LoggerFactory.getLogger(LoansServiceImpl.class);
     private final UsersFeignClient usersFeignClient;
+    private final LoanProcessingService loanProcessingService;
 
-    public LoansServiceImpl(LoansRepository repository, LoansMapper mapper, AccountsFeignClient accountsFeignClient, UsersFeignClient usersFeignClient) {
+    public LoansServiceImpl(LoansRepository repository, LoansMapper mapper, AccountsFeignClient accountsFeignClient, UsersFeignClient usersFeignClient, LoanProcessingService loanProcessingService) {
         super(repository, mapper);
         this.accountsFeignClient = accountsFeignClient;
         this.usersFeignClient = usersFeignClient;
+        this.loanProcessingService = loanProcessingService;
     }
 
     @Override
@@ -79,9 +83,7 @@ public class LoansServiceImpl extends BaseServiceImpl<Loan, LoanDto, Long, Loans
     @Override
     public List<String> getLoanTypes() {
         List<LoanType> loanTypes = List.of(LoanType.values());
-        return loanTypes.stream()
-                .map(LoanType::name)
-                .toList();
+        return loanTypes.stream().map(LoanType::name).toList();
     }
 
     @Override
@@ -107,14 +109,14 @@ public class LoansServiceImpl extends BaseServiceImpl<Loan, LoanDto, Long, Loans
 
             BigDecimal amount = loanApplicationRequestDto.getAmount();
 
-            BigDecimal interestRate = BigDecimal.valueOf(loanApplicationRequestDto.getInterestRate())
-                    .divide(BigDecimal.valueOf(100), 10, RoundingMode.HALF_UP);
+            BigDecimal interestRate = BigDecimal.valueOf(loanApplicationRequestDto.getInterestRate()).divide(BigDecimal.valueOf(100), 10, RoundingMode.HALF_UP);
             int termInMonths = loanApplicationRequestDto.getTermInMonths();
 
             BigDecimal totalWithInterest = amount.multiply(BigDecimal.ONE.add(interestRate));
             BigDecimal monthlyInstallment = totalWithInterest.divide(BigDecimal.valueOf(termInMonths), 2, RoundingMode.HALF_UP);
             loan.setMonthlyInstallment(monthlyInstallment);
             loan.setAmount(totalWithInterest);
+            loan.setLeftAmount(amount);
             loan.setStatus(LoanStatus.PENDING);
             loan.setTermInMonths(termInMonths);
 
@@ -139,16 +141,7 @@ public class LoansServiceImpl extends BaseServiceImpl<Loan, LoanDto, Long, Loans
     }
 
     @Override
-    public List<LoanDto> filterUserLoans(
-            String userId,
-            String loanTypeString,
-            String statusString,
-            String startDateString,
-            String endDateString,
-            Double minAmount,
-            Double maxAmount,
-            String query
-    ) {
+    public List<LoanDto> filterUserLoans(String userId, String loanTypeString, String statusString, String startDateString, String endDateString, Double minAmount, Double maxAmount, String query) {
         LocalDate parsedStartDate = null;
         if (startDateString != null && !startDateString.isEmpty()) {
             parsedStartDate = LocalDate.parse(startDateString);
@@ -164,7 +157,7 @@ public class LoansServiceImpl extends BaseServiceImpl<Loan, LoanDto, Long, Loans
             try {
                 parsedStatus = LoanStatus.valueOf(statusString.toUpperCase());
             } catch (IllegalArgumentException e) {
-                System.err.println("Warning: Received invalid LoanStatus string: " + statusString);
+                log.warn("Received invalid LoanStatus string: {}", statusString);
                 throw e;
             }
         }
@@ -174,7 +167,7 @@ public class LoansServiceImpl extends BaseServiceImpl<Loan, LoanDto, Long, Loans
             try {
                 parsedLoanType = LoanType.valueOf(loanTypeString.toUpperCase());
             } catch (IllegalArgumentException e) {
-                System.err.println("Warning: Received invalid LoanType string: " + loanTypeString);
+                log.warn("Received invalid LoanType string: {}", loanTypeString);
                 throw e;
             }
         }
@@ -182,37 +175,13 @@ public class LoansServiceImpl extends BaseServiceImpl<Loan, LoanDto, Long, Loans
         Double actualMinAmount = (minAmount != null) ? minAmount : 0.0;
         Double actualMaxAmount = (maxAmount != null) ? maxAmount : Double.MAX_VALUE;
 
-        List<Loan> loans = repository.findAll(
-                LoanSpecifications.withFilters(
-                        userId,
-                        parsedLoanType,
-                        parsedStatus,
-                        parsedStartDate,
-                        parsedEndDate,
-                        actualMinAmount,
-                        actualMaxAmount,
-                        query
-                )
-        );
+        List<Loan> loans = repository.findAll(LoanSpecifications.withFilters(userId, parsedLoanType, parsedStatus, parsedStartDate, parsedEndDate, actualMinAmount, actualMaxAmount, query));
 
         return mapper.toDtoList(loans);
     }
 
     @Override
-    public Page<LoanDto> filterAdminLoans(
-            String adminId,
-            String userId,
-            String username,
-            String email,
-            String typeString,
-            String statusString,
-            String startDate,
-            String endDate,
-            BigDecimal minAmount,
-            BigDecimal maxAmount,
-            int page,
-            int size
-    ) {
+    public Page<LoanDto> filterAdminLoans(String adminId, String userId, String username, String email, String typeString, String statusString, String startDate, String endDate, BigDecimal minAmount, BigDecimal maxAmount, int page, int size) {
         validateAdmin(adminId);
 
         LoanStatus parsedStatus = null;
@@ -220,7 +189,7 @@ public class LoansServiceImpl extends BaseServiceImpl<Loan, LoanDto, Long, Loans
             try {
                 parsedStatus = LoanStatus.valueOf(statusString.toUpperCase());
             } catch (IllegalArgumentException e) {
-                System.err.println("Warning: Invalid LoanStatus: " + statusString);
+                log.warn("Invalid LoanStatus: {}", statusString);
                 throw e;
             }
         }
@@ -230,7 +199,7 @@ public class LoansServiceImpl extends BaseServiceImpl<Loan, LoanDto, Long, Loans
             try {
                 parsedType = LoanType.valueOf(typeString.toUpperCase());
             } catch (IllegalArgumentException e) {
-                System.err.println("Warning: Invalid LoanType: " + typeString);
+                log.warn("Invalid LoanType: {}", typeString);
                 throw e;
             }
         }
@@ -250,20 +219,7 @@ public class LoansServiceImpl extends BaseServiceImpl<Loan, LoanDto, Long, Loans
 
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
 
-        Page<Loan> loansPage = repository.findAll(
-                AdminLoanSpecifications.withFilters(
-                        userId,
-                        username,
-                        email,
-                        parsedType,
-                        parsedStatus,
-                        parsedStartDate,
-                        parsedEndDate,
-                        actualMinAmount,
-                        actualMaxAmount
-                ),
-                pageable
-        );
+        Page<Loan> loansPage = repository.findAll(AdminLoanSpecifications.withFilters(userId, username, email, parsedType, parsedStatus, parsedStartDate, parsedEndDate, actualMinAmount, actualMaxAmount), pageable);
 
         return loansPage.map(mapper::toDto);
     }
@@ -272,8 +228,7 @@ public class LoansServiceImpl extends BaseServiceImpl<Loan, LoanDto, Long, Loans
     @Transactional
     public LoanDto acceptLoan(Long loanId, String adminId) {
         validateAdmin(adminId);
-        Loan loan = repository.findById(loanId)
-                .orElseThrow(() -> new ResourceNotFoundException("Loan not found with ID " + loanId));
+        Loan loan = repository.findById(loanId).orElseThrow(() -> new ResourceNotFoundException("Loan not found with ID " + loanId));
 
         if (loan.getStatus() != LoanStatus.PENDING) {
             throw new IllegalStateException("Only pending loans can be accepted.");
@@ -283,30 +238,26 @@ public class LoansServiceImpl extends BaseServiceImpl<Loan, LoanDto, Long, Loans
         loan.setStartDate(LocalDate.now());
         loan.setEndDate(loan.getStartDate().plusMonths(loan.getTermInMonths()));
         loan.setNextInstallmentDate(LocalDate.now().plusMonths(1));
+        loan.setLeftAmount(loan.getAmount());
 
         repository.save(loan);
         return mapper.toDto(loan);
     }
 
-//    @Override
     @Transactional
     public LoanDto rejectLoan(Long loanId, String adminId) {
         validateAdmin(adminId);
-        Loan loan = repository.findById(loanId)
-                .orElseThrow(() -> new ResourceNotFoundException("Loan not found with ID " + loanId));
+        Loan loan = repository.findById(loanId).orElseThrow(() -> new ResourceNotFoundException("Loan not found with ID " + loanId));
 
         if (loan.getStatus() != LoanStatus.PENDING) {
-            throw new IllegalStateException("Only pending loans can be accepted.");
+            throw new IllegalStateException("Only pending loans can be rejected.");
         }
 
         loan.setStatus(LoanStatus.REJECTED);
-//        loan.setStartDate(LocalDate.now());
-//        loan.setEndDate(loan.getStartDate().plusMonths(loan.getTermInMonths()));
 
         repository.save(loan);
         return mapper.toDto(loan);
     }
-
 
     private void validateAdmin(String adminId) {
         if (adminId == null || adminId.isBlank()) {
@@ -316,6 +267,23 @@ public class LoansServiceImpl extends BaseServiceImpl<Loan, LoanDto, Long, Loans
         if (adminUser == null || !adminUser.getRoles().contains(UserRole.ROLE_ADMIN)) {
             throw new IllegalArgumentException("User with ID " + adminId + " is not an admin.");
         }
+    }
+
+    @Scheduled(cron = "0 0 0 * * *")
+    public void processLoanInstallments() {
+        log.info("Scheduled loan installment processing started");
+
+        List<Loan> loans = repository.findByStatus(LoanStatus.ACTIVE);
+
+        for (Loan loan : loans) {
+            try {
+                loanProcessingService.processSingleLoanInstallment(loan);
+            } catch (Exception e) {
+                log.error("Failed to process loan {}: {}", loan.getId(), e.getMessage());
+            }
+        }
+
+        log.info("Scheduled loan installment processing finished");
     }
 
 }

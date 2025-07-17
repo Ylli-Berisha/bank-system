@@ -39,6 +39,10 @@ public class Loan extends BaseEntity<Long> {
     @Positive(message = "Amount must be positive")
     private BigDecimal amount;
 
+    @Column
+    @Positive(message = "Amount left must be positive")
+    private BigDecimal leftAmount;
+
     @Column(nullable = false)
     @NotNull(message = "Interest rate cannot be null")
     @PositiveOrZero(message = "Interest rate must be zero or positive")

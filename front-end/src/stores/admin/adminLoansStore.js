@@ -25,6 +25,7 @@ export const useAdminLoansStore = defineStore('adminLoansStore', () => {
                 params,
             })
 
+            console.log(response)
             loans.value = response.data.content || []
             totalPages.value = response.data.totalPages
             totalElements.value = response.data.totalElements

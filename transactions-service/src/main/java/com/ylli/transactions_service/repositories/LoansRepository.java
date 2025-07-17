@@ -12,7 +12,8 @@ import java.util.List;
 
 @Repository
 public interface LoansRepository extends JpaRepository<Loan, Long>, JpaSpecificationExecutor<Loan> {
-    public List<Loan> findByAccount(Account account);
+    List<Loan> findByAccount(Account account);
     List<Loan> findByAccountAndStatus(Account account, LoanStatus status);
+    List<Loan> findByStatus(LoanStatus status);
 
 }

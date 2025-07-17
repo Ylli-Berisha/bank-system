@@ -69,7 +69,9 @@
       <div v-else class="card-grid">
         <div v-for="loan in loans" :key="loan.id" :class="['card', loanStatusClass(loan.status)]">
           <h3>{{ formatLoanType(loan.loanType) }} Loan</h3>
-          <p><strong>Amount:</strong> ${{ loan.amount.toFixed(2) }}</p>
+          <p><strong>Amount left:</strong> ${{ loan.amount.toFixed(2) }}</p>
+          <p><strong>Amount taken: </strong>{{loan.amount}}</p>
+
           <p><strong>Interest Rate:</strong> {{ loan.interestRate.toFixed(2) }}%</p>
           <p><strong>Term:</strong> {{ loan.termInMonths }} Months</p>
           <p><strong>Status:</strong> {{ formatStatus(loan.status) }}</p>

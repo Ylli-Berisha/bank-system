@@ -105,8 +105,18 @@ public class LoanDto implements IdentifiableDto<Long> {
     private BigDecimal monthlyInstallment;
 
     @FutureOrPresent
+    @Schema(
+            description = "The next date on which a monthly installment is due",
+            example = "2025-08-01"
+    )
     private LocalDate nextInstallmentDate;
 
+    @Positive(message = "Amount left must be positive")
+    @Schema(
+            description = "Remaining balance to be paid on the loan",
+            example = "8500.00"
+    )
+    private BigDecimal leftAmount;
 
     @NotNull(message = "Created date cannot be null")
     @Schema(
