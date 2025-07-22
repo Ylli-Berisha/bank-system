@@ -2,9 +2,8 @@ package com.ylli.users_service.services.impls;
 
 import com.ylli.shared.base.BaseServiceImpl;
 import com.ylli.shared.configs.JwtUtil;
-import com.ylli.shared.dtos.LoginResponseDto;
-import com.ylli.shared.dtos.SignUpResponseDto;
-import com.ylli.shared.dtos.UserDto;
+import com.ylli.shared.dtos.*;
+import com.ylli.users_service.configs.UserSpecification;
 import com.ylli.users_service.dtos.UserLoginDto;
 import com.ylli.shared.enums.UserRole;
 import com.ylli.shared.models.User;
@@ -13,12 +12,15 @@ import com.ylli.users_service.repositories.UserRepository;
 import com.ylli.users_service.services.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-import com.ylli.shared.dtos.UserSignUpDto;
 
 
 @Slf4j
@@ -101,87 +103,35 @@ public class UserServiceImpl extends BaseServiceImpl<User, UserDto, String, User
                 .orElse(null);
     }
 
-//    @Override
-//    public UserDto validateUser(String username) {
-//        User user = repository.findByUsername(username)
-//                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-//
-//        return mapper.toDto(user);
-//    }
+    @Override
+    public Page<UserDto> filterAdminUsers(String adminId, UserFilterDto filterDto, int page, int size) {
+        validateAdmin(adminId);
 
+        if (page < 0 || size <= 0) {
+            throw new IllegalArgumentException("Page number must be >= 0 and size must be > 0");
+        }
 
+        if (filterDto == null) {
+            filterDto = new UserFilterDto();
+        }
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+
+        Page<User> usersPage = repository.findAll(UserSpecification.filterUsers(filterDto), pageable);
+
+        return usersPage.map(mapper::toDto);
+    }
+
+    private void validateAdmin(String userId) {
+        User user = repository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
+
+        if (user.getRoles() == null || user.getRoles().isEmpty()) {
+            throw new IllegalArgumentException("User with ID " + userId + " does not have any roles");
+        }
+
+        if (!user.getRoles().contains(UserRole.ROLE_ADMIN)) {
+            throw new IllegalArgumentException("User with ID " + userId + " is not an admin");
+        }
+    }
 }
-
-
-
-
-
-
-//    @Service
-//    @RequiredArgsConstructor
-//    public class UserServiceImpl implements UserService {
-//
-//        private final UserRepository userRepository;
-//
-//        private final UserMapper userMapper;
-//
-//        @Autowired
-//        public UserServiceImpl(UserRepository userRepository, UserMapper userMapper) {
-//            this.userRepository = userRepository;
-//            this.userMapper = userMapper;
-//        }
-//
-//        @Override
-//        public UserDto getById(String id) {
-//            User user = userRepository.findById(id)
-//                    .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + id));
-//            return mapToDto(user);
-//        }
-//
-//        @Override
-//        public UserDto create(UserDto userDto) {
-//            User user = mapToEntity(userDto);
-//            user.setId(null);
-//            user.setCreatedAt(LocalDateTime.now());
-//            user.setUpdatedAt(LocalDateTime.now());
-//            User savedUser = userRepository.save(user);
-//            return mapToDto(savedUser);
-//        }
-//
-//        @Override
-//        public UserDto update(String id, UserDto userDto) {
-//            User existingUser = userRepository.findById(id)
-//                    .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + id));
-//
-//            User updatedUser = mapToEntity(userDto);
-//            updatedUser.setId(id);
-//            updatedUser.setCreatedAt(existingUser.getCreatedAt());
-//            updatedUser.setUpdatedAt(LocalDateTime.now());
-//
-//            User savedUser = userRepository.save(updatedUser);
-//            return mapToDto(savedUser);
-//        }
-//
-//        @Override
-//        public UserDto delete(String id) {
-//            User user = userRepository.findById(id)
-//                    .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + id));
-//            userRepository.deleteById(id);
-//            return mapToDto(user);
-//        }
-//
-//        @Override
-//        public List<UserDto> getAllUsers() {
-//            return userRepository.findAll().stream()
-//                    .map(this::mapToDto)
-//                    .collect(Collectors.toList());
-//        }
-//
-//        private UserDto mapToDto(User user) {
-//            return userMapper.toDto(user);
-//        }
-//
-//        private User mapToEntity(UserDto userDto) {
-//            return userMapper.toEntity(userDto);
-//        }
-//    }

@@ -3,6 +3,7 @@ package com.ylli.shared.clients;
 import com.ylli.shared.dtos.UserDto;
 import com.ylli.shared.fallback.UsersFallbackImpl;
 import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,4 +24,21 @@ public interface UsersFeignClient {
 
     @GetMapping("/get/default-user")
     ResponseEntity<UserDto> getDefaultUser();
+
+    @GetMapping("/filter/admin-users")
+    ResponseEntity<Page<UserDto>> filterAdminUsers(
+            @RequestHeader("X-User-ID") String adminId,
+            @RequestParam(required = false) String userId,
+            @RequestParam(required = false) String username,
+            @RequestParam(required = false) String email,
+            @RequestParam(required = false) String firstName,
+            @RequestParam(required = false) String lastName,
+            @RequestParam(required = false) String phoneNumber,
+            @RequestParam(required = false) Boolean isActive,
+            @RequestParam(required = false) String accountId,
+            @RequestParam(required = false) String loanId,
+            @RequestParam(required = false) String transactionId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    );
 }

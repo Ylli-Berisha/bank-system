@@ -1,19 +1,18 @@
 package com.ylli.users_service.controllers;
 
 import com.ylli.shared.base.BaseController;
-import com.ylli.shared.dtos.LoginResponseDto;
-import com.ylli.shared.dtos.SignUpResponseDto;
-import com.ylli.shared.dtos.UserDto;
+import com.ylli.shared.dtos.*;
 import com.ylli.users_service.dtos.UserLoginDto;
-import com.ylli.shared.dtos.UserSignUpDto;
 import com.ylli.users_service.services.UserService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -70,4 +69,54 @@ public class UserController extends BaseController<UserDto, String, UserService>
         }
         return ResponseEntity.ok(user);
     }
+
+    @Operation(summary = "Filter admin users", description = "Filter users for admin panel based on optional criteria")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Users filtered successfully"),
+            @ApiResponse(responseCode = "204", description = "No matching users found", content = @Content)
+    })
+    @GetMapping("/filter/admin-users")
+    public ResponseEntity<Page<UserDto>> filterAdminUsers(
+            @RequestHeader("X-User-ID") String adminId,
+            @RequestParam(required = false) String userId,
+            @RequestParam(required = false) String username,
+            @RequestParam(required = false) String email,
+            @RequestParam(required = false) String firstName,
+            @RequestParam(required = false) String lastName,
+            @RequestParam(required = false) String phoneNumber,
+            @RequestParam(required = false) Boolean isActive,
+            @RequestParam(required = false) String accountId,
+            @RequestParam(required = false) String loanId,
+            @RequestParam(required = false) String transactionId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        if (adminId == null || adminId.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+        if (page < 0 || size <= 0) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        UserFilterDto filterDto = new UserFilterDto();
+        filterDto.setId(userId);
+        filterDto.setUsername(username);
+        filterDto.setEmail(email);
+        filterDto.setFirstName(firstName);
+        filterDto.setLastName(lastName);
+        filterDto.setPhoneNumber(phoneNumber);
+        filterDto.setIsActive(isActive);
+        filterDto.setAccountId(accountId);
+        filterDto.setLoanId(loanId);
+        filterDto.setTransactionId(transactionId);
+
+        Page<UserDto> usersPage = service.filterAdminUsers(adminId, filterDto, page, size);
+
+        if (usersPage == null || usersPage.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+
+        return ResponseEntity.ok(usersPage);
+    }
+
 }
