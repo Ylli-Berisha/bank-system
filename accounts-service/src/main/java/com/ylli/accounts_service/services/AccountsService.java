@@ -2,7 +2,9 @@ package com.ylli.accounts_service.services;
 
 import com.ylli.shared.base.BaseService;
 import com.ylli.shared.dtos.AccountDto;
+import org.springframework.data.domain.Page;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public interface AccountsService extends BaseService<AccountDto, String> {
@@ -26,4 +28,20 @@ public interface AccountsService extends BaseService<AccountDto, String> {
     AccountDto getByIdAndUserId(String id, String userId);
 
     List<AccountDto> getTopAccounts (String userId);
+
+    Page<AccountDto> filterAdminAccounts(
+            String adminId,
+            String accountId,
+            String typeString,
+            BigDecimal minBalance,
+            BigDecimal maxBalance,
+            String statusString,
+            String userId,
+            String username,
+            String email,
+            String loanId,
+            String transactionId,
+            int page,
+            int size
+    );
 }

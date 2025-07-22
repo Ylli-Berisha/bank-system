@@ -1,7 +1,9 @@
 package com.ylli.admin_service.services;
 
 import com.ylli.shared.dtos.AccountDto;
+import org.springframework.data.domain.Page;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public interface AdminAccountsService {
@@ -15,4 +17,20 @@ public interface AdminAccountsService {
     void approveAccount(String accountId, String userId);
 
     void rejectAccount(String accountId, String userId);
+
+    Page<AccountDto> filterAdminAccounts(
+            String adminId,
+            String accountId,
+            String typeString,
+            BigDecimal minBalance,
+            BigDecimal maxBalance,
+            String statusString,
+            String userId,
+            String username,
+            String email,
+            String loanId,
+            String transactionId,
+            int page,
+            int size
+    );
 }

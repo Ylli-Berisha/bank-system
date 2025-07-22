@@ -10,9 +10,13 @@ import com.ylli.shared.exceptions.ResourceNotFoundException;
 import feign.FeignException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestParam;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Slf4j
@@ -87,12 +91,12 @@ public class AdminAccountsServiceImpl implements AdminAccountsService {
             if (account == null) {
                 throw new IllegalArgumentException("Account with ID " + accountId + " not found");
             }
-            if (account.getStatus() != AccountStatus.PENDING_APPROVAL){
+            if (account.getStatus() != AccountStatus.PENDING_APPROVAL) {
                 throw new IllegalArgumentException("Account with ID " + accountId + " is not pending approval");
             }
             account.setStatus(AccountStatus.ACTIVE);
             accountsFeignClient.update(accountId, account);
-        }catch (FeignException e){
+        } catch (FeignException e) {
             throw new IllegalArgumentException("Error approving account: " + e.getMessage(), e);
         } catch (Exception e) {
             throw new RuntimeException("An unexpected error occurred while approving the account: " + e.getMessage(), e);
@@ -107,16 +111,26 @@ public class AdminAccountsServiceImpl implements AdminAccountsService {
             if (account == null) {
                 throw new ResourceNotFoundException("Account with ID " + accountId + " not found");
             }
-            if (account.getStatus() != AccountStatus.PENDING_APPROVAL){
+            if (account.getStatus() != AccountStatus.PENDING_APPROVAL) {
                 throw new IllegalStateException("Account with ID " + accountId + " is not pending approval");
             }
             account.setStatus(AccountStatus.REJECTED);
             accountsFeignClient.update(accountId, account);
-        }catch (FeignException e){
+        } catch (FeignException e) {
             throw new IllegalArgumentException("Error rejecting account: " + e.getMessage(), e);
         } catch (Exception e) {
             log.error("An unexpected error occurred while rejecting the account: {}", e.getMessage(), e);
             throw e;
+        }
+    }
+
+    @Override
+    public Page<AccountDto> filterAdminAccounts(String adminId, String accountId, String typeString, BigDecimal minBalance, BigDecimal maxBalance, String statusString, String userId, String username, String email, String loanId, String transactionId, int page, int size) {
+        try {
+            return accountsFeignClient.filterAdminAccounts(adminId, accountId, userId, username, email, loanId, transactionId, typeString, statusString, minBalance, maxBalance, page, size).getBody();
+        } catch (FeignException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException("A feign error occurred while fetching transactions: " + e.getMessage(), e);
         }
     }
 

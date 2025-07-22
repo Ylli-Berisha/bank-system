@@ -1,5 +1,6 @@
 package com.ylli.accounts_service.services.impls;
 
+import com.ylli.accounts_service.configs.AdminAccountSpecifications;
 import com.ylli.accounts_service.repositories.AccountsRepository;
 import com.ylli.accounts_service.services.AccountsService;
 import com.ylli.shared.base.BaseServiceImpl;
@@ -18,6 +19,10 @@ import jakarta.persistence.EntityNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -178,4 +183,72 @@ public class AccountsServiceImpl extends BaseServiceImpl<Account, AccountDto, St
         return mapper.toDtoList(accounts);
     }
 
+    @Override
+    public Page<AccountDto> filterAdminAccounts(
+            String adminId,
+            String accountId,
+            String typeString,
+            BigDecimal minBalance,
+            BigDecimal maxBalance,
+            String statusString,
+            String userId,
+            String username,
+            String email,
+            String loanId,
+            String transactionId,
+            int page,
+            int size
+    ) {
+        validateAdmin(adminId);
+
+        AccountType parsedType = null;
+        if (typeString != null && !typeString.isEmpty()) {
+            try {
+                parsedType = AccountType.valueOf(typeString.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                System.err.println("Warning: Received invalid AccountType string: " + typeString);
+                throw e;
+            }
+        }
+
+        AccountStatus parsedStatus = null;
+        if (statusString != null && !statusString.isEmpty()) {
+            try {
+                parsedStatus = AccountStatus.valueOf(statusString.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                System.err.println("Warning: Received invalid AccountStatus string: " + statusString);
+                throw e;
+            }
+        }
+
+        BigDecimal actualMinBalance = (minBalance != null) ? minBalance : BigDecimal.ZERO;
+        BigDecimal actualMaxBalance = (maxBalance != null) ? maxBalance : new BigDecimal("999999999999999.99");
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+
+        Page<Account> accountsPage = repository.findAll(
+                AdminAccountSpecifications.withFilters(
+                        accountId,
+                        parsedType,
+                        actualMinBalance,
+                        actualMaxBalance,
+                        parsedStatus,
+                        userId,
+                        username,
+                        email,
+                        loanId,
+                        transactionId
+                ),
+                pageable
+        );
+
+        return accountsPage.map(mapper::toDto);
+    }
+
+    private void validateAdmin(String adminId) {
+        UserDto admin = usersFeignClient.getUser(adminId).getBody();
+        if (admin == null || !admin.getRoles().contains(UserRole.ROLE_ADMIN)) {
+            throw new IllegalArgumentException("Invalid admin ID: " + adminId);
+        }
+    }
 }

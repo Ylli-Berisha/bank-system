@@ -6,6 +6,10 @@ export const useAdminAccountsStore = defineStore('adminAccounts', () => {
     const accounts = ref([])
     const error = ref(null)
 
+    const currentPage = ref(0)
+    const totalPages = ref(0)
+    const totalElements = ref(0)
+
     const getAllAccounts = async () => {
         error.value = null
         accounts.value = []
@@ -29,6 +33,33 @@ export const useAdminAccountsStore = defineStore('adminAccounts', () => {
             } else {
                 error.value = 'Failed to fetch accounts due to a network error or unexpected issue.'
             }
+        }
+    }
+
+    async function fetchFilteredAccounts(filters, page = currentPage.value, size = 12) {
+        error.value = null
+
+        try {
+            const params = {
+                ...filters,
+                page,
+                size,
+            }
+
+            const response = await client.get('/admin-service/api/accounts/filter/admin-accounts', {
+                params,
+            })
+
+            accounts.value = response.data.content || []
+            totalPages.value = response.data.totalPages
+            totalElements.value = response.data.totalElements
+            currentPage.value = response.data.number
+        } catch (err) {
+            error.value = 'Failed to load accounts.'
+            accounts.value = []
+            totalPages.value = 0
+            totalElements.value = 0
+            console.error(err)
         }
     }
 
@@ -107,10 +138,14 @@ export const useAdminAccountsStore = defineStore('adminAccounts', () => {
     return {
         accounts,
         error,
+        currentPage,
+        totalPages,
+        totalElements,
         getAllAccounts,
         freezeAccount,
         unfreezeAccount,
         approveAccount,
         rejectAccount,
+        fetchFilteredAccounts,
     }
 })

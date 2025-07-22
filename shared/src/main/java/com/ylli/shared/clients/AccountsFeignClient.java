@@ -5,9 +5,11 @@ import com.ylli.shared.fallback.AccountsFallbackImpl;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @FeignClient(name = "accounts-service", url = "http://localhost:8080", path = "/api/accounts", fallbackFactory = AccountsFallbackImpl.class)
@@ -53,5 +55,22 @@ public interface AccountsFeignClient {
 
     @PutMapping("/{id}/freeze-from-admin")
     ResponseEntity<?> freezeAccountFromAdmin(@PathVariable String id);
+
+    @GetMapping("/filter/admin-accounts")
+    ResponseEntity<Page<AccountDto>> filterAdminAccounts(
+            @RequestHeader("X-User-ID") String adminId,
+            @RequestParam(required = false) String accountId,
+            @RequestParam(required = false) String userId,
+            @RequestParam(required = false) String username,
+            @RequestParam(required = false) String email,
+            @RequestParam(required = false) String loanId,
+            @RequestParam(required = false) String transactionId,
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) BigDecimal minBalance,
+            @RequestParam(required = false) BigDecimal maxBalance,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    );
 }
 

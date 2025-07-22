@@ -5,10 +5,134 @@
       <p>Oversee and manage all customer bank accounts</p>
     </header>
 
+    <section class="section filter-section">
+      <h2 class="section-title">Filter Accounts</h2>
+      <p class="section-description">Use the fields below to filter accounts across all users.</p>
+
+      <div class="filter-controls-grid">
+        <div class="filter-group">
+          <label for="accountId">Account ID:</label>
+          <input
+              type="text"
+              id="accountId"
+              v-model="filters.accountId"
+              class="filter-input"
+              placeholder="e.g., acc_1234"
+          />
+        </div>
+
+        <div class="filter-group">
+          <label for="userId">User ID:</label>
+          <input
+              type="text"
+              id="userId"
+              v-model="filters.userId"
+              class="filter-input"
+              placeholder="e.g., usr_5678"
+          />
+        </div>
+
+        <div class="filter-group">
+          <label for="username">Username:</label>
+          <input
+              type="text"
+              id="username"
+              v-model="filters.username"
+              class="filter-input"
+              placeholder="e.g., johndoe"
+          />
+        </div>
+
+        <div class="filter-group">
+          <label for="email">Email:</label>
+          <input
+              type="text"
+              id="email"
+              v-model="filters.email"
+              class="filter-input"
+              placeholder="e.g., user@example.com"
+          />
+        </div>
+
+        <div class="filter-group">
+          <label for="loanId">Loan ID:</label>
+          <input
+              type="text"
+              id="loanId"
+              v-model="filters.loanId"
+              class="filter-input"
+              placeholder="e.g., loan_2345"
+          />
+        </div>
+
+        <div class="filter-group">
+          <label for="transactionId">Transaction ID:</label>
+          <input
+              type="text"
+              id="transactionId"
+              v-model="filters.transactionId"
+              class="filter-input"
+              placeholder="e.g., tx_3456"
+          />
+        </div>
+
+        <div class="filter-group">
+          <label for="accountType">Account Type:</label>
+          <select id="accountType" v-model="filters.type" class="filter-input">
+            <option value="">All Types</option>
+            <option v-for="type in accountTypes" :key="type" :value="type">
+              {{ type.toLowerCase() }}
+            </option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="accountStatus">Account Status:</label>
+          <select id="accountStatus" v-model="filters.status" class="filter-input">
+            <option value="">All Statuses</option>
+            <option v-for="status in accountStatuses" :key="status" :value="status">
+              {{ status.toLowerCase().replace('_', ' ') }}
+            </option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="minBalance">Min Balance:</label>
+          <input
+              type="number"
+              id="minBalance"
+              v-model.number="filters.minBalance"
+              class="filter-input"
+              placeholder="e.g., 100.00"
+          />
+        </div>
+
+        <div class="filter-group">
+          <label for="maxBalance">Max Balance:</label>
+          <input
+              type="number"
+              id="maxBalance"
+              v-model.number="filters.maxBalance"
+              class="filter-input"
+              placeholder="e.g., 10000.00"
+          />
+        </div>
+
+        <div class="filter-buttons">
+          <button @click="clearFilters" class="clear-filters-btn">Clear Filters</button>
+        </div>
+      </div>
+    </section>
+
     <section class="section active-section">
       <h2 class="section-title">Active Accounts</h2>
       <div v-if="activeAccounts.length" class="card-grid">
-        <div v-for="account in activeAccounts" :key="account.id" class="card" :class="accountStatusClass(account.status)">
+        <div
+            v-for="account in activeAccounts"
+            :key="account.id"
+            class="card"
+            :class="accountStatusClass(account.status)"
+        >
           <h3>{{ account.type.replace('_', ' ') }} Account</h3>
           <p><strong>Customer ID:</strong> {{ account.userId }}</p>
           <p><strong>Balance:</strong> ${{ account.balance.toFixed(2) }}</p>
@@ -26,7 +150,12 @@
     <section class="section frozen-section">
       <h2 class="section-title">Frozen Accounts</h2>
       <div v-if="frozenAccounts.length" class="card-grid">
-        <div v-for="account in frozenAccounts" :key="account.id" class="card" :class="accountStatusClass(account.status)">
+        <div
+            v-for="account in frozenAccounts"
+            :key="account.id"
+            class="card"
+            :class="accountStatusClass(account.status)"
+        >
           <h3>{{ account.type.replace('_', ' ') }} Account</h3>
           <p><strong>Customer ID:</strong> {{ account.userId }}</p>
           <p><strong>Balance:</strong> ${{ account.balance.toFixed(2) }}</p>
@@ -44,7 +173,12 @@
     <section class="section pending-section">
       <h2 class="section-title">Pending Accounts</h2>
       <div v-if="pendingAccounts.length" class="card-grid">
-        <div v-for="account in pendingAccounts" :key="account.id" class="card" :class="accountStatusClass(account.status)">
+        <div
+            v-for="account in pendingAccounts"
+            :key="account.id"
+            class="card"
+            :class="accountStatusClass(account.status)"
+        >
           <h3>{{ account.type.replace('_', ' ') }} Account</h3>
           <p><strong>Customer ID:</strong> {{ account.userId }}</p>
           <p><strong>Balance:</strong> ${{ account.balance.toFixed(2) }}</p>
@@ -55,7 +189,6 @@
             <button @click="openApproveConfirmModal(account.id)" class="approve-btn">Approve</button>
             <button @click="openRejectConfirmModal(account.id)" class="reject-btn">Reject</button>
           </div>
-
         </div>
       </div>
       <p v-else class="empty-state-message">No pending accounts found.</p>
@@ -64,15 +197,19 @@
     <section class="section closed-section">
       <h2 class="section-title">Closed Accounts</h2>
       <div v-if="closedAccounts.length" class="card-grid">
-        <div v-for="account in closedAccounts" :key="account.id" class="card" :class="accountStatusClass(account.status)">
+        <div
+            v-for="account in closedAccounts"
+            :key="account.id"
+            class="card"
+            :class="accountStatusClass(account.status)"
+        >
           <h3>{{ account.type.replace('_', ' ') }} Account</h3>
           <p><strong>Customer ID:</strong> {{ account.userId }}</p>
           <p><strong>Balance:</strong> ${{ account.balance.toFixed(2) }}</p>
           <p><strong>Status:</strong> {{ account.status.toLowerCase().replace('_', ' ') }}</p>
           <p><strong>Created:</strong> {{ formatDate(account.createdAt) }}</p>
           <p><strong>Account ID:</strong> {{ account.id }}</p>
-          <div class="card-actions">
-          </div>
+          <div class="card-actions"></div>
         </div>
       </div>
       <p v-else class="empty-state-message">No closed accounts found.</p>
@@ -90,23 +227,34 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useAdminAccountsStore } from '@/stores/admin/adminAccountsStore.js'
-import ConfirmationModal from '@/components/ConfirmModal.vue';
+import ConfirmationModal from '@/components/ConfirmModal.vue'
 
 const adminAccountsStore = useAdminAccountsStore()
-const {
-  accounts,
-  error: accountsError,
-} = storeToRefs(adminAccountsStore)
+const { accounts, error: accountsError } = storeToRefs(adminAccountsStore)
 
+const filters = reactive({
+  accountId: '',
+  userId: '',
+  username: '',
+  email: '',
+  loanId: '',
+  transactionId: '',
+  type: '',
+  status: '',
+  minBalance: null,
+  maxBalance: null,
+})
+
+const accountTypes = ['SAVINGS', 'CHECKING', 'FIXED_DEPOSIT', 'JOINT', 'BUSINESS']
+const accountStatuses = ['ACTIVE', 'INACTIVE', 'SUSPENDED', 'CLOSED', 'FROZEN', 'PENDING_APPROVAL', 'REJECTED']
 const showConfirmationModal = ref(false)
 const confirmationModalTitle = ref('')
 const currentActionType = ref(null)
 const currentAccountId = ref(null)
 
-// Computed properties to filter accounts by status
 const activeAccounts = computed(() =>
     (accounts.value ?? []).filter(acc => acc.status === 'ACTIVE')
 )
@@ -123,11 +271,49 @@ const closedAccounts = computed(() =>
     (accounts.value ?? []).filter(acc => acc.status === 'CLOSED')
 )
 
-
 onMounted(async () => {
-  document.title = "Admin Accounts"
-  await adminAccountsStore.getAllAccounts()
+  document.title = 'Admin Accounts'
+  await fetchAccounts()
 })
+
+let filterDebounceTimer = null;
+
+const debouncedFetch = () => {
+  if (filterDebounceTimer) clearTimeout(filterDebounceTimer);
+  filterDebounceTimer = setTimeout(async () => {
+    await fetchAccounts();
+  }, 500);
+};
+
+watch(filters, debouncedFetch, { deep: true });
+
+async function fetchAccounts() {
+  try {
+    const cleanFilters = {};
+    for (const key in filters) {
+      const val = filters[key];
+      if (val !== null && val !== '' && val !== undefined) {
+        cleanFilters[key] = val;
+      }
+    }
+    console.log('Clean Filters:', cleanFilters);
+    await adminAccountsStore.fetchFilteredAccounts(cleanFilters);
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+function clearFilters() {
+  Object.keys(filters).forEach(key => {
+    if (typeof filters[key] === 'number') {
+      filters[key] = null;
+    } else {
+      filters[key] = '';
+    }
+  });
+
+  debouncedFetch();
+}
 
 function formatDate(isoString) {
   if (!isoString) return ''
@@ -135,7 +321,7 @@ function formatDate(isoString) {
   return date.toLocaleDateString(undefined, {
     year: 'numeric',
     month: 'short',
-    day: 'numeric'
+    day: 'numeric',
   })
 }
 
@@ -153,7 +339,6 @@ function openUnfreezeConfirmModal(accountId) {
   showConfirmationModal.value = true
 }
 
-// New method to open confirmation modal for approving an account
 function openApproveConfirmModal(accountId) {
   confirmationModalTitle.value = 'Are you sure you want to approve this account?'
   currentActionType.value = 'approve'
@@ -162,50 +347,49 @@ function openApproveConfirmModal(accountId) {
 }
 
 function openRejectConfirmModal(accountId) {
-  confirmationModalTitle.value = 'Are you sure you want to reject this account?';
-  currentActionType.value = 'reject';
-  currentAccountId.value = accountId;
-  showConfirmationModal.value = true;
+  confirmationModalTitle.value = 'Are you sure you want to reject this account?'
+  currentActionType.value = 'reject'
+  currentAccountId.value = accountId
+  showConfirmationModal.value = true
 }
 
 async function handleConfirmationModalConfirm() {
   try {
     if (currentActionType.value === 'freeze' && currentAccountId.value) {
-      await freeze(currentAccountId.value);
+      await freeze(currentAccountId.value)
     } else if (currentActionType.value === 'unfreeze' && currentAccountId.value) {
-      await unfreeze(currentAccountId.value);
+      await unfreeze(currentAccountId.value)
     } else if (currentActionType.value === 'approve' && currentAccountId.value) {
-      await approve(currentAccountId.value);
+      await approve(currentAccountId.value)
     } else if (currentActionType.value === 'reject' && currentAccountId.value) {
-      await reject(currentAccountId.value);
+      await reject(currentAccountId.value)
     }
   } catch (err) {
-    console.error("Error during modal action:", err);
-    accountsError.value = `Action failed: ${err.message || 'Unknown error'}`;
+    console.error('Error during modal action:', err)
+    accountsError.value = `Action failed: ${err.message || 'Unknown error'}`
   } finally {
-    resetConfirmationModalState();
-    await adminAccountsStore.getAllAccounts();
+    resetConfirmationModalState()
+    await fetchAccounts()
   }
 }
 
-
 function handleConfirmationModalCancel() {
-  resetConfirmationModalState();
+  resetConfirmationModalState()
 }
 
 function resetConfirmationModalState() {
-  showConfirmationModal.value = false;
-  confirmationModalTitle.value = '';
-  currentActionType.value = null;
-  currentAccountId.value = null;
+  showConfirmationModal.value = false
+  confirmationModalTitle.value = ''
+  currentActionType.value = null
+  currentAccountId.value = null
 }
 
 async function freeze(accountId) {
   try {
     await adminAccountsStore.freezeAccount(accountId)
   } catch (err) {
-    console.error("Error freezing account:", err)
-    throw err;
+    console.error('Error freezing account:', err)
+    throw err
   }
 }
 
@@ -213,18 +397,17 @@ async function unfreeze(accountId) {
   try {
     await adminAccountsStore.unfreezeAccount(accountId)
   } catch (err) {
-    console.error("Error unfreezing account:", err)
-    throw err;
+    console.error('Error unfreezing account:', err)
+    throw err
   }
 }
 
-// New method to call the approveAccount action in the store
 async function approve(accountId) {
   try {
     await adminAccountsStore.approveAccount(accountId)
   } catch (err) {
-    console.error("Error approving account:", err)
-    throw err;
+    console.error('Error approving account:', err)
+    throw err
   }
 }
 
@@ -232,24 +415,23 @@ async function reject(accountId) {
   try {
     await adminAccountsStore.rejectAccount(accountId)
   } catch (err) {
-    console.error("Error rejecting account:", err)
-    throw err;
+    console.error('Error rejecting account:', err)
+    throw err
   }
 }
-
 
 function accountStatusClass(status) {
   switch (status) {
     case 'ACTIVE':
-      return 'active-account';
+      return 'active-account'
     case 'FROZEN':
-      return 'frozen-account';
+      return 'frozen-account'
     case 'PENDING_APPROVAL':
-      return 'pending-account';
+      return 'pending-account'
     case 'CLOSED':
-      return 'closed-account';
+      return 'closed-account'
     default:
-      return '';
+      return ''
   }
 }
 </script>
@@ -477,6 +659,76 @@ function accountStatusClass(status) {
   background-color: #c0392b;
   transform: translateY(-2px);
   box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+}
+
+
+/* Filter section */
+.filter-controls-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.filter-group label {
+  font-size: 0.9rem;
+  color: #546e7a;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.filter-input {
+  padding: 0.8rem 1rem;
+  border: 1px solid #cfd8dc;
+  border-radius: 8px;
+  font-size: 1rem;
+  color: #455a64;
+  background-color: #ffffff;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.filter-input:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+}
+
+.filter-input::placeholder {
+  color: #90a4ae;
+}
+
+.filter-buttons {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.clear-filters-btn {
+  background-color: #95a5a6;
+  color: #ffffff;
+  padding: 0.8rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(149, 165, 166, 0.2);
+}
+
+.clear-filters-btn:hover {
+  background-color: #7f8c8d;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 15px rgba(149, 165, 166, 0.3);
 }
 
 </style>

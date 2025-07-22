@@ -11,10 +11,12 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.media.Content;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -199,6 +201,57 @@ public class AccountsController extends BaseController<AccountDto, String, Accou
 
         List<AccountDto> topAccounts = Optional.ofNullable(service.getTopAccounts(userId)).orElse(Collections.emptyList());
         return ResponseEntity.ok(topAccounts);
+    }
+
+    @Operation(summary = "Filter admin accounts", description = "Filter accounts for admin panel based on optional criteria")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Accounts filtered successfully"),
+            @ApiResponse(responseCode = "204", description = "No matching accounts found", content = @Content)
+    })
+    @GetMapping("/filter/admin-accounts")
+    public ResponseEntity<Page<AccountDto>> filterAdminAccounts(
+            @RequestHeader("X-User-ID") String adminId,
+            @RequestParam(required = false) String accountId,
+            @RequestParam(required = false) String userId,
+            @RequestParam(required = false) String username,
+            @RequestParam(required = false) String email,
+            @RequestParam(required = false) String loanId,
+            @RequestParam(required = false) String transactionId,
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) BigDecimal minBalance,
+            @RequestParam(required = false) BigDecimal maxBalance,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        if (adminId == null || adminId.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+        if (page < 0 || size <= 0) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        Page<AccountDto> accounts = service.filterAdminAccounts(
+                adminId,
+                accountId,
+                type,
+                minBalance,
+                maxBalance,
+                status,
+                userId,
+                username,
+                email,
+                loanId,
+                transactionId,
+                page,
+                size
+        );
+
+        if (accounts == null || accounts.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+
+        return ResponseEntity.ok(accounts);
     }
 
 
