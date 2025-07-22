@@ -221,4 +221,58 @@ public class LoansController extends BaseController<LoanDto, Long, LoansService>
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
+
+    @Operation(summary = "Accept proposed loan changes", description = "User accepts the proposed changes on their loan")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Loan changes accepted successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid input or loan cannot accept changes"),
+            @ApiResponse(responseCode = "404", description = "Loan not found")
+    })
+    @PutMapping("/{loanId}/accept-changes")
+    public ResponseEntity<LoanDto> acceptProposedChanges(
+            @RequestHeader("X-User-ID") String userId,
+            @PathVariable Long loanId
+    ) {
+        try {
+            if (userId == null || userId.isEmpty() || loanId == null || loanId <= 0 || userId.isBlank()) {
+                return ResponseEntity.badRequest().build();
+            }
+            LoanDto acceptedLoan = service.acceptProposedChanges(loanId, userId);
+            return ResponseEntity.ok(acceptedLoan);
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        } catch (IllegalStateException | IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(null);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @Operation(summary = "Reject proposed loan changes", description = "User rejects the proposed changes on their loan")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Loan changes rejected successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid input or loan cannot reject changes"),
+            @ApiResponse(responseCode = "404", description = "Loan not found")
+    })
+    @PutMapping("/{loanId}/reject-changes")
+    public ResponseEntity<LoanDto> rejectProposedChanges(
+            @RequestHeader("X-User-ID") String userId,
+            @PathVariable Long loanId
+    ) {
+        if (userId == null || userId.isEmpty() || loanId == null || loanId <= 0 || userId.isBlank()) {
+            return ResponseEntity.badRequest().build();
+        }
+        try {
+            LoanDto rejectedLoan = service.rejectProposedChanges(loanId, userId);
+            return ResponseEntity.ok(rejectedLoan);
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        } catch (IllegalStateException | IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(null);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
 }

@@ -37,4 +37,8 @@ public interface LoansService extends BaseService<LoanDto, Long> {
     LoanDto acceptLoan(Long loanId, String adminId);
 
     LoanDto rejectLoan(Long loanId, String adminId);
+
+    LoanDto acceptProposedChanges(Long loanId, String userId);
+
+    LoanDto rejectProposedChanges(Long loanId, String userId);
 }

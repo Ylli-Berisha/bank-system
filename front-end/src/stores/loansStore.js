@@ -7,6 +7,7 @@ export const useLoansStore = defineStore('loans', () => {
     const error = ref(null)
     const loanTypes = ref([])
     const createError = ref(null)
+    const adminLoansPage = ref(null)
 
     const fetchAllLoans = async (status = null) => {
         error.value = null
@@ -47,7 +48,6 @@ export const useLoansStore = defineStore('loans', () => {
                     params.append(key, value)
                 }
             }
-
 
             const url = `/transactions-service/api/loans/filter/user-loans?${params.toString()}`
             const response = await client.get(url)
@@ -103,14 +103,94 @@ export const useLoansStore = defineStore('loans', () => {
         }
     }
 
+
+    const acceptLoan = async (loanId) => {
+        try {
+            const response = await client.put(`/transactions-service/api/loans/${loanId}/accept`);
+            return response.data;
+        } catch (err) {
+            console.error('Failed to accept loan:', err);
+            throw err;
+        }
+    }
+
+    const rejectLoan = async (loanId) => {
+        try {
+            const response = await client.put(`/transactions-service/api/loans/${loanId}/reject`);
+            return response.data;
+        } catch (err) {
+            console.error('Failed to reject loan:', err);
+            throw err;
+        }
+    }
+
+    const acceptProposedChanges = async (loanId) => {
+        try {
+            const response = await client.put(`/transactions-service/api/loans/${loanId}/accept-changes`);
+            return response.data;
+        } catch (err) {
+            console.error('Failed to accept proposed changes:', err);
+            throw err;
+        }
+    }
+
+    const rejectProposedChanges = async (loanId) => {
+        try {
+            const response = await client.put(`/transactions-service/api/loans/${loanId}/reject-changes`);
+            return response.data;
+        } catch (err) {
+            console.error('Failed to reject proposed changes:', err);
+            throw err;
+        }
+    }
+
+    const filterAdminLoans = async (filters = {}, page = 0, size = 10) => {
+        error.value = null
+        try {
+            const params = new URLSearchParams()
+            for (const key in filters) {
+                const value = filters[key]
+                if (value !== undefined && value !== null && value !== '') {
+                    params.append(key, value)
+                }
+            }
+            params.append('page', page.toString())
+            params.append('size', size.toString())
+
+            const url = `/transactions-service/api/loans/filter/admin-loans?${params.toString()}`
+
+            const response = await client.get(url)
+
+            if (response.status === 204) {
+                adminLoansPage.value = null
+            } else {
+                adminLoansPage.value = response.data
+            }
+        } catch (err) {
+            console.error('Failed to fetch admin filtered loans:', err)
+            if (err.response && (err.response.status === 404 || err.response.status === 204)) {
+                adminLoansPage.value = null
+                error.value = 'No loans found matching your criteria.'
+            } else {
+                error.value = 'Failed to fetch admin filtered loans. Please try again.'
+            }
+        }
+    }
+
     return {
         loans,
         error,
         loanTypes,
         createError,
+        adminLoansPage,
         fetchAllLoans,
         fetchFilteredLoans,
         fetchLoanTypes,
-        applyForNewLoan
+        applyForNewLoan,
+        acceptLoan,
+        rejectLoan,
+        acceptProposedChanges,
+        rejectProposedChanges,
+        filterAdminLoans
     }
 })

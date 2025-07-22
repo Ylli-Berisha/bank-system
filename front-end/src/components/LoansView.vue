@@ -84,6 +84,24 @@
           <p v-if="loan.monthlyInstallment !== undefined"><strong>Monthly Installment:</strong>
             ${{ loan.monthlyInstallment.toFixed(2) }}</p>
           <p><strong>Loan ID:</strong> {{ loan.id }}</p>
+
+          <!-- Accept/Reject buttons for CHANGES_PROPOSED -->
+          <div v-if="loan.status === 'CHANGES_PROPOSED'" class="changes-proposed-actions">
+            <button
+                class="accept-btn"
+                :disabled="actionLoading[loan.id]"
+                @click="openConfirmModal('accept', loan.id)"
+            >
+              Accept Changes
+            </button>
+            <button
+                class="reject-btn"
+                :disabled="actionLoading[loan.id]"
+                @click="openConfirmModal('reject', loan.id)"
+            >
+              Reject Changes
+            </button>
+          </div>
         </div>
       </div>
     </section>
@@ -114,6 +132,8 @@
       <Transition name="fade-slide">
         <form v-if="showForm" @submit.prevent="openNewLoanConfirmModal" class="create-form-card">
           <h3>New Loan Details</h3>
+
+          <!-- form inputs as before -->
 
           <div class="form-group">
             <label for="loanType">Loan Type:</label>
@@ -240,8 +260,9 @@ const newLoan = ref({
 const showConfirmationModal = ref(false)
 const confirmationModalTitle = ref('')
 const currentActionType = ref(null)
+const currentLoanId = ref(null)
 
-const loanStatuses = ['ACTIVE', 'PENDING', 'PAID_OFF', 'REJECTED', 'DEFAULTED'];
+const loanStatuses = ['ACTIVE', 'PENDING', 'PAID_OFF', 'REJECTED', 'DEFAULTED', 'CHANGES_PROPOSED'];
 
 const filters = reactive({
   startDate: '',
@@ -258,6 +279,8 @@ let searchDebounceTimer = null;
 const activeAccountsForSelection = computed(() =>
     accounts.value.filter(acc => acc.status === 'ACTIVE')
 );
+
+const actionLoading = reactive({});
 
 onMounted(async () => {
   document.title = "Loans"
@@ -366,16 +389,35 @@ function openNewLoanConfirmModal() {
   showConfirmationModal.value = true
 }
 
+function openConfirmModal(actionType, loanId) {
+  currentActionType.value = actionType
+  currentLoanId.value = loanId
+
+  let actionText = actionType === 'accept' ? 'accept the proposed changes' : 'reject the proposed changes'
+
+  confirmationModalTitle.value = `Are you sure you want to ${actionText} for loan ID ${loanId}?`
+  showConfirmationModal.value = true
+}
+
 async function handleConfirmationModalConfirm() {
   try {
     if (currentActionType.value === 'applyLoan') {
       await submitLoanApplication();
+    } else if (currentActionType.value === 'accept' && currentLoanId.value) {
+      actionLoading[currentLoanId.value] = true
+      await loansStore.acceptProposedChanges(currentLoanId.value)
+      await applyFilters()
+      actionLoading[currentLoanId.value] = false
+    } else if (currentActionType.value === 'reject' && currentLoanId.value) {
+      actionLoading[currentLoanId.value] = true
+      await loansStore.rejectProposedChanges(currentLoanId.value)
+      await applyFilters()
+      actionLoading[currentLoanId.value] = false
     }
   } catch (err) {
     console.error("Error during modal action:", err);
   } finally {
     resetConfirmationModalState();
-    await applyFilters();
   }
 }
 
@@ -387,6 +429,7 @@ function resetConfirmationModalState() {
   showConfirmationModal.value = false;
   confirmationModalTitle.value = '';
   currentActionType.value = null;
+  currentLoanId.value = null;
 }
 
 async function submitLoanApplication() {
@@ -864,4 +907,53 @@ function loanStatusClass(status) {
 .active-loan { /* This rule is now handled by .card.active-loan above */
   border-left-color: #3498db;
 }
+
+.changes-proposed-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.accept-btn,
+.reject-btn {
+  padding: 8px 18px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  min-width: 110px;
+  user-select: none;
+}
+
+.accept-btn {
+  background-color: #4caf50; /* Green */
+  color: white;
+  box-shadow: 0 3px 6px rgba(76, 175, 80, 0.4);
+}
+
+.accept-btn:hover:not(:disabled) {
+  background-color: #43a047;
+}
+
+.reject-btn {
+  background-color: #f44336; /* Red */
+  color: white;
+  box-shadow: 0 3px 6px rgba(244, 67, 54, 0.4);
+}
+
+.reject-btn:hover:not(:disabled) {
+  background-color: #e53935;
+}
+
+/* Disabled state for buttons */
+.accept-btn:disabled,
+.reject-btn:disabled {
+  background-color: #bbb;
+  color: #666;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
 </style>

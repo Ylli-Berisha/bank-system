@@ -234,14 +234,7 @@ public class LoansServiceImpl extends BaseServiceImpl<Loan, LoanDto, Long, Loans
             throw new IllegalStateException("Only pending loans can be accepted.");
         }
 
-        loan.setStatus(LoanStatus.APPROVED);
-        loan.setStartDate(LocalDate.now());
-        loan.setEndDate(loan.getStartDate().plusMonths(loan.getTermInMonths()));
-        loan.setNextInstallmentDate(LocalDate.now().plusMonths(1));
-        loan.setLeftAmount(loan.getAmount());
-
-        repository.save(loan);
-        return mapper.toDto(loan);
+        return startLoan(loan);
     }
 
     @Transactional
@@ -258,6 +251,44 @@ public class LoansServiceImpl extends BaseServiceImpl<Loan, LoanDto, Long, Loans
         repository.save(loan);
         return mapper.toDto(loan);
     }
+
+    @Override
+    @Transactional
+    public LoanDto acceptProposedChanges(Long loanId, String userId) {
+        Loan loan = repository.findById(loanId)
+                .orElseThrow(() -> new ResourceNotFoundException("Loan not found with ID " + loanId));
+
+        if (!userId.equals(loan.getAccount().getUser().getId())) {
+            throw new IllegalArgumentException("User with ID " + userId + " does not own the loan with ID " + loanId);
+        }
+
+        if (loan.getStatus() != LoanStatus.CHANGES_PROPOSED) {
+            throw new IllegalStateException("Only loans with proposed changes can be accepted.");
+        }
+
+
+        return startLoan(loan);
+    }
+
+    @Override
+    @Transactional
+    public LoanDto rejectProposedChanges(Long loanId, String userId) {
+        Loan loan = repository.findById(loanId)
+                .orElseThrow(() -> new ResourceNotFoundException("Loan not found with ID " + loanId));
+
+        if (!userId.equals(loan.getAccount().getUser().getId())) {
+            throw new IllegalArgumentException("User with ID " + userId + " does not own the loan with ID " + loanId);
+        }
+
+        if (loan.getStatus() != LoanStatus.CHANGES_PROPOSED) {
+            throw new IllegalStateException("Only loans with proposed changes can be rejected.");
+        }
+
+        loan.setStatus(LoanStatus.REJECTED);
+        repository.save(loan);
+        return mapper.toDto(loan);
+    }
+
 
     private void validateAdmin(String adminId) {
         if (adminId == null || adminId.isBlank()) {
@@ -286,4 +317,16 @@ public class LoansServiceImpl extends BaseServiceImpl<Loan, LoanDto, Long, Loans
         log.info("Scheduled loan installment processing finished");
     }
 
+
+    private LoanDto startLoan(Loan loan) {
+        LocalDate now = LocalDate.now();
+        loan.setStatus(LoanStatus.APPROVED);
+        loan.setStartDate(now);
+        loan.setEndDate(loan.getStartDate().plusMonths(loan.getTermInMonths()));
+        loan.setNextInstallmentDate(now.plusMonths(1));
+        loan.setLeftAmount(loan.getAmount());
+
+        repository.save(loan);
+        return mapper.toDto(loan);
+    }
 }
