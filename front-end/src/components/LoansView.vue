@@ -68,7 +68,7 @@
 
       <div v-else class="card-grid">
         <div v-for="loan in loans" :key="loan.id" :class="['card', loanStatusClass(loan.status)]">
-          <h3>{{ formatLoanType(loan.loanType) }} Loan</h3>
+          <h3>{{ formatLoanType(loan.loanType) }}</h3>
           <p><strong>Amount left:</strong> ${{ loan.amount.toFixed(2) }}</p>
           <p><strong>Amount taken: </strong>{{loan.amount}}</p>
 
@@ -420,6 +420,8 @@ function loanStatusClass(status) {
       return 'rejected-loan';
     case 'DEFAULTED':
       return 'defaulted-loan';
+    case 'CHANGES_PROPOSED':
+      return 'changes-proposed-loan';
     default:
       return '';
   }
@@ -851,6 +853,13 @@ function loanStatusClass(status) {
   border-left-color: #2ecc71;
   box-shadow: 0 5px 15px rgba(46, 204, 113, 0.1);
 }
+
+.card.changes-proposed-loan {
+  border-left-color: #ff9800; /* Orange */
+  background-color: #fff4e5;  /* Light orange/yellowish background */
+  box-shadow: 0 4px 15px rgba(255, 152, 0, 0.15);
+}
+
 
 .active-loan { /* This rule is now handled by .card.active-loan above */
   border-left-color: #3498db;

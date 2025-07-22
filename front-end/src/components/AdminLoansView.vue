@@ -84,7 +84,10 @@
         <div
             v-for="loan in pendingLoans"
             :key="loan.id"
-            class="card type-pending"
+            :class="['card', {
+            'type-pending': loan.status.toLowerCase() === 'pending',
+            'type-changes-proposed': loan.status.toLowerCase() === 'changes_proposed'
+          }]"
         >
           <div class="card-header">
             <span class="loan-type">{{ formatLabel(loan.loanType) }}</span>
@@ -93,20 +96,24 @@
 
           <div class="card-body">
             <p><strong>Account:</strong> {{ loan.accountId }}</p>
-            <p><strong>Amount taken: </strong>{{loan.amount}}</p>
+            <p><strong>Amount taken: </strong>{{ loan.amount }}</p>
             <p><strong>Interest Rate:</strong> {{ loan.interestRate }}%</p>
             <p><strong>Duration:</strong> {{ loan.termInMonths }} months</p>
             <p><strong>Monthly Installment:</strong> ${{ loan.monthlyInstallment?.toFixed(2) }}</p>
-            <p><strong>Next installment: </strong> {{loan.nextInstallmentDate}} </p>
+            <p><strong>Next installment: </strong> {{ loan.nextInstallmentDate }} </p>
             <p><strong>Status:</strong>
-              <span class="status-tag status-pending">{{ formatLabel(loan.status) }}</span>
+              <span class="status-tag" :class="{
+                'status-pending': loan.status.toLowerCase() === 'pending',
+                'status-changes-proposed': loan.status.toLowerCase() === 'changes_proposed'
+              }">{{ formatLabel(loan.status) }}</span>
             </p>
 
-            <div class="action-buttons">
+            <div class="action-buttons" v-if="loan.status.toLowerCase() !== 'changes_proposed'">
               <button class="btn-accept" @click="openAcceptModal(loan.id)">Accept</button>
               <button class="btn-reject" @click="openRejectModal(loan.id)">Reject</button>
-              <button class="btn-propose">Propose Changes</button>
+              <button class="btn-propose" @click="openProposeModal(loan.id)">Propose Changes</button>
             </div>
+
           </div>
         </div>
       </div>
@@ -123,7 +130,7 @@
         <div
             v-for="loan in filteredLoans"
             :key="loan.id"
-            class="card"
+            :class="['card', 'type-' + loan.status.toLowerCase()]"
         >
           <div class="card-header">
             <span class="loan-type">{{ formatLabel(loan.type) }}</span>
@@ -132,11 +139,11 @@
 
           <div class="card-body">
             <p><strong>Account:</strong> {{ loan.accountId }}</p>
-            <p><strong>Amount taken: </strong>{{loan.amount}}</p>
+            <p><strong>Amount taken: </strong>{{ loan.amount }}</p>
             <p><strong>Interest Rate:</strong> {{ loan.interestRate }}%</p>
             <p><strong>Duration:</strong> {{ loan.termInMonths }} months</p>
             <p><strong>Monthly Installment:</strong> ${{ loan.monthlyInstallment?.toFixed(2) }}</p>
-            <p><strong>Next installment: </strong> {{formatDate(loan.nextInstallmentDate) || 'N/A'}} </p>
+            <p><strong>Next installment: </strong> {{ formatDate(loan.nextInstallmentDate) || 'N/A' }} </p>
             <p><strong>Status:</strong>
               <span class="status-tag" :class="'status-' + loan.status.toLowerCase()">
                 {{ formatLabel(loan.status) }}
@@ -162,11 +169,58 @@
         :confirm="confirmReject"
         :cancel="closeModal"
     />
+
+    <div v-if="isProposeModalOpen" class="modal-overlay" @click.self="closeProposeModal">
+      <div class="modal-content">
+        <h3>Propose Loan Changes</h3>
+
+        <div>
+          <label>Proposed Amount</label>
+          <input
+              type="number"
+              v-model.number="proposeForm.proposedAmount"
+              min="0"
+              step="0.01"
+              placeholder="e.g. 12000.00"
+          />
+        </div>
+
+        <div>
+          <label>Proposed Interest Rate (%)</label>
+          <input
+              type="number"
+              v-model.number="proposeForm.proposedInterestRate"
+              min="0"
+              max="100"
+              step="0.01"
+              placeholder="e.g. 4.5"
+          />
+        </div>
+
+        <div>
+          <label>Proposed Term (Months)</label>
+          <input
+              type="number"
+              v-model.number="proposeForm.proposedTermInMonths"
+              min="1"
+              step="1"
+              placeholder="e.g. 48"
+          />
+        </div>
+
+        <p v-if="proposeError" style="color: red; margin-top: 0.5rem;">{{ proposeError }}</p>
+
+        <div class="modal-buttons">
+          <button class="confirm-btn" @click="submitProposeChanges">Submit</button>
+          <button class="cancel-btn" @click="closeProposeModal">Cancel</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { reactive, watch, onMounted, computed, ref } from 'vue'
+import { reactive, ref, computed, watch, onMounted } from 'vue'
 import { useAdminLoansStore } from '@/stores/admin/adminLoansStore.js'
 import ConfirmModal from '@/components/ConfirmModal.vue'
 
@@ -183,16 +237,16 @@ const filters = reactive({
 })
 
 const loanTypes = ['personal_loan', 'auto_loan', 'mortgage', 'student_loan']
-const loanStatuses = ['pending', 'approved', 'rejected', 'active', 'repaid', 'overdue', 'defaulted', 'cancelled']
+const loanStatuses = ['pending', 'approved', 'rejected', 'active', 'repaid', 'overdue', 'defaulted', 'cancelled', 'changes_proposed']
 
 const adminLoansStore = useAdminLoansStore()
 
 const pendingLoans = computed(() =>
-    adminLoansStore.loans.filter(loan => loan.status.toLowerCase() === 'pending')
+    adminLoansStore.loans.filter(loan => loan.status.toLowerCase() === 'pending' || loan.status.toLowerCase() === 'changes_proposed')
 )
 
 const filteredLoans = computed(() =>
-    adminLoansStore.paginatedLoans.filter(loan => loan.status.toLowerCase() !== 'pending')
+    adminLoansStore.paginatedLoans.filter(loan => loan.status.toLowerCase() !== 'pending' && loan.status.toLowerCase() !== 'changes_proposed')
 )
 
 function clearFilters() {
@@ -245,7 +299,18 @@ function prevPage() {
 
 const isAcceptModalOpen = ref(false)
 const isRejectModalOpen = ref(false)
+const isProposeModalOpen = ref(false)
+
 const selectedLoanId = ref(null)
+const proposedLoanId = ref(null)
+
+const proposeForm = reactive({
+  proposedAmount: null,
+  proposedInterestRate: null,
+  proposedTermInMonths: null,
+})
+
+const proposeError = ref(null)
 
 function openAcceptModal(loanId) {
   selectedLoanId.value = loanId
@@ -257,10 +322,25 @@ function openRejectModal(loanId) {
   isRejectModalOpen.value = true
 }
 
+function openProposeModal(loanId) {
+  proposedLoanId.value = loanId
+  proposeError.value = null
+  proposeForm.proposedAmount = null
+  proposeForm.proposedInterestRate = null
+  proposeForm.proposedTermInMonths = null
+  isProposeModalOpen.value = true
+}
+
 function closeModal() {
   isAcceptModalOpen.value = false
   isRejectModalOpen.value = false
   selectedLoanId.value = null
+}
+
+function closeProposeModal() {
+  isProposeModalOpen.value = false
+  proposedLoanId.value = null
+  proposeError.value = null
 }
 
 async function confirmAccept() {
@@ -285,6 +365,33 @@ async function confirmReject() {
   }
 }
 
+async function submitProposeChanges() {
+  if (
+      proposeForm.proposedAmount == null ||
+      proposeForm.proposedInterestRate == null ||
+      proposeForm.proposedTermInMonths == null
+  ) {
+    proposeError.value = 'Please fill in all fields.'
+    return
+  }
+
+  proposeError.value = null
+
+  try {
+    await adminLoansStore.proposeChanges(
+        proposedLoanId.value,
+        proposeForm.proposedAmount,
+        proposeForm.proposedInterestRate,
+        proposeForm.proposedTermInMonths
+    )
+    alert('Changes proposed successfully.')
+    closeProposeModal()
+    fetchLoans()
+  } catch (err) {
+    proposeError.value = adminLoansStore.error || 'Failed to propose changes.'
+  }
+}
+
 function formatDate(isoString) {
   if (!isoString) return ''
   const date = new Date(isoString)
@@ -295,6 +402,8 @@ function formatDate(isoString) {
   })
 }
 </script>
+
+
 
 <style scoped>
 .page-container {
@@ -713,6 +822,144 @@ function formatDate(isoString) {
 .btn-propose:hover {
   background-color: #455a64;
 }
+
+/* Modal Overlay */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+/* Modal Content */
+.modal-content {
+  background: white;
+  padding: 2rem 2.5rem;
+  border-radius: 12px;
+  max-width: 420px;
+  width: 90%;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  text-align: center;
+}
+
+.modal-content h3 {
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+  color: #263238;
+  font-weight: 600;
+}
+
+/* Input fields inside modal */
+.modal-content label {
+  display: block;
+  font-weight: 600;
+  margin-top: 1rem;
+  margin-bottom: 0.4rem;
+  color: #546e7a;
+  text-align: left;
+}
+
+.modal-content input[type="number"] {
+  width: 100%;
+  padding: 0.6rem 1rem;
+  font-size: 1rem;
+  border: 1px solid #cfd8dc;
+  border-radius: 8px;
+  color: #455a64;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.modal-content input[type="number"]:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.25);
+}
+
+/* Error message */
+.modal-content p {
+  margin-top: 0.5rem;
+  color: #c62828;
+  font-weight: 600;
+}
+
+/* Modal buttons container */
+.modal-buttons {
+  margin-top: 2rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+/* Confirm button */
+.confirm-btn {
+  flex: 1;
+  background-color: #fbc02d;
+  color: #4a4a4a;
+  border: none;
+  padding: 0.7rem 0;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  user-select: none;
+}
+
+.confirm-btn:hover {
+  background-color: #d4af1f;
+}
+
+/* Cancel button */
+.cancel-btn {
+  flex: 1;
+  background-color: #78909c;
+  color: white;
+  border: none;
+  padding: 0.7rem 0;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  user-select: none;
+}
+
+.cancel-btn:hover {
+  background-color: #546e7a;
+}
+
+/* New loan status for admin side: Changes Proposed */
+.type-changes-proposed {
+  border-left-color: #fbc02d; /* Same yellow used for pending, fits warning/info */
+}
+
+.status-changes-proposed {
+  background-color: #fffde7; /* Very light yellow */
+  color: #fbc02d;            /* Matching text color */
+}
+
+/* Button styling for propose/change action */
+.btn-changes-proposed {
+  background-color: #fbc02d;
+  color: #4a4a4a;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.btn-changes-proposed:hover {
+  background-color: #d4af1f;
+}
+
+
 
 </style>
 

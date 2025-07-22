@@ -91,6 +91,30 @@ export const useAdminLoansStore = defineStore('adminLoansStore', () => {
         }
     }
 
+    async function proposeChanges(loanId, proposedAmount, proposedInterestRate, proposedTermInMonths) {
+        error.value = null
+
+        try {
+            const payload = {
+                proposedAmount,
+                proposedInterestRate,
+                proposedTermInMonths,
+            }
+
+            const response = await client.put(`/admin-service/api/loans/${loanId}/propose-changes`, payload)
+            return response.data
+        } catch (err) {
+            if (err.response && err.response.data && err.response.data.message) {
+                error.value = `Failed to propose changes: ${err.response.data.message}`
+            } else if (err.response && err.response.status) {
+                error.value = `Failed to propose changes. Server responded with status ${err.response.status}: ${err.response.statusText}`
+            } else {
+                error.value = 'Failed to propose changes due to a network error or unexpected issue.'
+            }
+            throw err
+        }
+    }
+
     return {
         loans,
         totalPages,
@@ -104,5 +128,6 @@ export const useAdminLoansStore = defineStore('adminLoansStore', () => {
         paginatedLoans,
         acceptLoan,
         rejectLoan,
+        proposeChanges,
     }
 })

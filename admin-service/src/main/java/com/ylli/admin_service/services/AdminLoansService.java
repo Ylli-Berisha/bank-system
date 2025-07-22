@@ -1,5 +1,6 @@
 package com.ylli.admin_service.services;
 
+import com.ylli.shared.dtos.LoanChangeProposalRequestDto;
 import com.ylli.shared.dtos.LoanDto;
 import org.springframework.data.domain.Page;
 
@@ -25,5 +26,7 @@ public interface AdminLoansService {
     LoanDto acceptLoan(Long loanId, String adminId);
 
     LoanDto rejectLoan(Long loanId, String adminId);
+
+    LoanDto proposeChangesForLoan(String adminId, Long loanId, LoanChangeProposalRequestDto proposalDto);
 
 }

@@ -2,9 +2,17 @@ package com.ylli.admin_service.services.impls;
 
 import com.ylli.admin_service.services.AdminLoansService;
 import com.ylli.shared.clients.TransactionsFeignClient;
+import com.ylli.shared.clients.UsersFeignClient;
+import com.ylli.shared.dtos.LoanChangeProposalRequestDto;
 import com.ylli.shared.dtos.LoanDto;
+import com.ylli.shared.enums.LoanStatus;
+import com.ylli.shared.enums.UserRole;
+import com.ylli.shared.exceptions.ResourceNotFoundException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 
 import java.math.BigDecimal;
@@ -12,10 +20,13 @@ import java.math.BigDecimal;
 @Service
 public class AdminLoansServiceImpl implements AdminLoansService {
 
+    private final static Logger log = LoggerFactory.getLogger(AdminLoansServiceImpl.class);
     private final TransactionsFeignClient transactionsFeignClient;
+    private final UsersFeignClient usersFeignClient;
 
-    public AdminLoansServiceImpl(TransactionsFeignClient transactionsFeignClient) {
+    public AdminLoansServiceImpl(TransactionsFeignClient transactionsFeignClient, UsersFeignClient usersFeignClient) {
         this.transactionsFeignClient = transactionsFeignClient;
+        this.usersFeignClient = usersFeignClient;
     }
 
     @Override
@@ -46,4 +57,46 @@ public class AdminLoansServiceImpl implements AdminLoansService {
             throw new RuntimeException("An error occurred while rejecting loan: " + e.getMessage(), e);
         }
     }
+
+    @Override
+    @Transactional
+    public LoanDto proposeChangesForLoan(String adminId, Long loanId, LoanChangeProposalRequestDto proposalDto) {
+        validateAdmin(adminId);
+        try {
+            LoanDto loan = transactionsFeignClient.getLoan(loanId).getBody();
+            if (loan == null) {
+                throw new ResourceNotFoundException("Loan with ID " + loanId + " not found.");
+            }
+
+            if (loan.getStatus() != LoanStatus.PENDING) {
+                throw new IllegalStateException("Changes can only be proposed for loans in PENDING status.");
+            }
+
+            loan.setAmount(proposalDto.getProposedAmount());
+            loan.setTermInMonths(proposalDto.getProposedTermInMonths());
+            loan.setInterestRate(proposalDto.getProposedInterestRate());
+
+            loan.setStatus(LoanStatus.CHANGES_PROPOSED);
+
+            transactionsFeignClient.updateLoan(loan.getId(), loan);
+            return loan;
+        } catch (ResourceNotFoundException | IllegalStateException e) {
+            log.warn("Failed to propose changes for loan ID {}. Error: {}", loanId, e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            log.error("Unexpected error while proposing changes for loan ID {}. Error: {}", loanId, e.getMessage(), e);
+            throw new RuntimeException("Unexpected error while proposing loan changes.", e);
+        }
+    }
+
+    public void validateAdmin(String userId) {
+        var user = usersFeignClient.getUser(userId).getBody();
+        if (user.getRoles() == null || user.getRoles().isEmpty()) {
+            throw new IllegalArgumentException("User with ID " + userId + " does not have any roles");
+        }
+        if (!user.getRoles().contains(UserRole.ROLE_ADMIN)) {
+            throw new IllegalArgumentException("User with ID " + userId + " is not an admin");
+        }
+    }
+
 }

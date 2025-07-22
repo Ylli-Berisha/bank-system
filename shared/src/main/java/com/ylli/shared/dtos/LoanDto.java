@@ -41,7 +41,7 @@ public class LoanDto implements IdentifiableDto<Long> {
             description = "Loan amount",
             example = "10000.00"
     )
-    private Double amount;
+    private BigDecimal amount;
 
     @NotNull(message = "Interest rate cannot be null")
     @PositiveOrZero(message = "Interest rate must be zero or positive")

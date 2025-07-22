@@ -8,5 +8,5 @@ public enum LoanStatus {
     REPAID,
     OVERDUE,
     DEFAULTED,
-    CANCELLED
+    CHANGES_PROPOSED, CANCELLED
 }

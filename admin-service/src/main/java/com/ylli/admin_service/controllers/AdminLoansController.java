@@ -1,6 +1,7 @@
 package com.ylli.admin_service.controllers;
 
 import com.ylli.admin_service.services.AdminLoansService;
+import com.ylli.shared.dtos.LoanChangeProposalRequestDto;
 import com.ylli.shared.dtos.LoanDto;
 import com.ylli.shared.exceptions.ResourceNotFoundException;
 import io.swagger.v3.oas.annotations.Operation;
@@ -99,6 +100,35 @@ public class AdminLoansController {
         try {
             LoanDto rejectedLoan = adminLoansService.rejectLoan(loanId, adminId);
             return ResponseEntity.ok(rejectedLoan);
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        } catch (IllegalStateException | IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(null);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @Operation(summary = "Propose changes for a loan", description = "Proposes changes to a loan by admin")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Changes proposed successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid input or loan cannot be modified"),
+            @ApiResponse(responseCode = "404", description = "Loan not found"),
+            @ApiResponse(responseCode = "403", description = "Admin validation failed")
+    })
+    @PutMapping("/{loanId}/propose-changes")
+    public ResponseEntity<LoanDto> proposeChangesForLoan(
+            @RequestHeader("X-User-ID") String adminId,
+            @PathVariable Long loanId,
+            @RequestBody LoanChangeProposalRequestDto proposalDto
+    ) {
+        if (adminId == null || adminId.isEmpty() || loanId == null || proposalDto == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        try {
+            LoanDto loan = adminLoansService.proposeChangesForLoan(adminId, loanId, proposalDto);
+            return ResponseEntity.ok(loan);
         } catch (ResourceNotFoundException e) {
             return ResponseEntity.notFound().build();
         } catch (IllegalStateException | IllegalArgumentException e) {
