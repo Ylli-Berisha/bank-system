@@ -1,10 +1,14 @@
 package com.ylli.admin_service.services.impls;
 
 import com.ylli.admin_service.services.AdminLoansService;
+import com.ylli.shared.base.AuditHelper;
+import com.ylli.shared.clients.AuditFeignClient;
 import com.ylli.shared.clients.TransactionsFeignClient;
 import com.ylli.shared.clients.UsersFeignClient;
+import com.ylli.shared.dtos.AuditDto;
 import com.ylli.shared.dtos.LoanChangeProposalRequestDto;
 import com.ylli.shared.dtos.LoanDto;
+import com.ylli.shared.enums.AuditType;
 import com.ylli.shared.enums.LoanStatus;
 import com.ylli.shared.enums.UserRole;
 import com.ylli.shared.exceptions.ResourceNotFoundException;
@@ -23,10 +27,12 @@ public class AdminLoansServiceImpl implements AdminLoansService {
     private final static Logger log = LoggerFactory.getLogger(AdminLoansServiceImpl.class);
     private final TransactionsFeignClient transactionsFeignClient;
     private final UsersFeignClient usersFeignClient;
+    private final AuditHelper auditHelper;
 
-    public AdminLoansServiceImpl(TransactionsFeignClient transactionsFeignClient, UsersFeignClient usersFeignClient) {
+    public AdminLoansServiceImpl(TransactionsFeignClient transactionsFeignClient, UsersFeignClient usersFeignClient, AuditHelper auditHelper) {
         this.transactionsFeignClient = transactionsFeignClient;
         this.usersFeignClient = usersFeignClient;
+        this.auditHelper = auditHelper;
     }
 
     @Override
@@ -43,7 +49,18 @@ public class AdminLoansServiceImpl implements AdminLoansService {
     @Override
     public LoanDto acceptLoan(Long loanId, String adminId) {
         try {
-            return transactionsFeignClient.acceptLoan(adminId, loanId).getBody();
+            LoanDto loanDto = transactionsFeignClient.acceptLoan(adminId, loanId).getBody();
+
+            if (loanDto == null) {
+                throw new ResourceNotFoundException("Loan with ID " + loanId + " not found.");
+            }
+
+            auditHelper.createAudit(AuditType.LOAN_APPROVED,
+                    "Loan with ID " + loanId + " has been approved by admin with ID " + adminId,
+                    loanDto.getAccountId());
+
+            return loanDto;
+
         } catch (Exception e) {
             throw new RuntimeException("An error occurred while accepting loan: " + e.getMessage(), e);
         }
@@ -52,7 +69,17 @@ public class AdminLoansServiceImpl implements AdminLoansService {
     @Override
     public LoanDto rejectLoan(Long loanId, String adminId) {
         try {
-            return transactionsFeignClient.rejectLoan(adminId, loanId).getBody();
+            LoanDto loanDto = transactionsFeignClient.rejectLoan(adminId, loanId).getBody();
+            if (loanDto == null) {
+                throw new ResourceNotFoundException("Loan with ID " + loanId + " not found.");
+            }
+
+            auditHelper.createAudit(AuditType.LOAN_DECLINED,
+                    "Loan with ID " + loanId + " has been rejected by admin with ID " + adminId,
+                    loanDto.getAccountId());
+
+            return loanDto;
+
         } catch (Exception e) {
             throw new RuntimeException("An error occurred while rejecting loan: " + e.getMessage(), e);
         }
@@ -79,6 +106,11 @@ public class AdminLoansServiceImpl implements AdminLoansService {
             loan.setStatus(LoanStatus.CHANGES_PROPOSED);
 
             transactionsFeignClient.updateLoan(loan.getId(), loan);
+
+            auditHelper.createAudit(AuditType.LOAN_CHANGES_PROPOSED,
+                    "Changes proposed for loan with ID " + loanId + " by admin with ID " + adminId,
+                    loan.getAccountId());
+
             return loan;
         } catch (ResourceNotFoundException | IllegalStateException e) {
             log.warn("Failed to propose changes for loan ID {}. Error: {}", loanId, e.getMessage());

@@ -1,7 +1,11 @@
 package com.ylli.transactions_service.services.impls;
 
+import com.ylli.shared.base.AuditHelper;
 import com.ylli.shared.clients.AccountsFeignClient;
+import com.ylli.shared.clients.AuditFeignClient;
 import com.ylli.shared.dtos.AccountDto;
+import com.ylli.shared.dtos.AuditDto;
+import com.ylli.shared.enums.AuditType;
 import com.ylli.shared.enums.LoanStatus;
 import com.ylli.shared.models.Loan;
 import com.ylli.transactions_service.repositories.LoansRepository;
@@ -14,18 +18,21 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 
+// ... all your imports remain the same
+
 @Service
 public class LoanProcessingService  {
 
     private final LoansRepository repository;
     private final AccountsFeignClient accountsFeignClient;
     private static final Logger log = LoggerFactory.getLogger(LoanProcessingService.class);
+    private final AuditHelper auditHelper;
 
-    public LoanProcessingService(LoansRepository repository, AccountsFeignClient accountsFeignClient) {
+    public LoanProcessingService(LoansRepository repository, AccountsFeignClient accountsFeignClient, AuditHelper auditHelper) {
         this.repository = repository;
         this.accountsFeignClient = accountsFeignClient;
+        this.auditHelper = auditHelper;
     }
-
 
     @Transactional
     public void processSingleLoanInstallment(Loan loan) {
@@ -36,7 +43,14 @@ public class LoanProcessingService  {
         }
 
         if (loan.getLeftAmount().compareTo(BigDecimal.ZERO) < 0) {
-            log.warn("Loan {} has negative left amount - skipping installment", loan.getId());
+            log.warn("Loan {} has negative left amount - returning the installment amount and setting to paid", loan.getId());
+            loan.getAccount().setBalance(
+                    loan.getAccount().getBalance().add(loan.getLeftAmount())
+            );
+            loan.setLeftAmount(BigDecimal.ZERO);
+            loan.setStatus(LoanStatus.REPAID);
+
+            auditHelper.createAudit(AuditType.LOAN_REPAID, "Loan with ID " + loan.getId() + " has been fully repaid due to negative left amount.", loan.getAccount().getId());
             return;
         }
 
@@ -44,6 +58,8 @@ public class LoanProcessingService  {
             loan.setStatus(LoanStatus.REPAID);
             repository.save(loan);
             log.info("Loan {} is already fully repaid", loan.getId());
+
+            auditHelper.createAudit(AuditType.LOAN_REPAID, "Loan with ID " + loan.getId() + " is already fully repaid.", loan.getAccount().getId());
             return;
         }
 
@@ -68,23 +84,31 @@ public class LoanProcessingService  {
 
         if (account.getBalance().compareTo(installmentAmount) < 0) {
             log.warn("Insufficient funds for loan {} - skipping installment", loan.getId());
+            auditHelper.createAudit(AuditType.NOT_ENOUGH_FUNDS,
+                    "Insufficient funds for loan with ID " + loan.getId() +
+                            ". Account balance: " + account.getBalance() +
+                            ", Required installment: " + installmentAmount,
+                    account.getId());
             return;
         }
 
         account.setBalance(account.getBalance().subtract(installmentAmount));
-        accountsFeignClient.updateAccount(account.getId(), account);
+        var response = accountsFeignClient.updateAccount(account.getId(), account);
+        if (response == null || !response.getStatusCode().is2xxSuccessful()) {
+            throw new RuntimeException("Failed to update account balance for account ID " + account.getId());
+        }
 
         loan.setLeftAmount(loan.getLeftAmount().subtract(installmentAmount));
 
         if (loan.getLeftAmount().compareTo(BigDecimal.ZERO) <= 0) {
             loan.setLeftAmount(BigDecimal.ZERO);
             loan.setStatus(LoanStatus.REPAID);
+
+            auditHelper.createAudit(AuditType.LOAN_REPAID, "Loan with ID " + loan.getId() + " has been fully repaid.", loan.getAccount().getId());
         } else {
             loan.setNextInstallmentDate(loan.getNextInstallmentDate().plusMonths(1));
         }
 
         repository.save(loan);
     }
-
-
 }

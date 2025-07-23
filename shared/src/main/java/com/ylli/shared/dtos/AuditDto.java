@@ -25,12 +25,17 @@ public class AuditDto implements IdentifiableDto<Long> {
     )
     private Long id;
 
-    @NotNull(message = "Account cannot be null")
     @Schema(
             description = "Account associated with the audit record",
             example = "123e4567-e89b-12d3-a456-426614174000"
     )
     private String accountId;
+
+    @Schema(
+            description = "User associated with the audit record",
+            example = "123e4567-e89b-12d3-a456-426614174001"
+    )
+    private String userId;
 
     @NotNull(message = "Audit type cannot be null")
     @Schema(

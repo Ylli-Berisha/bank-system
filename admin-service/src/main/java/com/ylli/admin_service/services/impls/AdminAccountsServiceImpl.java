@@ -1,10 +1,14 @@
 package com.ylli.admin_service.services.impls;
 
 import com.ylli.admin_service.services.AdminAccountsService;
+import com.ylli.shared.base.AuditHelper;
 import com.ylli.shared.clients.AccountsFeignClient;
+import com.ylli.shared.clients.AuditFeignClient;
 import com.ylli.shared.clients.UsersFeignClient;
 import com.ylli.shared.dtos.AccountDto;
+import com.ylli.shared.dtos.AuditDto;
 import com.ylli.shared.enums.AccountStatus;
+import com.ylli.shared.enums.AuditType;
 import com.ylli.shared.enums.UserRole;
 import com.ylli.shared.exceptions.ResourceNotFoundException;
 import feign.FeignException;
@@ -13,8 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestParam;
+
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -25,11 +28,13 @@ public class AdminAccountsServiceImpl implements AdminAccountsService {
 
     private final AccountsFeignClient accountsFeignClient;
     private final UsersFeignClient usersFeignClient;
+    private final AuditHelper auditHelper;
 
     @Autowired
-    public AdminAccountsServiceImpl(AccountsFeignClient accountsFeignClient, UsersFeignClient usersFeignClient) {
+    public AdminAccountsServiceImpl(AccountsFeignClient accountsFeignClient, UsersFeignClient usersFeignClient, AuditHelper auditHelper) {
         this.accountsFeignClient = accountsFeignClient;
         this.usersFeignClient = usersFeignClient;
+        this.auditHelper = auditHelper;
     }
 
 
@@ -55,6 +60,11 @@ public class AdminAccountsServiceImpl implements AdminAccountsService {
         try {
             HttpStatusCode code = accountsFeignClient.freezeAccountFromAdmin(accountId).getStatusCode();
             if (code.is2xxSuccessful()) {
+
+                auditHelper.createAudit(AuditType.ACCOUNT_LOCKED,
+                        "Account with ID " + accountId + " has been frozen by admin: " + userId,
+                                accountId);
+
                 return true;
             } else {
                 throw new IllegalArgumentException("Failed to freeze account with ID: " + accountId);
@@ -72,6 +82,11 @@ public class AdminAccountsServiceImpl implements AdminAccountsService {
         try {
             HttpStatusCode code = accountsFeignClient.unfreezeAccount(accountId).getStatusCode();
             if (code.is2xxSuccessful()) {
+
+                auditHelper.createAudit(AuditType.ACCOUNT_UNLOCKED,
+                        "Account with ID " + accountId + " has been unfrozen by admin: " + userId,
+                                accountId);
+
                 return true;
             } else {
                 throw new IllegalArgumentException("Failed to unfreeze account with ID: " + accountId);
@@ -96,6 +111,11 @@ public class AdminAccountsServiceImpl implements AdminAccountsService {
             }
             account.setStatus(AccountStatus.ACTIVE);
             accountsFeignClient.update(accountId, account);
+
+            auditHelper.createAudit(AuditType.ACCOUNT_APPLICATION_APPROVED,
+                    "Account with ID " + accountId + " has been approved by admin: " + userId,
+                            accountId);
+
         } catch (FeignException e) {
             throw new IllegalArgumentException("Error approving account: " + e.getMessage(), e);
         } catch (Exception e) {
@@ -116,6 +136,11 @@ public class AdminAccountsServiceImpl implements AdminAccountsService {
             }
             account.setStatus(AccountStatus.REJECTED);
             accountsFeignClient.update(accountId, account);
+
+            auditHelper.createAudit(AuditType.ACCOUNT_APPLICATION_REJECTED,
+                    "Account with ID " + accountId + " has been rejected by admin: " + userId,
+                            accountId);
+
         } catch (FeignException e) {
             throw new IllegalArgumentException("Error rejecting account: " + e.getMessage(), e);
         } catch (Exception e) {

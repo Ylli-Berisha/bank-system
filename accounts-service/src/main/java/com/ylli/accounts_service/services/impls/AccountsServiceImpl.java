@@ -3,13 +3,17 @@ package com.ylli.accounts_service.services.impls;
 import com.ylli.accounts_service.configs.AdminAccountSpecifications;
 import com.ylli.accounts_service.repositories.AccountsRepository;
 import com.ylli.accounts_service.services.AccountsService;
+import com.ylli.shared.base.AuditHelper;
 import com.ylli.shared.base.BaseServiceImpl;
+import com.ylli.shared.clients.AuditFeignClient;
 import com.ylli.shared.clients.UsersFeignClient;
 import com.ylli.shared.dtos.AccountDto;
 import com.ylli.accounts_service.mappers.AccountMapper;
+import com.ylli.shared.dtos.AuditDto;
 import com.ylli.shared.dtos.UserDto;
 import com.ylli.shared.enums.AccountStatus;
 import com.ylli.shared.enums.AccountType;
+import com.ylli.shared.enums.AuditType;
 import com.ylli.shared.enums.UserRole;
 import com.ylli.shared.exceptions.AccountLockedException;
 import com.ylli.shared.exceptions.ResourceNotFoundException;
@@ -35,11 +39,13 @@ public class AccountsServiceImpl extends BaseServiceImpl<Account, AccountDto, St
 
     private static final Logger log = LoggerFactory.getLogger(AccountsServiceImpl.class);
     private final UsersFeignClient usersFeignClient;
+    private final AuditHelper auditHelper;
 
     @Autowired
-    public AccountsServiceImpl(AccountsRepository repository, AccountMapper mapper, UsersFeignClient usersFeignClient) {
+    public AccountsServiceImpl(AccountsRepository repository, AccountMapper mapper, UsersFeignClient usersFeignClient, AuditHelper auditHelper) {
         super(repository, mapper);
         this.usersFeignClient = usersFeignClient;
+        this.auditHelper = auditHelper;
     }
 
     @Override
@@ -103,6 +109,11 @@ public class AccountsServiceImpl extends BaseServiceImpl<Account, AccountDto, St
 //            account.setUser(userEntity);
             repository.save(account);
 
+
+            auditHelper.createAudit(AuditType.ACCOUNT_APPLICATION_SUBMITTED,
+                    "Application for new account submitted by user: " + user.getId(),
+                    account.getId());
+
             return Boolean.TRUE;
         } catch (Exception e) {
             log.error("Apply for new account error", e);
@@ -128,7 +139,13 @@ public class AccountsServiceImpl extends BaseServiceImpl<Account, AccountDto, St
         try {
             account.setStatus(AccountStatus.FROZEN);
             repository.save(account);
+
+            auditHelper.createAudit(AuditType.ACCOUNT_LOCKED,
+                    "Account with ID " + accountId + " has been frozen by user: " + userId,
+                    accountId);
+
             return Boolean.TRUE;
+
         } catch (Exception e) {
             log.error("Error freezing account with ID {}", accountId, e);
             throw e;
@@ -150,6 +167,11 @@ public class AccountsServiceImpl extends BaseServiceImpl<Account, AccountDto, St
         try {
             account.setStatus(AccountStatus.ACTIVE);
             repository.save(account);
+
+            auditHelper.createAudit(AuditType.ACCOUNT_UNLOCKED,
+                    "Account with ID " + accountId + " has been unfrozen by user: " + userId,
+                    accountId);
+
             return Boolean.TRUE;
         } catch (Exception e) {
             log.error("Error unfreezing account with ID {}", accountId, e);

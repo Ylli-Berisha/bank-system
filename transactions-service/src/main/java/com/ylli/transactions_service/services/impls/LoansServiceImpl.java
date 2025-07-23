@@ -1,11 +1,13 @@
 package com.ylli.transactions_service.services.impls;
 
+import com.ylli.shared.base.AuditHelper;
 import com.ylli.shared.base.BaseServiceImpl;
 import com.ylli.shared.clients.AccountsFeignClient;
 import com.ylli.shared.clients.UsersFeignClient;
 import com.ylli.shared.dtos.AccountDto;
 import com.ylli.shared.dtos.LoanApplicationRequestDto;
 import com.ylli.shared.dtos.LoanDto;
+import com.ylli.shared.enums.AuditType;
 import com.ylli.shared.enums.LoanStatus;
 import com.ylli.shared.enums.LoanType;
 import com.ylli.shared.enums.UserRole;
@@ -44,12 +46,14 @@ public class LoansServiceImpl extends BaseServiceImpl<Loan, LoanDto, Long, Loans
     private static final Logger log = LoggerFactory.getLogger(LoansServiceImpl.class);
     private final UsersFeignClient usersFeignClient;
     private final LoanProcessingService loanProcessingService;
+    private final AuditHelper auditHelper;
 
-    public LoansServiceImpl(LoansRepository repository, LoansMapper mapper, AccountsFeignClient accountsFeignClient, UsersFeignClient usersFeignClient, LoanProcessingService loanProcessingService) {
+    public LoansServiceImpl(LoansRepository repository, LoansMapper mapper, AccountsFeignClient accountsFeignClient, UsersFeignClient usersFeignClient, LoanProcessingService loanProcessingService, AuditHelper auditHelper) {
         super(repository, mapper);
         this.accountsFeignClient = accountsFeignClient;
         this.usersFeignClient = usersFeignClient;
         this.loanProcessingService = loanProcessingService;
+        this.auditHelper = auditHelper;
     }
 
     @Override
@@ -119,6 +123,12 @@ public class LoansServiceImpl extends BaseServiceImpl<Loan, LoanDto, Long, Loans
             loan.setLeftAmount(amount);
             loan.setStatus(LoanStatus.PENDING);
             loan.setTermInMonths(termInMonths);
+
+            auditHelper.createAudit(
+                    AuditType.LOAN_APPLIED,
+                    "User with ID " + userId + " applied for a loan with ID " + loan.getId() + " for account ID " + accountId,
+                    accountId
+            );
 
             repository.save(loan);
             return true;
@@ -234,6 +244,12 @@ public class LoansServiceImpl extends BaseServiceImpl<Loan, LoanDto, Long, Loans
             throw new IllegalStateException("Only pending loans can be accepted.");
         }
 
+        auditHelper.createAudit(
+                AuditType.LOAN_APPROVED,
+                "Loan with ID " + loanId + " has been approved by admin with ID " + adminId,
+                loan.getAccount().getId()
+        );
+
         return startLoan(loan);
     }
 
@@ -247,6 +263,12 @@ public class LoansServiceImpl extends BaseServiceImpl<Loan, LoanDto, Long, Loans
         }
 
         loan.setStatus(LoanStatus.REJECTED);
+
+        auditHelper.createAudit(
+                AuditType.LOAN_REJECTED,
+                "Loan with ID " + loanId + " has been rejected by admin with ID " + adminId,
+                loan.getAccount().getId()
+        );
 
         repository.save(loan);
         return mapper.toDto(loan);
@@ -266,6 +288,11 @@ public class LoansServiceImpl extends BaseServiceImpl<Loan, LoanDto, Long, Loans
             throw new IllegalStateException("Only loans with proposed changes can be accepted.");
         }
 
+        auditHelper.createAudit(
+                AuditType.LOAN_CHANGES_ACCEPTED,
+                "Loan with ID " + loanId + " has been accepted by user with ID " + userId,
+                loan.getAccount().getId()
+        );
 
         return startLoan(loan);
     }
@@ -285,6 +312,13 @@ public class LoansServiceImpl extends BaseServiceImpl<Loan, LoanDto, Long, Loans
         }
 
         loan.setStatus(LoanStatus.REJECTED);
+
+        auditHelper.createAudit(
+                AuditType.LOAN_CHANGES_REJECTED,
+                "Loan with ID " + loanId + " has been rejected by user with ID " + userId,
+                loan.getAccount().getId()
+        );
+
         repository.save(loan);
         return mapper.toDto(loan);
     }

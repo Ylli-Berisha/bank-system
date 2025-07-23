@@ -1,14 +1,12 @@
 package com.ylli.transactions_service.services.impls;
 
+import com.ylli.shared.base.AuditHelper;
 import com.ylli.shared.base.BaseServiceImpl;
 import com.ylli.shared.clients.AccountsFeignClient;
 import com.ylli.shared.clients.UsersFeignClient;
 import com.ylli.shared.dtos.AccountDto;
 import com.ylli.shared.dtos.TransactionDto;
-import com.ylli.shared.enums.AccountStatus;
-import com.ylli.shared.enums.TransactionStatus;
-import com.ylli.shared.enums.TransactionType;
-import com.ylli.shared.enums.UserRole;
+import com.ylli.shared.enums.*;
 import com.ylli.shared.models.Account;
 import com.ylli.shared.models.Transaction;
 import com.ylli.shared.models.User;
@@ -35,11 +33,13 @@ import java.util.List;
 public class TransactionsServiceImpl extends BaseServiceImpl<Transaction, TransactionDto, String, TransactionsRepository, TransactionMapper> implements TransactionsService {
     private final AccountsFeignClient accountsFeignClient;
     private final UsersFeignClient usersFeignClient;
+    private final AuditHelper auditHelper;
 
-    public TransactionsServiceImpl(TransactionsRepository transactionsRepository, TransactionMapper transactionMapper, AccountsFeignClient accountsFeignClient, UsersFeignClient usersFeignClient){
+    public TransactionsServiceImpl(TransactionsRepository transactionsRepository, TransactionMapper transactionMapper, AccountsFeignClient accountsFeignClient, UsersFeignClient usersFeignClient, AuditHelper auditHelper){
         super(transactionsRepository, transactionMapper);
         this.accountsFeignClient = accountsFeignClient;
         this.usersFeignClient = usersFeignClient;
+        this.auditHelper = auditHelper;
     }
 
     @Override
@@ -232,6 +232,13 @@ public class TransactionsServiceImpl extends BaseServiceImpl<Transaction, Transa
                 sourceAccountDto.setBalance(sourceAccountDto.getBalance().add(newTransaction.getAmount()));
                 newTransaction.setStatus(TransactionStatus.COMPLETED);
                 newTransaction.setRecipientAccount(null);
+
+                auditHelper.createAudit(
+                        AuditType.DEPOSIT_MADE,
+                        "Deposit of " + newTransaction.getAmount() + " to account " + sourceAccountDto.getId(),
+                        sourceAccountDto.getId()
+                );
+
                 break;
 
             case WITHDRAWAL:
@@ -243,6 +250,13 @@ public class TransactionsServiceImpl extends BaseServiceImpl<Transaction, Transa
                 sourceAccountDto.setBalance(sourceAccountDto.getBalance().subtract(newTransaction.getAmount()));
                 newTransaction.setStatus(TransactionStatus.COMPLETED);
                 newTransaction.setRecipientAccount(null);
+
+                auditHelper.createAudit(
+                        AuditType.WITHDRAWAL_MADE,
+                        "Withdrawal of " + newTransaction.getAmount() + " from account " + sourceAccountDto.getId(),
+                        sourceAccountDto.getId()
+                );
+
                 break;
 
             case TRANSFER:
@@ -278,6 +292,14 @@ public class TransactionsServiceImpl extends BaseServiceImpl<Transaction, Transa
                 newTransaction.setStatus(TransactionStatus.COMPLETED);
 
                 accountsFeignClient.update(recipientAccountDto.getId(), recipientAccountDto);
+
+                auditHelper.createAudit(
+                        AuditType.MONEY_TRANSFERRED,
+                        "Transfer of " + newTransaction.getAmount() + " from account " + sourceAccountDto.getId() +
+                                " to account " + recipientAccountDto.getId(),
+                        sourceAccountDto.getId()
+                );
+
                 break;
 
             default:

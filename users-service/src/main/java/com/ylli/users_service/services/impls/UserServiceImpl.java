@@ -1,8 +1,10 @@
 package com.ylli.users_service.services.impls;
 
+import com.ylli.shared.base.AuditHelper;
 import com.ylli.shared.base.BaseServiceImpl;
 import com.ylli.shared.configs.JwtUtil;
 import com.ylli.shared.dtos.*;
+import com.ylli.shared.enums.AuditType;
 import com.ylli.users_service.configs.UserSpecification;
 import com.ylli.users_service.dtos.UserLoginDto;
 import com.ylli.shared.enums.UserRole;
@@ -29,12 +31,14 @@ public class UserServiceImpl extends BaseServiceImpl<User, UserDto, String, User
 
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private final AuditHelper auditHelper;
 
     @Autowired
-    public UserServiceImpl(UserRepository userRepository, UserMapper userMapper, PasswordEncoder passwordEncoder, JwtUtil jwtUtil) {
+    public UserServiceImpl(UserRepository userRepository, UserMapper userMapper, PasswordEncoder passwordEncoder, JwtUtil jwtUtil, AuditHelper auditHelper) {
         super(userRepository, userMapper);
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
+        this.auditHelper = auditHelper;
     }
 
     @Override
@@ -66,6 +70,12 @@ public class UserServiceImpl extends BaseServiceImpl<User, UserDto, String, User
         var token = jwtUtil.generateToken(savedUser.getId(), savedUser.getRoles());
         log.info("User signed up successfully: {}", savedUser.getUsername());
 
+        auditHelper.createAuditWithUser(
+                AuditType.USER_SIGNED_UP,
+                "User with username " + savedUser.getUsername() + " has signed up successfully.",
+                savedUser.getId()
+        );
+
         return new SignUpResponseDto(
                 mapper.toDto(user),
                 token
@@ -92,6 +102,12 @@ public class UserServiceImpl extends BaseServiceImpl<User, UserDto, String, User
 //        String refreshToken = jwtUtil.generateRefreshToken(user.getUsername());
 
         UserDto userDto = mapper.toDto(user);
+
+        auditHelper.createAuditWithUser(
+                AuditType.USER_LOGGED_IN,
+                "User with username " + user.getUsername() + " has logged in successfully.",
+                user.getId()
+        );
 
         return new LoginResponseDto(accessToken, userDto);
     }

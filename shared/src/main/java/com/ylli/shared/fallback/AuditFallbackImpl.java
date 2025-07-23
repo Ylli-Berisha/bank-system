@@ -2,6 +2,7 @@ package com.ylli.shared.fallback;
 
 import com.ylli.shared.clients.AuditFeignClient;
 import com.ylli.shared.dtos.AuditDto;
+import com.ylli.shared.dtos.ErrorResponseDto;
 import org.springframework.cloud.openfeign.FallbackFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -19,6 +20,7 @@ public class AuditFallbackImpl implements FallbackFactory<AuditFeignClient> {
 
             @Override
             public ResponseEntity<AuditDto> createAudit(AuditDto audit) {
+                System.err.println("Fallback in createAudit: " + cause.getMessage());
                 return ResponseEntity.status(503).build();
             }
 
