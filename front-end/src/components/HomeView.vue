@@ -21,15 +21,28 @@
 
     <section class="section">
       <h2>Recent Transactions</h2>
-      <ul class="list" v-if="transactions.length">
-        <li v-for="tx in transactions" :key="tx.id">
-          {{ tx.details || "no details for this transaction" }} — {{"Amount: $"  + tx.amount }} on {{ formatDate(tx.createdAt) }} to "to do later"
+
+      <ul v-if="transactions.length" class="transactions-list">
+        <li v-for="tx in transactions" :key="tx.id" class="transaction-item">
+          <div class="transaction-details">
+            <p class="details-text">{{ tx.details || "No details for this transaction" }}</p>
+            <p class="amount-date">
+              <strong>Amount:</strong> ${{ tx.amount.toFixed(2) }}
+              <span>on {{ formatDate(tx.createdAt) }}</span>
+              <span v-if="tx.recipientAccountId" class="recipient">
+            &nbsp;→ To <strong>{{ tx.recipientAccountId }}</strong>
+          </span>
+            </p>
+          </div>
         </li>
       </ul>
-      <p v-else>No transactions found.</p>
+
+      <p v-else class="empty-message">No transactions found.</p>
       <p v-if="transactionsError" class="error">{{ transactionsError }}</p>
+
       <router-link to="/transactions" class="view-all">View All Transactions</router-link>
     </section>
+
 
     <section class="section">
       <h2>Loans</h2>
@@ -58,8 +71,8 @@
 <script setup>
 import { onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
-import { useRouter } from 'vue-router'; // Import useRouter
-import { useAuthStore } from '@/stores/authStore'; // Import useAuthStore
+import { useRouter } from 'vue-router';
+import { useAuthStore } from '@/stores/authStore';
 import { useAccountsStore } from '@/stores/acccountsStore.js'
 import { useTransactionsStore } from '@/stores/transactionsStore.js'
 import { useLoansStore } from '@/stores/loansStore.js'
@@ -187,5 +200,56 @@ h2 {
 .logout-button:hover {
   background-color: #c82333;
   transform: translateY(-2px);
+}
+.transactions-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-width: 700px;
+}
+
+.transaction-item {
+  background-color: #f8fafd;
+  border-radius: 10px;
+  padding: 1rem 1.5rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  transition: box-shadow 0.3s ease;
+}
+
+.transaction-item:hover {
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+}
+
+.transaction-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.details-text {
+  font-weight: 600;
+  font-size: 1.05rem;
+  color: #1a2b4c;
+  margin-bottom: 0.25rem;
+}
+
+.amount-date {
+  font-size: 0.9rem;
+  color: #455a64;
+}
+
+.amount-date strong {
+  color: #3498db;
+}
+
+.recipient {
+  color: #2d8cf0;
+  font-weight: 700;
+}
+
+.empty-message {
+  font-style: italic;
+  color: #7f8c8d;
+  margin-top: 1rem;
 }
 </style>

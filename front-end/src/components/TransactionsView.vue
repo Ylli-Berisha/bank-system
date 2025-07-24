@@ -92,7 +92,7 @@
                 {{ transaction.status.toLowerCase() }}
               </span>
             </p>
-            <p><strong>Details:</strong> {{ transaction.details || '—' }}</p>
+            <p><strong>Details:</strong> {{ transaction.details || 'No details for this transaction' }}</p>
             <p><strong>Recipient:</strong> {{ maskAccount(transaction.recipientAccountId) }}</p>
           </div>
         </div>
