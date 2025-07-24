@@ -332,7 +332,7 @@ public class LoansServiceImpl extends BaseServiceImpl<Loan, LoanDto, Long, Loans
         if (user == null) {
             throw new ResourceNotFoundException("User with ID " + userId + " not found.");
         }
-        Pageable pageable = PageRequest.of(0, 4, Sort.by(Sort.Direction.DESC, "startDate"));
+        Pageable pageable = PageRequest.of(0, 3, Sort.by(Sort.Direction.DESC, "startDate"));
         List<Loan> loans;
         try{
            loans  = repository.findTop4ActiveLoansByUserId(userId, pageable);

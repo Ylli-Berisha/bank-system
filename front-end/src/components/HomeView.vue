@@ -48,7 +48,7 @@
       <h2>Loans</h2>
       <div class="card-grid" v-if="topActiveLoans && topActiveLoans.length">
         <div v-for="loan in topActiveLoans" :key="loan.id" class="card">
-          <h3>{{ loan.type }} Loan</h3>
+          <h3>{{ loan.loanType.replace("_", " ") }}</h3>
           <p>Amount : ${{ loan.amount }}</p>
           <p>Due: {{ formatDate(loan.endDate) }}</p>
           <p>Interest rate: {{ loan.interestRate }}%</p>
