@@ -8,10 +8,11 @@ import LoansView from "@/components/LoansView.vue";
 
 // Import the auth store
 import { useAuthStore } from "@/stores/authStore.js";
-import AdminHomeView from "@/components/AdminHomeView.vue";
-import AdminAccountsView from "@/components/AdminAccountsView.vue";
-import AdminTransactionsView from "@/components/AdminTransactionsView.vue";
-import AdminLoansView from "@/components/AdminLoansView.vue";
+import AdminHomeView from "@/components/admin/AdminHomeView.vue";
+import AdminAccountsView from "@/components/admin/AdminAccountsView.vue";
+import AdminTransactionsView from "@/components/admin/AdminTransactionsView.vue";
+import AdminLoansView from "@/components/admin/AdminLoansView.vue";
+import AdminAuditsView from "@/components/admin/AdminAuditsView.vue";
 
 const ROLE_USER = 'ROLE_USER';
 const ROLE_ADMIN = 'ROLE_ADMIN';
@@ -75,6 +76,12 @@ const routes = [
         path:'/admin/loans',
         name: 'AdminLoans',
         component: AdminLoansView,
+        meta: { requiresAuth: true, requiredRole: ROLE_ADMIN }
+    },
+    {
+        path: '/admin/audit',
+        name: 'AdminAudit',
+        component: AdminAuditsView,
         meta: { requiresAuth: true, requiredRole: ROLE_ADMIN }
     }
 ];
