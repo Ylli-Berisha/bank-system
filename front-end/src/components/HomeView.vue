@@ -7,7 +7,7 @@
 
     <section class="section">
       <h2>Accounts</h2>
-      <div class="card-grid" v-if="accounts.length">
+      <div class="card-grid" v-if="accounts && accounts.length">
         <div v-for="account in accounts" :key="account.id" class="card">
           <h3>{{ account.type }} Account</h3>
           <p>Balance: ${{ account.balance.toFixed(2) }}</p>
@@ -22,16 +22,17 @@
     <section class="section">
       <h2>Recent Transactions</h2>
 
-      <ul v-if="transactions.length" class="transactions-list">
-        <li v-for="tx in transactions" :key="tx.id" class="transaction-item">
+      <ul v-if="topTransactions && topTransactions.length" class="transactions-list">
+        <li v-for="tx in topTransactions" :key="tx.id" class="transaction-item">
           <div class="transaction-details">
             <p class="details-text">{{ tx.details || "No details for this transaction" }}</p>
             <p class="amount-date">
               <strong>Amount:</strong> ${{ tx.amount.toFixed(2) }}
+              <span class="transaction-type">({{ formatTransactionType(tx.type) }}) </span>
               <span>on {{ formatDate(tx.createdAt) }}</span>
               <span v-if="tx.recipientAccountId" class="recipient">
-            &nbsp;→ To <strong>{{ tx.recipientAccountId }}</strong>
-          </span>
+                &nbsp;→ To <strong>{{ tx.recipientAccountId }}</strong>
+              </span>
             </p>
           </div>
         </li>
@@ -43,17 +44,16 @@
       <router-link to="/transactions" class="view-all">View All Transactions</router-link>
     </section>
 
-
     <section class="section">
       <h2>Loans</h2>
-      <div class="card-grid" v-if="loans.length">
-        <div v-for="loan in loans" :key="loan.id" class="card">
+      <div class="card-grid" v-if="topActiveLoans && topActiveLoans.length">
+        <div v-for="loan in topActiveLoans" :key="loan.id" class="card">
           <h3>{{ loan.type }} Loan</h3>
           <p>Amount : ${{ loan.amount }}</p>
           <p>Due: {{ formatDate(loan.endDate) }}</p>
           <p>Interest rate: {{ loan.interestRate }}%</p>
-          <p>Next installment: {{formatDate(loan.nextInstallmentDate)}}</p>
-          <p><b>Monthly installment: ${{loan.monthlyInstallment}}</b></p>
+          <p>Next installment: {{ formatDate(loan.nextInstallmentDate) }}</p>
+          <p><b>Monthly installment: ${{ loan.monthlyInstallment }}</b></p>
         </div>
       </div>
       <p v-else>No loans found.</p>
@@ -64,39 +64,36 @@
     <section class="logout-section">
       <button @click="handleLogout" class="logout-button">Logout</button>
     </section>
-
   </div>
 </template>
+
 
 <script setup>
 import { onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
-import { useRouter } from 'vue-router';
-import { useAuthStore } from '@/stores/authStore';
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/authStore'
 import { useAccountsStore } from '@/stores/acccountsStore.js'
 import { useTransactionsStore } from '@/stores/transactionsStore.js'
 import { useLoansStore } from '@/stores/loansStore.js'
 
-const username = localStorage.getItem('username');
-
-onMounted(() => {
-  document.title = "Home"
-})
+const username = localStorage.getItem('username')
 
 const accountsStore = useAccountsStore()
 const transactionsStore = useTransactionsStore()
 const loansStore = useLoansStore()
-const authStore = useAuthStore();
-const router = useRouter();
+const authStore = useAuthStore()
+const router = useRouter()
 
 const { accounts, error: accountsError } = storeToRefs(accountsStore)
-const { transactions, error: transactionsError } = storeToRefs(transactionsStore)
-const { loans, error: loansError } = storeToRefs(loansStore)
+const { topTransactions, error: transactionsError } = storeToRefs(transactionsStore)
+const { topActiveLoans, error: loansError } = storeToRefs(loansStore)
 
 onMounted(() => {
+  document.title = "Home"
   accountsStore.fetchTopAccounts()
-  transactionsStore.fetchAllTransactions();
-  loansStore.fetchAllLoans()
+  transactionsStore.fetchTopUserTransactions()
+  loansStore.fetchTopActiveLoans()
 })
 
 function formatDate(isoString) {
@@ -109,11 +106,19 @@ function formatDate(isoString) {
   })
 }
 
+function formatTransactionType(type) {
+  if (!type) return ''
+  return type.charAt(0).toUpperCase() + type.slice(1).toLowerCase().replace(/_/g, ' ')
+}
+
 const handleLogout = () => {
-  authStore.logOut();
-  router.push('/login');
-};
+  authStore.logOut()
+  router.push('/login')
+}
 </script>
+
+
+
 
 <style scoped>
 .home-container {
@@ -245,11 +250,5 @@ h2 {
 .recipient {
   color: #2d8cf0;
   font-weight: 700;
-}
-
-.empty-message {
-  font-style: italic;
-  color: #7f8c8d;
-  margin-top: 1rem;
 }
 </style>

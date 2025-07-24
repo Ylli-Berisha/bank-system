@@ -172,4 +172,26 @@ public class TransactionsController extends BaseController<TransactionDto, Strin
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
+    @Operation(summary = "Get top user transactions", description = "Retrieve the top transactions for a specific user")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Top transactions retrieved successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid or missing user ID", content = @Content),
+            @ApiResponse(responseCode = "204", description = "No top transactions found", content = @Content),
+            @ApiResponse(responseCode = "404", description = "User not found", content = @Content)
+    })
+    @GetMapping("/get/top-user-transactions")
+    public ResponseEntity<List<TransactionDto>> getTopUserTransactions(@RequestHeader("X-User-ID") String userId) {
+        if (userId == null || userId.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        List<TransactionDto> topTransactions = service.getTopUserTransactions(userId);
+
+        if (topTransactions == null || topTransactions.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+
+        return ResponseEntity.ok(topTransactions);
+    }
 }

@@ -323,6 +323,30 @@ public class LoansServiceImpl extends BaseServiceImpl<Loan, LoanDto, Long, Loans
         return mapper.toDto(loan);
     }
 
+    @Override
+    public List<LoanDto> getTopActiveLoans(String userId) {
+        if (userId == null || userId.isEmpty()) {
+            throw new IllegalArgumentException("User ID is required to get top active loans.");
+        }
+        var user = usersFeignClient.getUser(userId).getBody();
+        if (user == null) {
+            throw new ResourceNotFoundException("User with ID " + userId + " not found.");
+        }
+        Pageable pageable = PageRequest.of(0, 4, Sort.by(Sort.Direction.DESC, "startDate"));
+        List<Loan> loans;
+        try{
+           loans  = repository.findTop4ActiveLoansByUserId(userId, pageable);
+        }
+        catch (Exception e){
+            log.error("Error fetching top active loans for user {}: {}", userId, e.getMessage());
+            throw new RuntimeException("Failed to fetch top active loans for user " + userId, e);
+        }
+        if (loans == null || loans.isEmpty()) {
+            return List.of();
+        }
+        return mapper.toDtoList(loans);
+    }
+
 
     private void validateAdmin(String adminId) {
         if (adminId == null || adminId.isBlank()) {
@@ -354,7 +378,7 @@ public class LoansServiceImpl extends BaseServiceImpl<Loan, LoanDto, Long, Loans
 
     private LoanDto startLoan(Loan loan) {
         LocalDate now = LocalDate.now();
-        loan.setStatus(LoanStatus.APPROVED);
+        loan.setStatus(LoanStatus.ACTIVE);
         loan.setStartDate(now);
         loan.setEndDate(loan.getStartDate().plusMonths(loan.getTermInMonths()));
         loan.setNextInstallmentDate(now.plusMonths(1));

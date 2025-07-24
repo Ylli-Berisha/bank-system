@@ -5,8 +5,10 @@ import { useAccountsStore } from '@/stores/acccountsStore.js';
 
 export const useTransactionsStore = defineStore('transactions', () => {
     const transactions = ref([]);
+    const topTransactions = ref([]);
     const error = ref(null);
     const loading = ref(false);
+    const loadingTop = ref(false);
 
     const fetchAllTransactions = async () => {
         error.value = null;
@@ -86,6 +88,35 @@ export const useTransactionsStore = defineStore('transactions', () => {
         }
     };
 
+    const fetchTopUserTransactions = async () => {
+        error.value = null;
+        loadingTop.value = true;
+
+        try {
+            const url = `/transactions-service/api/transactions/get/top-user-transactions`;
+            const response = await client.get(url);
+
+            if (response.status === 204) {
+                topTransactions.value = [];
+            } else {
+                topTransactions.value = response.data;
+            }
+            console.log("Fetched top user transactions:", topTransactions.value);
+
+        } catch (err) {
+            console.error('Failed to fetch top user transactions:', err);
+            if (err.response && (err.response.status === 404 || err.response.status === 204)) {
+                topTransactions.value = [];
+                error.value = 'No recent transactions found.';
+            } else {
+                error.value = 'Failed to fetch recent transactions. Please try again.';
+            }
+        } finally {
+            loadingTop.value = false;
+        }
+    };
+
+
     const createTransaction = async (transactionData) => {
         error.value = null;
         loading.value = true;
@@ -119,10 +150,13 @@ export const useTransactionsStore = defineStore('transactions', () => {
 
     return {
         transactions,
+        topTransactions,
         error,
         loading,
+        loadingTop,
         fetchAllTransactions,
         fetchFilteredTransactions,
+        fetchTopUserTransactions,
         createTransaction,
     };
 });

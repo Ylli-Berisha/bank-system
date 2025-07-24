@@ -5,6 +5,7 @@ import com.ylli.shared.enums.TransactionType;
 import com.ylli.shared.models.Account;
 import com.ylli.shared.models.Transaction;
 import com.ylli.shared.models.User;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -20,6 +21,14 @@ import java.util.List;
 public interface TransactionsRepository extends JpaRepository<Transaction, String>, JpaSpecificationExecutor<Transaction> {
     List<Transaction> findByAccount(Account account);
 
+    @Query("""
+        SELECT t FROM transactions t
+        JOIN t.account a
+        JOIN a.user u
+        WHERE u.id = :userId
+        ORDER BY t.createdAt DESC
+    """)
+    List<Transaction> findTop4ByUserIdOrderByCreatedAtDesc(@Param("userId") String userId, Pageable pageable);
 //    @Query("SELECT t FROM transactions t JOIN t.account a JOIN a.user u WHERE " +
 //            "u.id = :userId AND " +
 //            "(:type IS NULL OR t.type = :type) AND " +

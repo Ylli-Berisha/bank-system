@@ -5,6 +5,7 @@ import com.ylli.shared.dtos.LoanApplicationRequestDto;
 import com.ylli.shared.dtos.LoanDto;
 import com.ylli.shared.enums.LoanStatus;
 import com.ylli.shared.exceptions.ResourceNotFoundException;
+import com.ylli.shared.models.Loan;
 import com.ylli.transactions_service.services.LoansService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -272,6 +273,31 @@ public class LoansController extends BaseController<LoanDto, Long, LoansService>
             return ResponseEntity.badRequest().body(null);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @Operation(summary = "Get top active loans for user", description = "Retrieve the top 4 active loans for a specific user")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Top active loans retrieved successfully"),
+            @ApiResponse(responseCode = "204", description = "No active loans found for the user", content = @Content),
+            @ApiResponse(responseCode = "400", description = "Invalid or missing user ID", content = @Content),
+            @ApiResponse(responseCode = "404", description = "User not found", content = @Content)})
+    @GetMapping("/get/top-active-loans")
+    public ResponseEntity<List<LoanDto>> getTopActiveLoans(@RequestHeader("X-User-ID") String userId) {
+        if (userId == null || userId.isBlank()) {
+            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+        }
+
+        try {
+            List<LoanDto> topActiveLoans = service.getTopActiveLoans(userId);
+            if (topActiveLoans == null || topActiveLoans.isEmpty()) {
+                return new ResponseEntity<>(null, HttpStatus.NO_CONTENT);
+            }
+            return ResponseEntity.ok(topActiveLoans);
+        } catch (EntityNotFoundException e) {
+            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 

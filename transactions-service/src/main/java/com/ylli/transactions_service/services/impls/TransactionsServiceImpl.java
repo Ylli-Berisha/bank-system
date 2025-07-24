@@ -356,6 +356,24 @@ public class TransactionsServiceImpl extends BaseServiceImpl<Transaction, Transa
         return mapper.toDto(original);
     }
 
+    @Override
+    public List<TransactionDto> getTopUserTransactions(String userId) {
+        if (userId == null || userId.isBlank()) {
+            throw new IllegalArgumentException("User ID is required.");
+        }
+        var user = usersFeignClient.getUser(userId).getBody();
+        if (user == null) {
+            throw new EntityNotFoundException("User with ID " + userId + " not found.");
+        }
+
+        Pageable pageable = PageRequest.of(0, 4);
+        List<Transaction> latest4UserTx = repository.findTop4ByUserIdOrderByCreatedAtDesc(userId, pageable);
+        if (latest4UserTx.isEmpty()) {
+            return List.of();
+        }
+        return mapper.toDtoList(latest4UserTx);
+    }
+
 
     private void validateAdmin(String adminId){
         if (adminId == null || adminId.isBlank()) {
