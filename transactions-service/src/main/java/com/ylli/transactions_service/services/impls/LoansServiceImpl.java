@@ -23,11 +23,12 @@ import feign.FeignException;
 import jakarta.persistence.EntityNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.dao.DataAccessException;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,9 +36,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class LoansServiceImpl extends BaseServiceImpl<Loan, LoanDto, Long, LoansRepository, LoansMapper> implements LoansService {
@@ -47,42 +48,54 @@ public class LoansServiceImpl extends BaseServiceImpl<Loan, LoanDto, Long, Loans
     private final UsersFeignClient usersFeignClient;
     private final LoanProcessingService loanProcessingService;
     private final AuditHelper auditHelper;
+    private final CacheManager cacheManager;
 
-    public LoansServiceImpl(LoansRepository repository, LoansMapper mapper, AccountsFeignClient accountsFeignClient, UsersFeignClient usersFeignClient, LoanProcessingService loanProcessingService, AuditHelper auditHelper) {
+    public LoansServiceImpl(LoansRepository repository, LoansMapper mapper, AccountsFeignClient accountsFeignClient,
+                            UsersFeignClient usersFeignClient, LoanProcessingService loanProcessingService,
+                            AuditHelper auditHelper, CacheManager cacheManager) {
         super(repository, mapper);
         this.accountsFeignClient = accountsFeignClient;
         this.usersFeignClient = usersFeignClient;
         this.loanProcessingService = loanProcessingService;
         this.auditHelper = auditHelper;
+        this.cacheManager = cacheManager;
     }
 
+    @Cacheable(
+            value = "userLoans",
+            key = "#userId + '-' + (#status != null ? #status.name() : 'ALL') + '-' + #page + '-' + #size"
+    )
     @Override
-    public List<LoanDto> getUserLoans(String userId, LoanStatus status) {
+    public Page<LoanDto> getUserLoans(String userId, LoanStatus status, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+
         List<AccountDto> accounts = accountsFeignClient.getUserAccounts(userId).getBody();
 
         if (accounts == null || accounts.isEmpty()) {
-            return List.of();
+            return Page.empty(pageable);
         }
 
-        List<Loan> allUserLoans = new ArrayList<>();
+        List<Account> accountEntities = accounts.stream()
+                .map(dto -> {
+                    Account a = new Account();
+                    a.setId(dto.getId());
+                    return a;
+                })
+                .collect(Collectors.toList());
 
-        for (AccountDto accountDto : accounts) {
-            Account tempAccount = new Account();
-            tempAccount.setId(accountDto.getId());
+        Page<Loan> loanPage;
 
-            if (status != null) {
-                allUserLoans.addAll(repository.findByAccountAndStatus(tempAccount, status));
-            } else {
-                allUserLoans.addAll(repository.findByAccount(tempAccount));
-            }
-        }
-
-        if (allUserLoans.isEmpty()) {
-            return Collections.emptyList();
+        if (status != null) {
+            loanPage = repository.findByAccountInAndStatus(accountEntities, status, pageable);
         } else {
-            return mapper.toDtoList(allUserLoans);
+            loanPage = repository.findByAccountIn(accountEntities, pageable);
         }
+
+        List<LoanDto> loanDtos = mapper.toDtoList(loanPage.getContent());
+
+        return new PageImpl<>(loanDtos, pageable, loanPage.getTotalElements());
     }
+
 
     @Override
     public List<String> getLoanTypes() {
@@ -131,6 +144,7 @@ public class LoansServiceImpl extends BaseServiceImpl<Loan, LoanDto, Long, Loans
             );
 
             repository.save(loan);
+            evictUserLoansCache(userId);
             return true;
         } catch (EntityNotFoundException e) {
             log.warn("Loan application failed: Account with ID {} not found for user {}. Error: {}", accountId, userId, e.getMessage());
@@ -250,7 +264,13 @@ public class LoansServiceImpl extends BaseServiceImpl<Loan, LoanDto, Long, Loans
                 loan.getAccount().getId()
         );
 
-        return startLoan(loan);
+        LoanDto acceptedLoan = startLoan(loan);
+        if (loan.getAccount() != null && loan.getAccount().getUser() != null) {
+            evictUserLoansCache(loan.getAccount().getUser().getId());
+        } else {
+            log.warn("Could not evict cache for accepted loan {}: User ID not found.", loanId);
+        }
+        return acceptedLoan;
     }
 
     @Transactional
@@ -271,6 +291,11 @@ public class LoansServiceImpl extends BaseServiceImpl<Loan, LoanDto, Long, Loans
         );
 
         repository.save(loan);
+        if (loan.getAccount() != null && loan.getAccount().getUser() != null) {
+            evictUserLoansCache(loan.getAccount().getUser().getId());
+        } else {
+            log.warn("Could not evict cache for rejected loan {}: User ID not found.", loanId);
+        }
         return mapper.toDto(loan);
     }
 
@@ -294,7 +319,9 @@ public class LoansServiceImpl extends BaseServiceImpl<Loan, LoanDto, Long, Loans
                 loan.getAccount().getId()
         );
 
-        return startLoan(loan);
+        LoanDto acceptedLoan = startLoan(loan);
+        evictUserLoansCache(userId);
+        return acceptedLoan;
     }
 
     @Override
@@ -320,6 +347,7 @@ public class LoansServiceImpl extends BaseServiceImpl<Loan, LoanDto, Long, Loans
         );
 
         repository.save(loan);
+        evictUserLoansCache(userId);
         return mapper.toDto(loan);
     }
 
@@ -335,7 +363,7 @@ public class LoansServiceImpl extends BaseServiceImpl<Loan, LoanDto, Long, Loans
         Pageable pageable = PageRequest.of(0, 3, Sort.by(Sort.Direction.DESC, "startDate"));
         List<Loan> loans;
         try{
-           loans  = repository.findTop4ActiveLoansByUserId(userId, pageable);
+            loans  = repository.findTop4ActiveLoansByUserId(userId, pageable);
         }
         catch (Exception e){
             log.error("Error fetching top active loans for user {}: {}", userId, e.getMessage());
@@ -346,7 +374,6 @@ public class LoansServiceImpl extends BaseServiceImpl<Loan, LoanDto, Long, Loans
         }
         return mapper.toDtoList(loans);
     }
-
 
     private void validateAdmin(String adminId) {
         if (adminId == null || adminId.isBlank()) {
@@ -364,17 +391,17 @@ public class LoansServiceImpl extends BaseServiceImpl<Loan, LoanDto, Long, Loans
 
         List<Loan> loans = repository.findByStatus(LoanStatus.ACTIVE);
 
-        for (Loan loan : loans) {
-            try {
-                loanProcessingService.processSingleLoanInstallment(loan);
-            } catch (Exception e) {
-                log.error("Failed to process loan {}: {}", loan.getId(), e.getMessage());
-            }
+        Set<String> affectedUserIds = loans.stream()
+                .filter(loan -> loan.getAccount() != null && loan.getAccount().getUser() != null)
+                .map(loan -> loan.getAccount().getUser().getId())
+                .collect(Collectors.toSet());
+
+        for (String userId : affectedUserIds) {
+            evictUserLoansCache(userId);
         }
 
         log.info("Scheduled loan installment processing finished");
     }
-
 
     private LoanDto startLoan(Loan loan) {
         LocalDate now = LocalDate.now();
@@ -386,5 +413,28 @@ public class LoansServiceImpl extends BaseServiceImpl<Loan, LoanDto, Long, Loans
 
         repository.save(loan);
         return mapper.toDto(loan);
+    }
+
+    private void evictUserLoansCache(String userId) {
+        Cache userLoansCache = cacheManager.getCache("userLoans");
+        if (userLoansCache == null) {
+            log.warn("Cache 'userLoans' not found, skipping eviction for user {}", userId);
+            return;
+        }
+
+        List<Integer> commonPageSizes = List.of(6, 10, 20, 50, 100);
+        List<LoanStatus> allLoanStatuses = List.of(LoanStatus.values());
+
+        for (int pageSize : commonPageSizes) {
+            for (int page = 0; page < 5; page++) {
+                String allKey = userId + "-" + "ALL" + "-" + page + "-" + pageSize;
+                userLoansCache.evict(allKey);
+                for (LoanStatus status : allLoanStatuses) {
+                    String statusKey = userId + "-" + status.name() + "-" + page + "-" + pageSize;
+                    userLoansCache.evict(statusKey);
+                }
+            }
+        }
+        log.info("Evicted userLoans cache for user ID: {}", userId);
     }
 }

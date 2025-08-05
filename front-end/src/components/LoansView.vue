@@ -28,13 +28,11 @@
 
         <div class="filter-group">
           <label for="minAmountFilter">Min Amount:</label>
-          <input type="number" id="minAmountFilter" v-model.number="filters.minAmount" class="filter-input"
-                 placeholder="e.g., 100.00"/>
+          <input type="number" id="minAmountFilter" v-model.number="filters.minAmount" class="filter-input" placeholder="e.g., 100.00"/>
         </div>
         <div class="filter-group">
           <label for="maxAmountFilter">Max Amount:</label>
-          <input type="number" id="maxAmountFilter" v-model.number="filters.maxAmount" class="filter-input"
-                 placeholder="e.g., 5000.00"/>
+          <input type="number" id="maxAmountFilter" v-model.number="filters.maxAmount" class="filter-input" placeholder="e.g., 5000.00"/>
         </div>
 
         <div class="filter-group">
@@ -48,8 +46,7 @@
 
         <div class="filter-group filter-group-search">
           <label for="searchQueryFilter">Search:</label>
-          <input type="text" id="searchQueryFilter" v-model="filters.query" class="filter-input"
-                 placeholder="By ID or details"/>
+          <input type="text" id="searchQueryFilter" v-model="filters.query" class="filter-input" placeholder="By ID or details"/>
         </div>
 
         <div class="filter-buttons">
@@ -70,39 +67,29 @@
         <div v-for="loan in loans" :key="loan.id" :class="['card', loanStatusClass(loan.status)]">
           <h3>{{ formatLoanType(loan.loanType) }}</h3>
           <p><strong>Amount left:</strong> ${{ loan.amount.toFixed(2) }}</p>
-          <p><strong>Amount taken: </strong>{{loan.amount}}</p>
-
+          <p><strong>Amount taken: </strong>{{ loan.amount }}</p>
           <p><strong>Interest Rate:</strong> {{ loan.interestRate.toFixed(2) }}%</p>
           <p><strong>Term:</strong> {{ loan.termInMonths }} Months</p>
           <p><strong>Status:</strong> {{ formatStatus(loan.status) }}</p>
-          <p v-if="loan.nextInstallmentDate"><strong>Next Installment Due:</strong>
-            {{ formatDate(loan.nextInstallmentDate) }}</p>
+          <p v-if="loan.nextInstallmentDate"><strong>Next Installment Due:</strong> {{ formatDate(loan.nextInstallmentDate) }}</p>
           <p v-if="loan.startDate"><strong>Start Date:</strong> {{ formatDate(loan.startDate) }}</p>
           <p v-if="loan.endDate"><strong>End Date:</strong> {{ formatDate(loan.endDate) }}</p>
           <p v-if="loan.createdAt"><strong>Applied On:</strong> {{ formatDate(loan.createdAt) }}</p>
           <p v-if="loan.paidOffDate"><strong>Paid Off Date:</strong> {{ formatDate(loan.paidOffDate) }}</p>
-          <p v-if="loan.monthlyInstallment !== undefined"><strong>Monthly Installment:</strong>
-            ${{ loan.monthlyInstallment.toFixed(2) }}</p>
+          <p v-if="loan.monthlyInstallment !== undefined"><strong>Monthly Installment:</strong> ${{ loan.monthlyInstallment.toFixed(2) }}</p>
           <p><strong>Loan ID:</strong> {{ loan.id }}</p>
 
-          <!-- Accept/Reject buttons for CHANGES_PROPOSED -->
           <div v-if="loan.status === 'CHANGES_PROPOSED'" class="changes-proposed-actions">
-            <button
-                class="accept-btn"
-                :disabled="actionLoading[loan.id]"
-                @click="openConfirmModal('accept', loan.id)"
-            >
-              Accept Changes
-            </button>
-            <button
-                class="reject-btn"
-                :disabled="actionLoading[loan.id]"
-                @click="openConfirmModal('reject', loan.id)"
-            >
-              Reject Changes
-            </button>
+            <button class="accept-btn" :disabled="actionLoading[loan.id]" @click="openConfirmModal('accept', loan.id)">Accept Changes</button>
+            <button class="reject-btn" :disabled="actionLoading[loan.id]" @click="openConfirmModal('reject', loan.id)">Reject Changes</button>
           </div>
         </div>
+      </div>
+
+      <div class="pagination-controls">
+        <button :disabled="currentPageNumber <= 0" @click="changePage(currentPageNumber - 1)">Previous</button>
+        <span>Page {{ currentPageNumber + 1 }} of {{ totalPagesNumber }}</span>
+        <button :disabled="currentPageNumber + 1 >= totalPagesNumber" @click="changePage(currentPageNumber + 1)">Next</button>
       </div>
     </section>
 
@@ -113,16 +100,12 @@
       <button @click="showForm = !showForm" :class="['toggle-form-btn', { 'is-open': showForm }]">
         <span v-if="!showForm">Apply For New Loan</span>
         <span v-else>Cancel Application</span>
-        <svg v-if="!showForm" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-             class="feather feather-plus-circle">
+        <svg v-if="!showForm" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-plus-circle">
           <circle cx="12" cy="12" r="10"></circle>
           <line x1="12" y1="8" x2="12" y2="16"></line>
           <line x1="8" y1="12" x2="16" y2="12"></line>
         </svg>
-        <svg v-else xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-             class="feather feather-x-circle">
+        <svg v-else xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-x-circle">
           <circle cx="12" cy="12" r="10"></circle>
           <line x1="15" y1="9" x2="9" y2="15"></line>
           <line x1="9" y1="9" x2="15" y2="15"></line>
@@ -133,15 +116,11 @@
         <form v-if="showForm" @submit.prevent="openNewLoanConfirmModal" class="create-form-card">
           <h3>New Loan Details</h3>
 
-          <!-- form inputs as before -->
-
           <div class="form-group">
             <label for="loanType">Loan Type:</label>
             <select id="loanType" v-model="newLoan.loanType" required class="form-input">
               <option value="" disabled>Select a loan type</option>
-              <option v-for="type in loanTypes" :key="type" :value="type">
-                {{ formatLoanType(type) }}
-              </option>
+              <option v-for="type in loanTypes" :key="type" :value="type">{{ formatLoanType(type) }}</option>
             </select>
           </div>
 
@@ -149,65 +128,31 @@
             <label for="sourceAccount">Source Account:</label>
             <select id="sourceAccount" v-model="selectedSourceAccountId" required class="form-input">
               <option value="" disabled>Select an account</option>
-              <option v-for="account in activeAccountsForSelection" :key="account.id" :value="account.id">
-                {{ formatAccountDisplay(account) }}
-              </option>
+              <option v-for="account in activeAccountsForSelection" :key="account.id" :value="account.id">{{ formatAccountDisplay(account) }}</option>
             </select>
-            <p v-if="!activeAccountsForSelection.length" class="text-sm text-gray-500 mt-1">
-              You need at least one active account to apply for a loan.
-            </p>
+            <p v-if="!activeAccountsForSelection.length" class="text-sm text-gray-500 mt-1">You need at least one active account to apply for a loan.</p>
           </div>
 
           <div class="form-group">
             <label for="amount">Loan Amount:</label>
-            <input
-                id="amount"
-                type="number"
-                v-model.number="newLoan.amount"
-                min="0.01"
-                step="0.01"
-                required
-                class="form-input"
-                placeholder="e.g., 1000.00"
-            />
+            <input id="amount" type="number" v-model.number="newLoan.amount" min="0.01" step="0.01" required class="form-input" placeholder="e.g., 1000.00"/>
           </div>
 
           <div class="form-group">
             <label for="interestRate">Interest Rate (%):</label>
-            <input
-                id="interestRate"
-                type="number"
-                v-model.number="newLoan.interestRate"
-                min="0.01"
-                step="0.01"
-                required
-                class="form-input"
-                placeholder="e.g., 5.50"
-            />
+            <input id="interestRate" type="number" v-model.number="newLoan.interestRate" min="0.01" step="0.01" required class="form-input" placeholder="e.g., 5.50"/>
           </div>
 
           <div class="form-group">
             <label for="termInMonths">Loan Term (Months):</label>
-            <input
-                id="termInMonths"
-                type="number"
-                v-model.number="newLoan.termInMonths"
-                min="1"
-                required
-                class="form-input"
-                placeholder="e.g., 60"
-            />
+            <input id="termInMonths" type="number" v-model.number="newLoan.termInMonths" min="1" required class="form-input" placeholder="e.g., 60"/>
           </div>
 
-          <div class="status-box">
-            <strong>Status:</strong> Pending Approval
-          </div>
+          <div class="status-box"><strong>Status:</strong> Pending Approval</div>
 
           <button type="submit" class="submit-application-btn">
             Submit Loan Application
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                 class="feather feather-arrow-right">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right">
               <line x1="5" y1="12" x2="19" y2="12"></line>
               <polyline points="12 5 19 12 12 19"></polyline>
             </svg>
@@ -217,43 +162,33 @@
       </Transition>
     </section>
 
-    <ConfirmationModal
-        :is-open="showConfirmationModal"
-        :title="confirmationModalTitle"
-        :confirm="handleConfirmationModalConfirm"
-        :cancel="handleConfirmationModalCancel"
-    />
+    <ConfirmationModal :is-open="showConfirmationModal" :title="confirmationModalTitle" :confirm="handleConfirmationModalConfirm" :cancel="handleConfirmationModalCancel" />
   </div>
 </template>
 
 <script setup>
-import {ref, computed, onMounted, watch, reactive} from 'vue'
-import {storeToRefs} from 'pinia'
-import {useLoansStore} from '@/stores/loansStore.js'
-import {useAccountsStore} from '@/stores/acccountsStore.js'
-import ConfirmationModal from '@/components/ConfirmModal.vue';
+import { ref, computed, onMounted, watch, reactive } from 'vue'
+import { storeToRefs } from 'pinia'
+import { useLoansStore } from '@/stores/loansStore.js'
+import { useAccountsStore } from '@/stores/acccountsStore.js'
+import ConfirmationModal from '@/components/ConfirmModal.vue'
 
 const loansStore = useLoansStore()
 const accountsStore = useAccountsStore()
 
-const {
-  loans,
-  error: loansError,
-  loanTypes,
-  createError,
-} = storeToRefs(loansStore)
+const { loans, error: loansError, loanTypes, createError, totalPages, currentPage, pageSize } = storeToRefs(loansStore)
+const { accounts } = storeToRefs(accountsStore)
 
-const {
-  accounts
-} = storeToRefs(accountsStore)
+const currentPageNumber = computed(() => currentPage.value)
+const totalPagesNumber = computed(() => totalPages.value)
 
 const showForm = ref(false)
 const selectedSourceAccountId = ref('')
 
 const newLoan = ref({
   loanType: '',
-  amount: 0.00,
-  interestRate: 0.00,
+  amount: 0.0,
+  interestRate: 0.0,
   termInMonths: 1,
 })
 
@@ -262,7 +197,7 @@ const confirmationModalTitle = ref('')
 const currentActionType = ref(null)
 const currentLoanId = ref(null)
 
-const loanStatuses = ['ACTIVE', 'PENDING', 'PAID_OFF', 'REJECTED', 'DEFAULTED', 'CHANGES_PROPOSED'];
+const loanStatuses = ['ACTIVE', 'PENDING', 'PAID_OFF', 'REJECTED', 'DEFAULTED', 'CHANGES_PROPOSED']
 
 const filters = reactive({
   startDate: '',
@@ -272,56 +207,42 @@ const filters = reactive({
   minAmount: null,
   maxAmount: null,
   query: ''
-});
+})
 
-let searchDebounceTimer = null;
+let searchDebounceTimer = null
 
-const activeAccountsForSelection = computed(() =>
-    accounts.value.filter(acc => acc.status === 'ACTIVE')
-);
+const activeAccountsForSelection = computed(() => accounts.value.filter(acc => acc.status === 'ACTIVE'))
 
-const actionLoading = reactive({});
+const actionLoading = reactive({})
 
 onMounted(async () => {
-  document.title = "Loans"
+  document.title = 'Loans'
+  await loansStore.fetchAllLoans()
   await accountsStore.fetchAccounts()
   await loansStore.fetchLoanTypes()
-  await applyFilters();
+  await applyFilters()
 
-  if (loanTypes.value.length > 0) {
-    newLoan.value.loanType = loanTypes.value[0]
-  }
+  if (loanTypes.value.length > 0) newLoan.value.loanType = loanTypes.value[0]
 
-  if (activeAccountsForSelection.value.length > 0) {
-    selectedSourceAccountId.value = activeAccountsForSelection.value[0].id;
-  }
+  if (activeAccountsForSelection.value.length > 0) selectedSourceAccountId.value = activeAccountsForSelection.value[0].id
 })
 
 watch(filters, (newFilters, oldFilters) => {
   if (newFilters.query !== oldFilters.query) {
-    if (searchDebounceTimer) {
-      clearTimeout(searchDebounceTimer);
-    }
-    searchDebounceTimer = setTimeout(() => {
-      applyFilters();
-    }, 500);
+    if (searchDebounceTimer) clearTimeout(searchDebounceTimer)
+    searchDebounceTimer = setTimeout(() => { applyFilters() }, 500)
   } else {
-    applyFilters();
+    applyFilters()
   }
-}, {deep: true});
+}, { deep: true })
 
-async function applyFilters() {
-  const currentFilters = filters;
-
+async function applyFilters(page = 0) {
+  const currentFilters = filters
   const hasActiveFilter = Object.values(currentFilters).some(value => {
-    if (typeof value === 'number') {
-      return value !== null && !isNaN(value);
-    }
-    if (typeof value === 'string') {
-      return value.trim() !== '';
-    }
-    return false;
-  });
+    if (typeof value === 'number') return value !== null && !isNaN(value)
+    if (typeof value === 'string') return value.trim() !== ''
+    return false
+  })
 
   const cleanedFilters = {
     loanType: currentFilters.loanType || undefined,
@@ -331,12 +252,12 @@ async function applyFilters() {
     minAmount: currentFilters.minAmount !== null ? currentFilters.minAmount : undefined,
     maxAmount: currentFilters.maxAmount !== null ? currentFilters.maxAmount : undefined,
     query: currentFilters.query || undefined
-  };
+  }
 
   if (hasActiveFilter) {
-    await loansStore.fetchFilteredLoans(cleanedFilters);
+    await loansStore.fetchFilteredLoans(cleanedFilters)
   } else {
-    await loansStore.fetchAllLoans();
+    await loansStore.fetchAllLoans(filters.status || null, page, pageSize.value)
   }
 }
 
@@ -349,40 +270,41 @@ function clearFilters() {
     minAmount: null,
     maxAmount: null,
     query: ''
-  });
+  })
+}
+
+function changePage(newPage) {
+  if (newPage < 0 || newPage >= totalPages.value) return
+  applyFilters(newPage)
 }
 
 function formatDate(isoString) {
   if (!isoString) return ''
   const date = new Date(isoString)
-  return date.toLocaleDateString(undefined, {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  })
+  return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
 }
 
 function formatLoanType(type) {
-  return type ? type.toString().replace(/_/g, ' ').replace(/\b\w/g, char => char.toUpperCase()) : '';
+  return type ? type.toString().replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : ''
 }
 
 function formatStatus(status) {
-  return status ? status.toString().replace(/_/g, ' ').replace(/\b\w/g, char => char.toUpperCase()) : '';
+  return status ? status.toString().replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : ''
 }
 
 function formatAccountDisplay(account) {
-  if (!account) return '';
-  return `${account.type.replace('_', ' ')} (ID: ${account.id.substring(0, 8)}..., Balance: $${account.balance.toFixed(2)})`;
+  if (!account) return ''
+  return `${account.type.replace('_', ' ')} (ID: ${account.id.substring(0, 8)}..., Balance: $${account.balance.toFixed(2)})`
 }
 
 function openNewLoanConfirmModal() {
   if (!newLoan.value.loanType || newLoan.value.amount <= 0 || newLoan.value.interestRate <= 0 || newLoan.value.termInMonths < 1 || !selectedSourceAccountId.value) {
-    createError.value = 'Please fill in all loan details and select a source account correctly.';
-    return;
+    createError.value = 'Please fill in all loan details and select a source account correctly.'
+    return
   }
 
-  const selectedAccount = activeAccountsForSelection.value.find(acc => acc.id === selectedSourceAccountId.value);
-  const accountDisplay = selectedAccount ? formatAccountDisplay(selectedAccount) : 'selected account';
+  const selectedAccount = activeAccountsForSelection.value.find(acc => acc.id === selectedSourceAccountId.value)
+  const accountDisplay = selectedAccount ? formatAccountDisplay(selectedAccount) : 'selected account'
 
   confirmationModalTitle.value = `Are you sure you want to apply for a ${formatLoanType(newLoan.value.loanType)} loan of $${newLoan.value.amount.toFixed(2)} with an interest rate of ${newLoan.value.interestRate.toFixed(2)}% over ${newLoan.value.termInMonths} months, linked to your ${accountDisplay}?`
   currentActionType.value = 'applyLoan'
@@ -392,9 +314,7 @@ function openNewLoanConfirmModal() {
 function openConfirmModal(actionType, loanId) {
   currentActionType.value = actionType
   currentLoanId.value = loanId
-
-  let actionText = actionType === 'accept' ? 'accept the proposed changes' : 'reject the proposed changes'
-
+  const actionText = actionType === 'accept' ? 'accept the proposed changes' : 'reject the proposed changes'
   confirmationModalTitle.value = `Are you sure you want to ${actionText} for loan ID ${loanId}?`
   showConfirmationModal.value = true
 }
@@ -402,7 +322,7 @@ function openConfirmModal(actionType, loanId) {
 async function handleConfirmationModalConfirm() {
   try {
     if (currentActionType.value === 'applyLoan') {
-      await submitLoanApplication();
+      await submitLoanApplication()
     } else if (currentActionType.value === 'accept' && currentLoanId.value) {
       actionLoading[currentLoanId.value] = true
       await loansStore.acceptProposedChanges(currentLoanId.value)
@@ -415,58 +335,58 @@ async function handleConfirmationModalConfirm() {
       actionLoading[currentLoanId.value] = false
     }
   } catch (err) {
-    console.error("Error during modal action:", err);
+    console.error('Error during modal action:', err)
   } finally {
-    resetConfirmationModalState();
+    resetConfirmationModalState()
   }
 }
 
 function handleConfirmationModalCancel() {
-  resetConfirmationModalState();
+  resetConfirmationModalState()
 }
 
 function resetConfirmationModalState() {
-  showConfirmationModal.value = false;
-  confirmationModalTitle.value = '';
-  currentActionType.value = null;
-  currentLoanId.value = null;
+  showConfirmationModal.value = false
+  confirmationModalTitle.value = ''
+  currentActionType.value = null
+  currentLoanId.value = null
 }
 
 async function submitLoanApplication() {
   createError.value = null
   try {
-    const loanPayload = {...newLoan.value};
-    await loansStore.applyForNewLoan(selectedSourceAccountId.value, loanPayload);
+    const loanPayload = { ...newLoan.value }
+    await loansStore.applyForNewLoan(selectedSourceAccountId.value, loanPayload)
     newLoan.value = {
       loanType: loanTypes.value[0] || '',
-      amount: 0.00,
-      interestRate: 0.00,
+      amount: 0.0,
+      interestRate: 0.0,
       termInMonths: 1,
-      monthlyInstallment: 0.00,
-    };
-    selectedSourceAccountId.value = activeAccountsForSelection.value[0]?.id || '';
-    showForm.value = false;
+      monthlyInstallment: 0.0,
+    }
+    selectedSourceAccountId.value = activeAccountsForSelection.value[0]?.id || ''
+    showForm.value = false
   } catch (err) {
-    throw err;
+    throw err
   }
 }
 
 function loanStatusClass(status) {
   switch (status) {
     case 'ACTIVE':
-      return 'active-loan';
+      return 'active-loan'
     case 'PENDING':
-      return 'pending-loan';
+      return 'pending-loan'
     case 'PAID_OFF':
-      return 'paid-off-loan';
+      return 'paid-off-loan'
     case 'REJECTED':
-      return 'rejected-loan';
+      return 'rejected-loan'
     case 'DEFAULTED':
-      return 'defaulted-loan';
+      return 'defaulted-loan'
     case 'CHANGES_PROPOSED':
-      return 'changes-proposed-loan';
+      return 'changes-proposed-loan'
     default:
-      return '';
+      return ''
   }
 }
 </script>
@@ -955,5 +875,36 @@ function loanStatusClass(status) {
   cursor: not-allowed;
   box-shadow: none;
 }
+
+.pagination-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 1.5rem;
+  gap: 1rem;
+}
+
+.pagination-controls button {
+  background-color: #1976d2;
+  border: none;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.3s ease;
+}
+
+.pagination-controls button:disabled {
+  background-color: #9e9e9e;
+  cursor: not-allowed;
+}
+
+.pagination-controls span {
+  font-weight: 500;
+  font-size: 1rem;
+  color: #444;
+}
+
 
 </style>

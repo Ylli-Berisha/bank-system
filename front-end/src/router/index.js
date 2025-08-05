@@ -22,7 +22,7 @@ const routes = [
         path: '/',
         name: 'Home',
         component: HomeView,
-        meta: { requiresAuth: true, requiredRole: ROLE_USER } // Added requiredRole
+        meta: { requiresAuth: true, requiredRole: ROLE_USER }
     },
     {
         path: '/login',
@@ -96,6 +96,13 @@ router.beforeEach(async (to, from, next) => { // Made async to await store actio
 
     const isAuthenticated = authStore.isTokenValid;
     console.log(`Navigating to ${to.path}. Authenticated: ${isAuthenticated}`);
+
+    if(to.path === '/' && authStore.userHasRole(ROLE_ADMIN)) {
+        console.log(`Admin user detected. Redirecting to admin home.`);
+        next('/admin');
+        return;
+    }
+
     if (to.meta.requiresAuth && !isAuthenticated) {
         console.warn(`Attempted access to ${to.path} without authentication. Redirecting to login.`);
         next('/login');

@@ -6,12 +6,13 @@ import com.ylli.shared.dtos.LoanDto;
 import com.ylli.shared.enums.LoanStatus;
 import com.ylli.shared.models.Loan;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
 import java.util.List;
 
 public interface LoansService extends BaseService<LoanDto, Long> {
-    List<LoanDto> getUserLoans(String userId, LoanStatus loanStatus);
+    Page<LoanDto> getUserLoans(String userId, LoanStatus status, int page, int size);
 
     List<String> getLoanTypes();
 

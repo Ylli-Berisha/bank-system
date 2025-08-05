@@ -95,7 +95,8 @@ public class UserServiceImpl extends BaseServiceImpl<User, UserDto, String, User
         if (!passwordEncoder.matches(loginDto.getPassword(), user.getPassword())) {
             log.info("users password: {}", user.getPassword());
             log.info("loginDto password: {}", loginDto.getPassword());
-//            throw new IllegalArgumentException("Invalid username or password");
+            System.out.println(passwordEncoder.encode("Baba123@"));
+            throw new IllegalArgumentException("Invalid username or password");
         }
 
         String accessToken = jwtUtil.generateToken(user.getId(), user.getRoles());

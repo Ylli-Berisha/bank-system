@@ -13,7 +13,10 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.media.Content;
 import jakarta.persistence.EntityNotFoundException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -22,6 +25,7 @@ import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
 
+@Slf4j
 @Tag(name = "Loans", description = "Operations related to loans")
 @RestController
 @RequestMapping("/api/loans")
@@ -31,30 +35,38 @@ public class LoansController extends BaseController<LoanDto, Long, LoansService>
         super(service);
     }
 
-    @Operation(summary = "Get loans for user", description = "Retrieve all loans for the authenticated user, optionally filtered by status")
+    @Operation(
+            summary = "Get loans for user (paginated)",
+            description = "Retrieve a paginated list of loans for the authenticated user, optionally filtered by status"
+    )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Loans retrieved successfully"),
             @ApiResponse(responseCode = "400", description = "Missing or invalid user ID", content = @Content),
             @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
     })
     @GetMapping("/get/user-loans")
-    public ResponseEntity<List<LoanDto>> getUserLoans(
+    public ResponseEntity<Page<LoanDto>> getUserLoans(
             @RequestHeader("X-User-ID") String userId,
-            @RequestParam(required = false) LoanStatus status) {
+            @RequestParam(required = false) LoanStatus status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "6") int size) {
 
         if (userId == null || userId.isBlank()) {
-            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+            return ResponseEntity.badRequest().build();
         }
-
         try {
-            List<LoanDto> loans = service.getUserLoans(userId, status);
-            return ResponseEntity.ok(loans != null ? loans : Collections.emptyList());
+            Page<LoanDto> loans = service.getUserLoans(userId, status, page, size);
+            loans.stream().forEach(loanDto -> {
+                log.info("loanDto: {}", loanDto);
+            });
+            return ResponseEntity.ok(loans);
         } catch (EntityNotFoundException e) {
-            return new ResponseEntity<>(List.of(), HttpStatus.OK);
+            return ResponseEntity.ok(Page.empty(PageRequest.of(page, size)));
         } catch (Exception e) {
-            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
 
     @Operation(summary = "Get available loan types", description = "Retrieve all loan types supported by the system")
     @ApiResponses(value = {
