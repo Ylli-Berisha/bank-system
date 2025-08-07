@@ -34,15 +34,17 @@ public class TransactionsController extends BaseController<TransactionDto, Strin
             @ApiResponse(responseCode = "204", description = "No transactions found", content = @Content)
     })
     @GetMapping("/get/user-transactions")
-    public ResponseEntity<List<TransactionDto>> getUserTransactions(@RequestHeader("X-User-ID") String userId) {
+    public ResponseEntity<Page<TransactionDto>> getUserTransactions(@RequestHeader("X-User-ID") String userId,
+                                                                    @RequestParam(defaultValue = "0") int page,
+                                                                    @RequestParam(defaultValue = "10") int size) {
         if (userId == null || userId.isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
 
-        List<TransactionDto> transactions = service.getUserTransactions(userId);
+        Page<TransactionDto> transactions = service.getUserTransactions(userId, page, size);
 
         if (transactions == null || transactions.isEmpty()) {
-            return new ResponseEntity<>(List.of(), HttpStatus.OK);
+            return new ResponseEntity<>(Page.empty(), HttpStatus.OK);
         }
 
         return ResponseEntity.ok(transactions);

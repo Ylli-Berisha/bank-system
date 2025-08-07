@@ -1,10 +1,7 @@
 package com.ylli.transactions_service.repositories;
 
-import com.ylli.shared.enums.TransactionStatus;
-import com.ylli.shared.enums.TransactionType;
 import com.ylli.shared.models.Account;
 import com.ylli.shared.models.Transaction;
-import com.ylli.shared.models.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -13,14 +10,11 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
 public interface TransactionsRepository extends JpaRepository<Transaction, String>, JpaSpecificationExecutor<Transaction> {
-    List<Transaction> findByAccount(Account account);
+    Page<Transaction> findByAccountIn(List<Account> account, Pageable pageable);
 
     @Query("""
         SELECT t FROM transactions t

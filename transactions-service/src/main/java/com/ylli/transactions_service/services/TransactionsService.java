@@ -10,7 +10,8 @@ import java.time.LocalDate;
 import java.util.List;
 
 public interface TransactionsService extends BaseService<TransactionDto, String> {
-    List<TransactionDto> getUserTransactions(String userId);
+    Page<TransactionDto> getUserTransactions(String userId, int page, int size);
+
     List<TransactionDto> filterUserTransactions(
             String userId,
             String type,

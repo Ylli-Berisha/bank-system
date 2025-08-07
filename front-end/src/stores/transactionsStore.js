@@ -10,79 +10,51 @@ export const useTransactionsStore = defineStore('transactions', () => {
     const loading = ref(false);
     const loadingTop = ref(false);
 
-    const fetchAllTransactions = async () => {
+    const totalTransactions = ref(0);
+    const totalPages = ref(0);
+    const currentPage = ref(0);
+    const pageSize = ref(6);
+
+    const fetchTransactions = async (filters = {}) => {
         error.value = null;
         loading.value = true;
 
-        const userId = localStorage.getItem('userId');
-        if (!userId) {
-            error.value = 'No user ID found, please try logging in again';
-            loading.value = false;
-            return;
+        const params = new URLSearchParams();
+        params.append('page', currentPage.value.toString());
+        params.append('size', pageSize.value.toString());
+
+        for (const key in filters) {
+            const value = filters[key];
+            if (value !== undefined && value !== null && value !== '') {
+                params.append(key, value);
+            }
         }
+
+        const url = `/transactions-service/api/transactions/get/user-transactions?${params.toString()}`;
 
         try {
-            const url = `/transactions-service/api/transactions/get/user-transactions`;
             const response = await client.get(url);
 
-            if (response.status === 204) {
+            if (response.status === 204 || !response.data || response.data.content?.length === 0) {
                 transactions.value = [];
+                totalTransactions.value = 0;
+                totalPages.value = 0;
             } else {
-                transactions.value = response.data;
+                transactions.value = response.data.content || [];
+                totalTransactions.value = response.data.totalElements || 0;
+                totalPages.value = response.data.totalPages || 0;
+                currentPage.value = response.data.number || currentPage.value;
+                pageSize.value = response.data.size || pageSize.value;
             }
-            console.log("Fetched all transactions:", transactions.value);
-
         } catch (err) {
-            console.error('Failed to fetch all transactions:', err);
-            if (err.response && (err.response.status === 404 || err.response.status === 204)) {
-                transactions.value = [];
-                error.value = 'No transactions found.';
-            } else {
-                error.value = 'Failed to fetch all transactions. Please try again.';
-            }
-        } finally {
-            loading.value = false;
-        }
-    };
+            console.error('Failed to fetch transactions (consolidated):', err);
 
-    const fetchFilteredTransactions = async (filters = {}) => {
-        error.value = null;
-        loading.value = true;
-
-        const userId = localStorage.getItem('userId');
-        if (!userId) {
-            error.value = 'No user ID found, please try logging in again';
-            loading.value = false;
-            return;
-        }
-
-        try {
-            const params = new URLSearchParams();
-            for (const key in filters) {
-                const value = filters[key];
-                if (value !== undefined && value !== null && value !== '') {
-                    params.append(key, value);
-                }
-            }
-
-            const url = `/transactions-service/api/transactions/filter/user-transactions?${params.toString()}`;
-            const response = await client.get(url);
-
-            if (response.status === 204) {
-                transactions.value = [];
-            } else {
-                transactions.value = response.data;
-            }
-            console.log("Fetched filtered transactions:", transactions.value);
-
-        } catch (err) {
-            console.error('Failed to fetch filtered transactions:', err);
-            if (err.response && (err.response.status === 404 || err.response.status === 204)) {
-                transactions.value = [];
-                error.value = 'No transactions found matching your criteria.';
-            } else {
-                error.value = 'Failed to fetch filtered transactions. Please try again.';
-            }
+            transactions.value = [];
+            totalTransactions.value = 0;
+            totalPages.value = 0;
+            error.value = (err.response?.data?.message)
+                ? `Failed to fetch transactions: ${err.response.data.message}`
+                : 'Failed to fetch transactions due to an unexpected error.';
         } finally {
             loading.value = false;
         }
@@ -101,8 +73,6 @@ export const useTransactionsStore = defineStore('transactions', () => {
             } else {
                 topTransactions.value = response.data;
             }
-            console.log("Fetched top user transactions:", topTransactions.value);
-
         } catch (err) {
             console.error('Failed to fetch top user transactions:', err);
             if (err.response && (err.response.status === 404 || err.response.status === 204)) {
@@ -124,10 +94,6 @@ export const useTransactionsStore = defineStore('transactions', () => {
         try {
             const url = '/transactions-service/api/transactions/create-new';
             const response = await client.post(url, transactionData);
-
-            transactions.value.unshift(response.data);
-
-            console.log("Transaction created successfully:", response.data);
 
             const accountsStore = useAccountsStore();
             await accountsStore.fetchAccounts();
@@ -154,8 +120,11 @@ export const useTransactionsStore = defineStore('transactions', () => {
         error,
         loading,
         loadingTop,
-        fetchAllTransactions,
-        fetchFilteredTransactions,
+        totalTransactions,
+        totalPages,
+        currentPage,
+        pageSize,
+        fetchTransactions,
         fetchTopUserTransactions,
         createTransaction,
     };

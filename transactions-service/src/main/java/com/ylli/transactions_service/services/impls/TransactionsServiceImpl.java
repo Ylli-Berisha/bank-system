@@ -9,7 +9,6 @@ import com.ylli.shared.dtos.TransactionDto;
 import com.ylli.shared.enums.*;
 import com.ylli.shared.models.Account;
 import com.ylli.shared.models.Transaction;
-import com.ylli.shared.models.User;
 import com.ylli.transactions_service.configs.AdminTransactionSpecifications;
 import com.ylli.transactions_service.configs.TransactionSpecifications;
 import com.ylli.transactions_service.mappers.TransactionMapper;
@@ -17,10 +16,14 @@ import com.ylli.transactions_service.repositories.TransactionsRepository;
 import com.ylli.transactions_service.services.TransactionsService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Caching;
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -28,39 +31,51 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.Set;
 
 @Service
 public class TransactionsServiceImpl extends BaseServiceImpl<Transaction, TransactionDto, String, TransactionsRepository, TransactionMapper> implements TransactionsService {
+
     private final AccountsFeignClient accountsFeignClient;
     private final UsersFeignClient usersFeignClient;
     private final AuditHelper auditHelper;
+    private final CacheManager cacheManager;
+    private static final Logger log = LoggerFactory.getLogger(TransactionsServiceImpl.class);
 
-    public TransactionsServiceImpl(TransactionsRepository transactionsRepository, TransactionMapper transactionMapper, AccountsFeignClient accountsFeignClient, UsersFeignClient usersFeignClient, AuditHelper auditHelper){
+    public TransactionsServiceImpl(TransactionsRepository transactionsRepository, TransactionMapper transactionMapper, AccountsFeignClient accountsFeignClient, UsersFeignClient usersFeignClient, AuditHelper auditHelper, CacheManager cacheManager){
         super(transactionsRepository, transactionMapper);
         this.accountsFeignClient = accountsFeignClient;
         this.usersFeignClient = usersFeignClient;
         this.auditHelper = auditHelper;
+        this.cacheManager = cacheManager;
     }
 
+    @Cacheable(
+            value = "userTransactions",
+            key = "#userId + '-' + #page + '-' + #size"
+    )
     @Override
-    public List<TransactionDto> getUserTransactions(String userId) {
+    public Page<TransactionDto> getUserTransactions(String userId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
         List<AccountDto> accounts = accountsFeignClient.getUserAccounts(userId).getBody();
 
-        List<Transaction> transactions = new ArrayList<>();
         if (accounts == null || accounts.isEmpty()) {
-            return List.of();
-        }
-        for (AccountDto account : accounts) {
-            var tempAccount = new Account();
-            tempAccount.setId(account.getId());
-            transactions.addAll(repository.findByAccount(tempAccount));
+            return Page.empty(pageable);
         }
 
-        if (transactions.isEmpty()) {
-            return null;
-        }
-        return mapper.toDtoList(transactions);
+        List<Account> accountEntities = accounts.stream()
+                .map(dto -> {
+                    Account a = new Account();
+                    a.setId(dto.getId());
+                    return a;
+                })
+                .collect(Collectors.toList());
 
+        Page<Transaction> transactionPage = repository.findByAccountIn(accountEntities, pageable);
+        List<TransactionDto> transactionDtos = mapper.toDtoList(transactionPage.getContent());
+
+        return new PageImpl<>(transactionDtos, pageable, transactionPage.getTotalElements());
     }
 
     @Override
@@ -87,6 +102,7 @@ public class TransactionsServiceImpl extends BaseServiceImpl<Transaction, Transa
         TransactionStatus parsedStatus = null;
         if (statusString != null && !statusString.isEmpty()) {
             try {
+                System.err.println("Warning: Received invalid TransactionStatus string: " + statusString);
                 parsedStatus = TransactionStatus.valueOf(statusString.toUpperCase());
             } catch (IllegalArgumentException e) {
                 System.err.println("Warning: Received invalid TransactionStatus string: " + statusString);
@@ -106,7 +122,6 @@ public class TransactionsServiceImpl extends BaseServiceImpl<Transaction, Transa
 
         BigDecimal actualMinAmount = (minAmount != null) ? minAmount : BigDecimal.ZERO;
         BigDecimal actualMaxAmount = (maxAmount != null) ? maxAmount : new BigDecimal("999999999999999.99");
-
 
         List<Transaction> transactions = repository.findAll(
                 TransactionSpecifications.withFilters(
@@ -155,6 +170,7 @@ public class TransactionsServiceImpl extends BaseServiceImpl<Transaction, Transa
         TransactionStatus parsedStatus = null;
         if (statusString != null && !statusString.isEmpty()) {
             try {
+                System.err.println("Warning: Received invalid TransactionStatus string: " + statusString);
                 parsedStatus = TransactionStatus.valueOf(statusString.toUpperCase());
             } catch (IllegalArgumentException e) {
                 System.err.println("Warning: Received invalid TransactionStatus string: " + statusString);
@@ -232,13 +248,7 @@ public class TransactionsServiceImpl extends BaseServiceImpl<Transaction, Transa
                 sourceAccountDto.setBalance(sourceAccountDto.getBalance().add(newTransaction.getAmount()));
                 newTransaction.setStatus(TransactionStatus.COMPLETED);
                 newTransaction.setRecipientAccount(null);
-
-                auditHelper.createAudit(
-                        AuditType.DEPOSIT_MADE,
-                        "Deposit of " + newTransaction.getAmount() + " to account " + sourceAccountDto.getId(),
-                        sourceAccountDto.getId()
-                );
-
+                auditHelper.createAudit(AuditType.DEPOSIT_MADE, "Deposit of " + newTransaction.getAmount() + " to account " + sourceAccountDto.getId(), sourceAccountDto.getId());
                 break;
 
             case WITHDRAWAL:
@@ -250,13 +260,7 @@ public class TransactionsServiceImpl extends BaseServiceImpl<Transaction, Transa
                 sourceAccountDto.setBalance(sourceAccountDto.getBalance().subtract(newTransaction.getAmount()));
                 newTransaction.setStatus(TransactionStatus.COMPLETED);
                 newTransaction.setRecipientAccount(null);
-
-                auditHelper.createAudit(
-                        AuditType.WITHDRAWAL_MADE,
-                        "Withdrawal of " + newTransaction.getAmount() + " from account " + sourceAccountDto.getId(),
-                        sourceAccountDto.getId()
-                );
-
+                auditHelper.createAudit(AuditType.WITHDRAWAL_MADE, "Withdrawal of " + newTransaction.getAmount() + " from account " + sourceAccountDto.getId(), sourceAccountDto.getId());
                 break;
 
             case TRANSFER:
@@ -293,13 +297,7 @@ public class TransactionsServiceImpl extends BaseServiceImpl<Transaction, Transa
 
                 accountsFeignClient.update(recipientAccountDto.getId(), recipientAccountDto);
 
-                auditHelper.createAudit(
-                        AuditType.MONEY_TRANSFERRED,
-                        "Transfer of " + newTransaction.getAmount() + " from account " + sourceAccountDto.getId() +
-                                " to account " + recipientAccountDto.getId(),
-                        sourceAccountDto.getId()
-                );
-
+                auditHelper.createAudit(AuditType.MONEY_TRANSFERRED, "Transfer of " + newTransaction.getAmount() + " from account " + sourceAccountDto.getId() + " to account " + recipientAccountDto.getId(), sourceAccountDto.getId());
                 break;
 
             default:
@@ -307,8 +305,15 @@ public class TransactionsServiceImpl extends BaseServiceImpl<Transaction, Transa
         }
 
         accountsFeignClient.update(sourceAccountDto.getId(), sourceAccountDto);
-
         Transaction savedTransaction = repository.save(newTransaction);
+
+        evictUserTransactionsCache(userId);
+        if (newTransaction.getType() == TransactionType.TRANSFER && newTransaction.getRecipientAccount() != null) {
+            String recipientUserId = getUserFromAccountId(newTransaction.getRecipientAccount().getId());
+            if (recipientUserId != null && !userId.equals(recipientUserId)) {
+                evictUserTransactionsCache(recipientUserId);
+            }
+        }
 
         return mapper.toDto(savedTransaction);
     }
@@ -342,20 +347,22 @@ public class TransactionsServiceImpl extends BaseServiceImpl<Transaction, Transa
         original.setStatus(TransactionStatus.REVERSED);
         repository.save(original);
 
-//        Transaction reversal = new Transaction();
-//        reversal.setAccount(original.getAccount());
-//        reversal.setRecipientAccount(original.getRecipientAccount());
-//        reversal.setAmount(original.getAmount());
-//        reversal.setType(TransactionType.TRANSFER);
-//        reversal.setStatus(TransactionStatus.COMPLETED);
-//        reversal.setDetails("Reversal of transaction " + transactionId);
-//        reversal.setCreatedAt(LocalDateTime.now());
-//
-//        repository.save(reversal);
+        String senderUserId = getUserFromAccountId(original.getAccount().getId());
+        if (senderUserId != null) {
+            evictUserTransactionsCache(senderUserId);
+        }
+        String recipientUserId = getUserFromAccountId(original.getRecipientAccount().getId());
+        if (recipientUserId != null && !recipientUserId.equals(senderUserId)) {
+            evictUserTransactionsCache(recipientUserId);
+        }
 
         return mapper.toDto(original);
     }
 
+    @Cacheable(
+            value = "topUserTransactions",
+            key = "#userId"
+    )
     @Override
     public List<TransactionDto> getTopUserTransactions(String userId) {
         if (userId == null || userId.isBlank()) {
@@ -374,7 +381,6 @@ public class TransactionsServiceImpl extends BaseServiceImpl<Transaction, Transa
         return mapper.toDtoList(latest4UserTx);
     }
 
-
     private void validateAdmin(String adminId){
         if (adminId == null || adminId.isBlank()) {
             throw new IllegalArgumentException("Admin ID is required.");
@@ -385,4 +391,41 @@ public class TransactionsServiceImpl extends BaseServiceImpl<Transaction, Transa
         }
     }
 
+    public String getUserFromAccountId(String accountId) {
+        if (accountId == null) {
+            return null;
+        }
+        AccountDto accountDto = accountsFeignClient.getById(accountId).getBody();
+        if (accountDto != null) {
+            return accountDto.getUserId();
+        }
+        return null;
+    }
+
+    private void evictUserTransactionsCache(String userId) {
+        Cache userTransactionsCache = cacheManager.getCache("userTransactions");
+        Cache topUserTransactionsCache = cacheManager.getCache("topUserTransactions");
+
+        if (userTransactionsCache == null) {
+            log.warn("Cache 'userTransactions' not found, skipping eviction for user {}", userId);
+        } else {
+            List<Integer> commonPageSizes = List.of(6, 10, 20, 50, 100);
+            int maxPagesToClear = 5;
+
+            for (int pageSize : commonPageSizes) {
+                for (int page = 0; page < maxPagesToClear; page++) {
+                    String keyToEvict = userId + "-" + page + "-" + pageSize;
+                    userTransactionsCache.evict(keyToEvict);
+                }
+            }
+            log.info("Evicted 'userTransactions' cache for user ID: {} across common pages/sizes.", userId);
+        }
+
+        if (topUserTransactionsCache != null) {
+            topUserTransactionsCache.evict(userId);
+            log.info("Evicted 'topUserTransactions' cache for user ID: {}", userId);
+        } else {
+            log.warn("Cache 'topUserTransactions' not found, skipping eviction for user {}", userId);
+        }
+    }
 }

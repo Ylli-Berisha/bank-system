@@ -66,12 +66,13 @@
       <p class="section-description">Review deposits, withdrawals, and transfers.</p>
 
       <div v-if="error" class="error">{{ error }}</div>
+      <div v-if="loading" class="loading-indicator">Loading transactions...</div>
 
-      <div v-if="transactions.length === 0 && !error" class="empty-state-message">
+      <div v-if="!loading && transactions.length === 0 && !error" class="empty-state-message">
         No transactions found matching your criteria.
       </div>
 
-      <div v-else class="card-grid">
+      <div v-else-if="transactions.length > 0" class="card-grid">
         <div v-for="transaction in transactions" :key="transaction.id" class="card">
           <div class="card-header">
             <span class="transaction-type" :class="transactionTypeClass(transaction.type)">
@@ -98,6 +99,12 @@
         </div>
       </div>
     </section>
+
+    <div v-if="totalPages > 0" class="pagination-controls">
+      <button :disabled="currentPage <= 0 || loading" @click="changePage(currentPage - 1)" class="pagination-button">Previous</button>
+      <span>Page {{ currentPage + 1 }} of {{ totalPages }} ({{ totalTransactions }} total transactions)</span>
+      <button :disabled="currentPage + 1 >= totalPages || loading" @click="changePage(currentPage + 1)" class="pagination-button">Next</button>
+    </div>
 
     <hr class="section-divider">
 
@@ -175,12 +182,20 @@
 import {ref, onMounted, watch, reactive} from 'vue';
 import {storeToRefs} from 'pinia';
 import {useTransactionsStore} from '@/stores/transactionsStore.js';
-import {useAuthStore} from '@/stores/authStore.js';
 import {useAccountsStore} from '@/stores/acccountsStore.js';
 
 const transactionsStore = useTransactionsStore();
 const accountsStore = useAccountsStore();
-const {transactions, error} = storeToRefs(transactionsStore); // Removed 'loading' from destructuring
+
+const {
+  transactions,
+  error,
+  loading,
+  totalTransactions,
+  totalPages,
+  currentPage,
+  pageSize
+} = storeToRefs(transactionsStore);
 
 const {accounts: userAccounts} = storeToRefs(accountsStore);
 
@@ -219,14 +234,17 @@ onMounted(async () => {
 });
 
 watch(filters, (newFilters, oldFilters) => {
+  if (searchDebounceTimer) {
+    clearTimeout(searchDebounceTimer);
+  }
+
   if (newFilters.query !== oldFilters.query) {
-    if (searchDebounceTimer) {
-      clearTimeout(searchDebounceTimer);
-    }
     searchDebounceTimer = setTimeout(() => {
+      currentPage.value = 0;
       applyFilters();
     }, 500);
   } else {
+    currentPage.value = 0;
     applyFilters();
   }
 }, {deep: true});
@@ -290,6 +308,7 @@ async function submitTransaction() {
     await transactionsStore.createTransaction(payload);
     transactionCreationSuccess.value = 'Transaction created successfully!';
     resetForm();
+    currentPage.value = 0;
     await applyFilters();
   } catch (err) {
     transactionCreationError.value = transactionsStore.error;
@@ -319,33 +338,17 @@ function resetForm() {
   transactionCreationSuccess.value = null;
 }
 
+async function changePage(newPage) {
+  if (newPage >= 0 && newPage < totalPages.value) {
+    currentPage.value = newPage;
+    await applyFilters();
+  }
+}
+
 async function applyFilters() {
   const currentFilters = filters.value;
 
-  const hasActiveFilter = Object.values(currentFilters).some(value => {
-    if (typeof value === 'number') {
-      return value !== null && !isNaN(value);
-    }
-    if (typeof value === 'string') {
-      return value.trim() !== '';
-    }
-    return false;
-  });
-
-  if (hasActiveFilter) {
-    const cleanedFilters = {
-      startDate: currentFilters.startDate || undefined,
-      endDate: currentFilters.endDate || undefined,
-      type: currentFilters.type || undefined,
-      status: currentFilters.status || undefined,
-      minAmount: currentFilters.minAmount !== null ? currentFilters.minAmount : undefined,
-      maxAmount: currentFilters.maxAmount !== null ? currentFilters.maxAmount : undefined,
-      query: currentFilters.query || undefined
-    };
-    await transactionsStore.fetchFilteredTransactions(cleanedFilters);
-  } else {
-    await transactionsStore.fetchAllTransactions();
-  }
+  await transactionsStore.fetchTransactions(currentFilters);
 }
 
 function clearFilters() {
@@ -358,6 +361,7 @@ function clearFilters() {
     maxAmount: null,
     query: ''
   };
+  currentPage.value = 0;
 }
 
 function formatDate(isoString) {
@@ -371,7 +375,6 @@ function formatDate(isoString) {
 }
 
 function maskAccount(accountId) {
-  console.log("masking account ID:", accountId);
   return accountId ? '****' + accountId.slice(-4) : '—';
 }
 
@@ -820,5 +823,64 @@ function transactionStatusClass(status) {
 
 .text-blue {
   color: #0277bd;
+}
+.loading-indicator {
+  text-align: center;
+  padding: 1.5rem;
+  font-size: 1.1rem;
+  color: #3f51b5; /* A distinct color for loading */
+  background-color: #e8eaf6;
+  border-radius: 8px;
+  margin-top: 2rem;
+  font-weight: 600;
+  box-shadow: 0 2px 10px rgba(63, 81, 181, 0.1);
+}
+
+/* --- Pagination Controls --- */
+.pagination-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1.5rem;
+  margin-top: 2.5rem;
+  padding: 1.2rem 2rem;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  flex-wrap: wrap; /* Allow items to wrap on smaller screens */
+}
+
+.pagination-button {
+  padding: 0.8rem 1.6rem;
+  background-color: #3498db;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 10px rgba(52, 152, 219, 0.2);
+}
+
+.pagination-button:hover:not(:disabled) {
+  background-color: #2980b9;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 12px rgba(52, 152, 219, 0.3);
+}
+
+.pagination-button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+  opacity: 0.7;
+  box-shadow: none;
+  transform: none;
+}
+
+.pagination-controls span {
+  font-size: 1.05rem;
+  color: #455a64;
+  font-weight: 500;
+  white-space: nowrap; /* Prevent text from wrapping prematurely */
 }
 </style>

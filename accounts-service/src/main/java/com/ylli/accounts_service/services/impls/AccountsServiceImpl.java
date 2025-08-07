@@ -54,30 +54,31 @@ public class AccountsServiceImpl extends BaseServiceImpl<Account, AccountDto, St
     }
 
     @Override
-    public List<AccountDto> getUserAccounts(String userId) {
+    public Page<AccountDto> getUserAccounts(String userId, int page, int size ) {
         User user = new User();
         user.setId(userId);
 
-        List<Account> accounts = repository.findByUser(user);
-        if (accounts == null || accounts.isEmpty()) {
-            return null;
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Account> accountPage = repository.findByUser(user, pageable);
+        if (accountPage == null || !accountPage.hasContent()) {
+            return Page.empty(pageable);
         }
 
-        return mapper.toDtoList(accounts);
+        return accountPage.map(mapper::toDto);
     }
 
-    @Override
-    public AccountDto getDefaultAccount() {
-        var userDto = usersFeignClient.getDefaultUser().getBody();
-        var user = new User();
-
-        if (userDto == null) {
-            throw new ResourceNotFoundException("Default user not found");
-        }
-        user.setId(userDto.getId());
-        Account account = repository.findByUser(user).getFirst();
-        return mapper.toDto(account);
-    }
+//    @Override
+//    public AccountDto getDefaultAccount() {
+//        var userDto = usersFeignClient.getDefaultUser().getBody();
+//        var user = new User();
+//
+//        if (userDto == null) {
+//            throw new ResourceNotFoundException("Default user not found");
+//        }
+//        user.setId(userDto.getId());
+//        Account account = repository.findByUser(user).getFirst();
+//        return mapper.toDto(account);
+//    }
 
     @Override
     public List<String> getAccountTypes() {

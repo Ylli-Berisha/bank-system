@@ -1,8 +1,13 @@
 <template>
-  <div class="page-container"> <header class="header">
-    <h1>Your Accounts</h1>
-    <p>Detailed overview of your banking accounts</p>
-  </header>
+  <p>here</p>
+  <p>Current Page: {{ currentPage }}</p>
+  <p>Total Pages: {{ totalPages }}</p>
+
+  <div class="page-container">
+    <header class="header">
+      <h1>Your Accounts</h1>
+      <p>Detailed overview of your banking accounts</p>
+    </header>
 
     <section class="create-account-section">
       <h2 class="section-title">New Account Application</h2>
@@ -11,8 +16,20 @@
       <button @click="showForm = !showForm" :class="['toggle-form-btn', { 'is-open': showForm }]">
         <span v-if="!showForm">Apply For New Account</span>
         <span v-else>Cancel Application</span>
-        <svg v-if="!showForm" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-plus-circle"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
-        <svg v-else xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-x-circle"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+        <svg v-if="!showForm" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+             class="feather feather-plus-circle">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="16"></line>
+          <line x1="8" y1="12" x2="16" y2="12"></line>
+        </svg>
+        <svg v-else xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+             class="feather feather-x-circle">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="15" y1="9" x2="9" y2="15"></line>
+          <line x1="9" y1="9" x2="15" y2="15"></line>
+        </svg>
       </button>
 
       <Transition name="fade-slide">
@@ -48,7 +65,12 @@
 
           <button type="submit" class="submit-application-btn">
             Apply For New Account
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                 class="feather feather-arrow-right">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
           </button>
           <p v-if="createError" class="error">{{ createError }}</p>
         </form>
@@ -56,63 +78,53 @@
     </section>
 
     <section class="section">
-      <h2 class="section-title">Active Accounts</h2>
-      <div v-if="activeAccounts.length" class="card-grid">
-        <div v-for="account in activeAccounts" :key="account.id" class="card">
-          <h3>{{ account.type }} Account</h3>
-          <p><strong>Balance:</strong> ${{ account.balance.toFixed(2) }}</p>
-          <p><strong>Status:</strong> {{ account.status.toLowerCase() }}</p>
-          <p><strong>Created:</strong> {{ formatDate(account.createdAt) }}</p>
-          <p><strong>Account id:</strong> {{ account.id }}</p>
-          <button @click="openFreezeConfirmModal(account.id)" class="freeze-btn">Freeze</button>
-        </div>
-      </div>
-      <p v-else class="empty-state-message">No active accounts found.</p> </section>
+      <h2 class="section-title">All Accounts</h2>
+      <p class="section-description">Review all your banking accounts, paginated for easy viewing.</p>
 
-    <section class="section frozen-section">
-      <h2 class="section-title">Frozen Accounts</h2>
-      <div v-if="frozenAccounts.length" class="card-grid">
-        <div v-for="account in frozenAccounts" :key="account.id" class="card frozen">
-          <h3>{{ account.type }} Account</h3>
-          <p><strong>Balance:</strong> ${{ account.balance.toFixed(2) }}</p>
-          <p><strong>Status:</strong> {{ account.status.toLowerCase() }}</p>
-          <p><strong>Created:</strong> {{ formatDate(account.createdAt) }}</p>
-          <p><strong>Account id:</strong> {{ account.id }}</p>
-          <button @click="openUnfreezeConfirmModal(account.id)" class="unfreeze-btn">Unfreeze</button>
-        </div>
+      <div v-if="accountsError" class="error">{{ accountsError }}</div>
+      <div v-else-if="accounts.length === 0 && totalAccounts === 0" class="empty-state-message">
+        No accounts found for this user.
       </div>
-      <p v-else class="empty-state-message">No frozen accounts found.</p> </section>
+      <div v-else>
+        <div class="card-grid">
+          <div
+              v-for="account in accounts"
+              :key="account.id"
+              class="card"
+              :class="{
+                active: account.status === 'ACTIVE',
+                frozen: account.status === 'FROZEN',
+                pending: account.status === 'PENDING_APPROVAL',
+                rejected: account.status === 'REJECTED'
+              }"
+          >
+            <h3>{{ account.type }} Account</h3>
+            <p><strong>Balance:</strong> ${{ account.balance.toFixed(2) }}</p>
+            <p><strong>Status:</strong> {{ account.status.toLowerCase() }}</p>
+            <p><strong>Created:</strong> {{ formatDate(account.createdAt) }}</p>
+            <p><strong>Account id:</strong> {{ account.id }}</p>
 
-    <section class="section pending-section">
-      <h2 class="section-title">Pending Accounts</h2>
-      <div v-if="pendingAccounts.length" class="card-grid">
-        <div v-for="account in pendingAccounts" :key="account.id" class="card pending">
-          <h3>{{ account.type }} Account</h3>
-          <p><strong>Balance:</strong> ${{ account.balance.toFixed(2) }}</p>
-          <p><strong>Status:</strong> {{ account.status.toLowerCase() }}</p>
-          <p><strong>Created:</strong> {{ formatDate(account.createdAt) }}</p>
-          <p><strong>Account id:</strong> {{ account.id }}</p>
+            <template v-if="account.status === 'ACTIVE'">
+              <button @click="openFreezeConfirmModal(account.id)" class="freeze-btn">Freeze</button>
+            </template>
+
+            <template v-else-if="account.status === 'FROZEN'">
+              <button @click="openUnfreezeConfirmModal(account.id)" class="unfreeze-btn">Unfreeze</button>
+            </template>
+          </div>
         </div>
       </div>
-      <p v-else class="empty-state-message">No pending accounts found.</p>
     </section>
 
-    <section class="section rejected-section">
-      <h2 class="section-title">Rejected Accounts</h2>
-      <div v-if="rejectedAccounts.length" class="card-grid">
-        <div v-for="account in rejectedAccounts" :key="account.id" class="card rejected">
-          <h3>{{ account.type }} Account</h3>
-          <p><strong>Balance:</strong> ${{ account.balance.toFixed(2) }}</p>
-          <p><strong>Status:</strong> {{ account.status.toLowerCase() }}</p>
-          <p><strong>Created:</strong> {{ formatDate(account.createdAt) }}</p>
-          <p><strong>Account ID:</strong> {{ account.id }}</p>
-        </div>
-      </div>
-      <p v-else class="empty-state-message">No rejected accounts found.</p>
-    </section>
-
-
-    <p v-if="accountsError" class="error">{{ accountsError }}</p>
+    <div v-if="totalPages > 0" class="pagination-controls">
+      <button :disabled="currentPage <= 0" @click="changePage(currentPage - 1)" class="pagination-button">
+        Previous
+      </button>
+      <span>Page {{ currentPage + 1 }} of {{ totalPages }} ({{ totalAccounts }} total accounts)</span>
+      <button :disabled="currentPage + 1 >= totalPages" @click="changePage(currentPage + 1)" class="pagination-button">
+        Next
+      </button>
+    </div>
 
     <ConfirmationModal
         :is-open="showConfirmationModal"
@@ -124,16 +136,20 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useAccountsStore } from '@/stores/acccountsStore.js'
-import ConfirmationModal from '@/components/ConfirmModal.vue';
+import ConfirmationModal from '@/components/ConfirmModal.vue'
 
 const accountsStore = useAccountsStore()
 const {
   accounts,
   error: accountsError,
-  accountTypes
+  accountTypes,
+  totalAccounts,
+  totalPages,
+  currentPage,
+  pageSize
 } = storeToRefs(accountsStore)
 
 const showForm = ref(false)
@@ -146,31 +162,6 @@ const newAccount = ref({
   userId: localStorage.getItem('userId') || ''
 })
 
-const activeAccounts = computed(() =>
-    Array.isArray(accounts.value)
-        ? accounts.value.filter(acc => acc.status === 'ACTIVE')
-        : []
-)
-
-const frozenAccounts = computed(() =>
-    Array.isArray(accounts.value)
-        ? accounts.value.filter(acc => acc.status === 'FROZEN')
-        : []
-)
-
-const pendingAccounts = computed(() =>
-    Array.isArray(accounts.value)
-        ? accounts.value.filter(acc => acc.status === 'PENDING_APPROVAL')
-        : []
-)
-
-const rejectedAccounts = computed(() =>
-    Array.isArray(accounts.value)
-        ? accounts.value.filter(acc => acc.status === 'REJECTED')
-        : []
-)
-
-
 const showConfirmationModal = ref(false)
 const confirmationModalTitle = ref('')
 const currentActionType = ref(null)
@@ -178,7 +169,7 @@ const currentAccountId = ref(null)
 
 onMounted(async () => {
   document.title = "Accounts"
-  await accountsStore.fetchAccounts()
+  await accountsStore.fetchAccounts(currentPage.value, pageSize.value)
   await accountsStore.fetchAccountTypes()
 
   if (accountTypes.value.length > 0) {
@@ -219,29 +210,29 @@ function openUnfreezeConfirmModal(accountId) {
 async function handleConfirmationModalConfirm() {
   try {
     if (currentActionType.value === 'apply') {
-      await submitApplication();
+      await submitApplication()
     } else if (currentActionType.value === 'freeze' && currentAccountId.value) {
-      await freeze(currentAccountId.value);
+      await freeze(currentAccountId.value)
     } else if (currentActionType.value === 'unfreeze' && currentAccountId.value) {
-      await unfreeze(currentAccountId.value);
+      await unfreeze(currentAccountId.value)
     }
   } catch (err) {
-    console.error("Error during modal action:", err);
+    console.error("Error during modal action:", err)
   } finally {
-    resetConfirmationModalState();
-    await accountsStore.fetchAccounts();
+    resetConfirmationModalState()
+    await accountsStore.fetchAccounts(currentPage.value, pageSize.value)
   }
 }
 
 function handleConfirmationModalCancel() {
-  resetConfirmationModalState();
+  resetConfirmationModalState()
 }
 
 function resetConfirmationModalState() {
-  showConfirmationModal.value = false;
-  confirmationModalTitle.value = '';
-  currentActionType.value = null;
-  currentAccountId.value = null;
+  showConfirmationModal.value = false
+  confirmationModalTitle.value = ''
+  currentActionType.value = null
+  currentAccountId.value = null
 }
 
 async function submitApplication() {
@@ -260,7 +251,7 @@ async function submitApplication() {
     showForm.value = false
   } catch (err) {
     createError.value = err.message || 'Failed to create account.'
-    throw err;
+    throw err
   }
 }
 
@@ -269,7 +260,7 @@ async function freeze(accountId) {
     await accountsStore.freezeAccount(accountId)
   } catch (err) {
     console.error("Error freezing account:", err)
-    throw err;
+    throw err
   }
 }
 
@@ -278,15 +269,19 @@ async function unfreeze(accountId) {
     await accountsStore.unfreezeAccount(accountId)
   } catch (err) {
     console.error("Error unfreezing account:", err)
-    throw err;
+    throw err
+  }
+}
+
+async function changePage(newPage) {
+  if (newPage >= 0 && newPage < totalPages.value) {
+    currentPage.value = newPage
+    await accountsStore.fetchAccounts(currentPage.value, pageSize.value)
   }
 }
 </script>
 
 <style scoped>
-/* Only component-specific styles remain here */
-
-/* Create New Account Section Styles */
 .create-account-section {
   background-color: #e3f2fd;
   padding: 2.5rem;
@@ -465,11 +460,6 @@ async function unfreeze(accountId) {
 .card {
   border-left-color: #2d8cf0; /* Default border color for active accounts */
 }
-.pending-section .card.pending {
-  background-color: #fffde7;
-  border-left-color: #f1c40f;
-  box-shadow: 0 5px 15px rgba(241, 196, 15, 0.1);
-}
 
 .frozen-section .card.frozen {
   background-color: #f7f9fb;
@@ -511,7 +501,69 @@ async function unfreeze(accountId) {
   transform: translateY(-1px);
 }
 
-.rejected-section .card.rejected {
+
+
+.pagination-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 2rem;
+  gap: 1rem;
+}
+
+.pagination-button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.loading-indicator,
+.empty-state-message {
+  text-align: center;
+  margin-top: 1.5rem;
+  font-style: italic;
+  color: #777;
+}
+
+.pagination-button {
+  padding: 10px 20px;
+  background-color: #3498db; /* fallback blue */
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.3s ease;
+}
+.pagination-button:hover:not(:disabled) {
+  background-color: #2980b9; /* darker blue */
+}
+.error {
+  color: #e74c3c; /* red */
+  font-weight: bold;
+  text-align: center;
+  margin-top: 1rem;
+}
+
+
+.card.active {
+  background-color: #f0fff4;
+  border-left-color: #2ecc71;
+  box-shadow: 0 5px 15px rgba(46, 204, 113, 0.1);
+}
+
+.card.pending {
+  background-color: #fffde7;
+  border-left-color: #f1c40f;
+  box-shadow: 0 5px 15px rgba(241, 196, 15, 0.1);
+}
+
+.card.frozen {
+  background-color: #f7f9fb;
+  border-left-color: #95a5a6;
+  box-shadow: 0 5px 15px rgba(149, 165, 166, 0.1);
+}
+
+.card.rejected {
   background-color: #fdecea;
   border-left-color: #e74c3c;
   box-shadow: 0 5px 15px rgba(231, 76, 60, 0.1);

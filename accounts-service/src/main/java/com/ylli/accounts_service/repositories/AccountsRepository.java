@@ -3,6 +3,8 @@ package com.ylli.accounts_service.repositories;
 import com.ylli.shared.enums.AccountStatus;
 import com.ylli.shared.models.Account;
 import com.ylli.shared.models.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -14,7 +16,7 @@ import java.util.Optional;
 
 @Repository
 public interface AccountsRepository extends JpaRepository<Account, String>, JpaSpecificationExecutor<Account> {
-    List<Account> findByUser(User userId);
+    Page<Account> findByUser(User userId, Pageable pageable);
 
     List<Account> findTop4ByUserAndStatusOrderByCreatedAtDesc(User user, AccountStatus status);
 

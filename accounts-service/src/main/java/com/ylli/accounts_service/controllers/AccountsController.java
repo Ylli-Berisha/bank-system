@@ -51,30 +51,33 @@ public class AccountsController extends BaseController<AccountDto, String, Accou
     @Operation(summary = "Get accounts by user ID", description = "Retrieve all accounts associated with a specific user")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Accounts retrieved successfully"),
+            @ApiResponse(responseCode = "204", description = "No accounts found for user"),
             @ApiResponse(responseCode = "400", description = "Invalid user ID", content = @Content)
     })
     @GetMapping("/get/user-accounts")
-    public ResponseEntity<List<AccountDto>> getUserAccounts(@RequestHeader("X-User-ID") String userId) {
+    public ResponseEntity<Page<AccountDto>> getUserAccounts(@RequestHeader("X-User-ID") String userId, @RequestParam(defaultValue = "0") Integer page, @RequestParam(defaultValue = "6") Integer size) {
         if (userId == null || userId.isEmpty()) {
             throw new IllegalArgumentException("User ID cannot be null or empty");
         }
-        List<AccountDto> accounts = service.getUserAccounts(userId);
+        Page<AccountDto> accounts = service.getUserAccounts(userId, page, size);
+        if (accounts.isEmpty())
+            return ResponseEntity.noContent().build();
         return ResponseEntity.ok(accounts);
     }
 
-    @Operation(summary = "Get default account", description = "Retrieve the default account of the currently authenticated user")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Default account retrieved successfully"),
-            @ApiResponse(responseCode = "404", description = "Default account not found", content = @Content)
-    })
-    @GetMapping("/get/default-account")
-    public ResponseEntity<AccountDto> getDefaultAccount() {
-        var account = service.getDefaultAccount();
-        if (account == null) {
-            return ResponseEntity.notFound().build();
-        }
-        return ResponseEntity.ok(account);
-    }
+//    @Operation(summary = "Get default account", description = "Retrieve the default account of the currently authenticated user")
+//    @ApiResponses(value = {
+//            @ApiResponse(responseCode = "200", description = "Default account retrieved successfully"),
+//            @ApiResponse(responseCode = "404", description = "Default account not found", content = @Content)
+//    })
+//    @GetMapping("/get/default-account")
+//    public ResponseEntity<AccountDto> getDefaultAccount() {
+//        var account = service.getDefaultAccount();
+//        if (account == null) {
+//            return ResponseEntity.notFound().build();
+//        }
+//        return ResponseEntity.ok(account);
+//    }
 
     @Operation(summary = "Get available account types", description = "Retrieve a list of supported account types")
     @ApiResponses(value = {

@@ -11,9 +11,9 @@ public interface AccountsService extends BaseService<AccountDto, String> {
 
     List<AccountDto> getAll();
 
-    List<AccountDto> getUserAccounts(String userId);
+    Page<AccountDto> getUserAccounts(String userId, int page, int size);
 
-    AccountDto getDefaultAccount();
+//    AccountDto getDefaultAccount();
 
     List<String> getAccountTypes();
 
