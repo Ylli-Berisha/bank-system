@@ -70,6 +70,15 @@ public class AccountsController extends BaseController<AccountDto, String, Accou
         return ResponseEntity.ok(accounts);
     }
 
+    @GetMapping("/get/user-accounts2")
+    public ResponseEntity<List<AccountDto>> getUserAccounts2(@RequestHeader("X-User-ID") String userId) {
+        if (userId == null || userId.isEmpty()) {
+            throw new IllegalArgumentException("User ID cannot be null or empty");
+        }
+        List<AccountDto> accounts = service.getUserAccounts2(userId);
+        return ResponseEntity.ok(accounts);
+    }
+
 //    @Operation(summary = "Get default account", description = "Retrieve the default account of the currently authenticated user")
 //    @ApiResponses(value = {
 //            @ApiResponse(responseCode = "200", description = "Default account retrieved successfully"),

@@ -47,7 +47,12 @@ public class AccountsFallbackImpl implements FallbackFactory<AccountsFeignClient
             }
 
             @Override
-            public ResponseEntity<List<AccountDto>> getUserAccounts(String userId) {
+            public ResponseEntity<Page<AccountDto>> getUserAccounts(String userId, Integer page, Integer size) {
+                return ResponseEntity.status(503).build();
+            }
+
+            @Override
+            public ResponseEntity<List<AccountDto>> getUserAccounts2(String userId) {
                 return ResponseEntity.status(503).build();
             }
 

@@ -63,6 +63,19 @@ public class AccountsServiceImpl extends BaseServiceImpl<Account, AccountDto, St
         return accountPage.map(mapper::toDto);
     }
 
+    @Override
+    public List<AccountDto> getUserAccounts2(String userId) {
+        User user = new User();
+        user.setId(userId);
+
+        List<Account> accounts = repository.findByUser(user);
+        if (accounts == null || accounts.isEmpty()) {
+            return null;
+        }
+
+        return mapper.toDtoList(accounts);
+    }
+
 //    @Override
 //    public AccountDto getDefaultAccount() {
 //        var userDto = usersFeignClient.getDefaultUser().getBody();

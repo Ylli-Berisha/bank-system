@@ -16,7 +16,9 @@ import java.util.Optional;
 
 @Repository
 public interface AccountsRepository extends JpaRepository<Account, String>, JpaSpecificationExecutor<Account> {
-    Page<Account> findByUser(User userId, Pageable pageable);
+    Page<Account> findByUser(User user, Pageable pageable);
+
+    List<Account> findByUser(User user);
 
     List<Account> findTop4ByUserAndStatusOrderByCreatedAtDesc(User user, AccountStatus status);
 

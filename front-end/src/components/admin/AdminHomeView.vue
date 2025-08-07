@@ -106,10 +106,6 @@ h2 {
   justify-content: space-between;
 }
 
-.admin-card {
-  flex: 0 0 100%;
-}
-
 .admin-card h3 {
   color: #1450a3;
   margin-bottom: 0.5rem;
@@ -173,4 +169,15 @@ h2 {
   background-color: #c82333;
   transform: translateY(-2px);
 }
+.card-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: center;
+}
+.card {
+  flex: 1 1 calc(50% - 1rem); /* 2 cards per row with gap accounted */
+  max-width: 400px;            /* Optional: limit card width */
+}
+
 </style>

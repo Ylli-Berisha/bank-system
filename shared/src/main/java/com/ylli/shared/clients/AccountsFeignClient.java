@@ -2,7 +2,6 @@ package com.ylli.shared.clients;
 
 import com.ylli.shared.dtos.AccountDto;
 import com.ylli.shared.fallback.AccountsFallbackImpl;
-import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.data.domain.Page;
@@ -33,7 +32,10 @@ public interface AccountsFeignClient {
     ResponseEntity<AccountDto> getDefaultAccount();
 
     @GetMapping("/get/user-accounts")
-    ResponseEntity<List<AccountDto>> getUserAccounts(@RequestHeader("X-User-Id") String userId);
+    ResponseEntity<Page<AccountDto>> getUserAccounts(@RequestHeader("X-User-ID") String userId, @RequestParam(defaultValue = "0") Integer page, @RequestParam(defaultValue = "6") Integer size);
+
+    @GetMapping("/get/user-accounts2")
+    ResponseEntity<List<AccountDto>> getUserAccounts2(@RequestHeader("X-User-Id") String userId);
 
     @GetMapping("/get/by-id-and-user-id")
     ResponseEntity<AccountDto> getAccountByIdAndUserId(

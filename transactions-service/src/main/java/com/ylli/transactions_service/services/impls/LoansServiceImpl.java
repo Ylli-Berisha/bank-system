@@ -25,7 +25,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.*;
@@ -69,7 +68,7 @@ public class LoansServiceImpl extends BaseServiceImpl<Loan, LoanDto, Long, Loans
     public Page<LoanDto> getUserLoans(String userId, LoanStatus status, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
 
-        List<AccountDto> accounts = accountsFeignClient.getUserAccounts(userId).getBody();
+        List<AccountDto> accounts = accountsFeignClient.getUserAccounts2(userId).getBody();
 
         if (accounts == null || accounts.isEmpty()) {
             return Page.empty(pageable);

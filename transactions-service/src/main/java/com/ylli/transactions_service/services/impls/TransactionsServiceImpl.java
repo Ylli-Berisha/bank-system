@@ -14,6 +14,7 @@ import com.ylli.transactions_service.configs.TransactionSpecifications;
 import com.ylli.transactions_service.mappers.TransactionMapper;
 import com.ylli.transactions_service.repositories.TransactionsRepository;
 import com.ylli.transactions_service.services.TransactionsService;
+import feign.FeignException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
@@ -21,18 +22,14 @@ import org.slf4j.LoggerFactory;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.Set;
 
 @Service
 public class TransactionsServiceImpl extends BaseServiceImpl<Transaction, TransactionDto, String, TransactionsRepository, TransactionMapper> implements TransactionsService {
@@ -58,8 +55,13 @@ public class TransactionsServiceImpl extends BaseServiceImpl<Transaction, Transa
     @Override
     public Page<TransactionDto> getUserTransactions(String userId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        List<AccountDto> accounts = accountsFeignClient.getUserAccounts(userId).getBody();
-
+        List<AccountDto> accounts = List.of();
+        try {
+            accounts = accountsFeignClient.getUserAccounts2(userId).getBody();
+        }
+        catch (FeignException e){
+            log.error(e.getMessage());
+        }
         if (accounts == null || accounts.isEmpty()) {
             return Page.empty(pageable);
         }
