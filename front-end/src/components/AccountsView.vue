@@ -1,13 +1,125 @@
 <template>
-  <p>here</p>
-  <p>Current Page: {{ currentPage }}</p>
-  <p>Total Pages: {{ totalPages }}</p>
-
   <div class="page-container">
     <header class="header">
       <h1>Your Accounts</h1>
       <p>Detailed overview of your banking accounts</p>
     </header>
+
+    <section class="section filter-section">
+      <h2 class="section-title">Filter Accounts</h2>
+      <p class="section-description">Use the fields below to filter accounts across all users.</p>
+
+      <div class="filter-controls-grid">
+        <div class="filter-group">
+          <label for="accountId">Account ID:</label>
+          <input
+              type="text"
+              id="accountId"
+              v-model="filters.accountId"
+              class="filter-input"
+              placeholder="e.g., acc_1234"
+          />
+        </div>
+
+        <div class="filter-group">
+          <label for="accountType">Account Type:</label>
+          <select id="accountType" v-model="filters.type" class="filter-input">
+            <option value="">All Types</option>
+            <option v-for="type in accountTypes" :key="type" :value="type">
+              {{ type.toLowerCase() }}
+            </option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="accountStatus">Account Status:</label>
+          <select id="accountStatus" v-model="filters.status" class="filter-input">
+            <option value="">All Statuses</option>
+            <option v-for="status in accountStatuses" :key="status" :value="status">
+              {{ status.toLowerCase().replace('_', ' ') }}
+            </option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="minBalance">Min Balance:</label>
+          <input
+              type="number"
+              id="minBalance"
+              v-model.number="filters.minBalance"
+              class="filter-input"
+              placeholder="e.g., 100.00"
+          />
+        </div>
+
+        <div class="filter-group">
+          <label for="maxBalance">Max Balance:</label>
+          <input
+              type="number"
+              id="maxBalance"
+              v-model.number="filters.maxBalance"
+              class="filter-input"
+              placeholder="e.g., 10000.00"
+          />
+        </div>
+
+        <div class="filter-buttons">
+          <button @click="clearFilters" class="clear-filters-btn">Clear Filters</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">All Accounts</h2>
+      <p class="section-description">Review all your banking accounts, paginated for easy viewing.</p>
+
+      <div v-if="accountsError" class="error">{{ accountsError }}</div>
+      <div v-else-if="accounts.length === 0 && totalAccounts === 0" class="empty-state-message">
+        No accounts found for this user.
+      </div>
+      <div v-else>
+        <div class="card-grid">
+          <div
+              v-for="account in accounts"
+              :key="account.id"
+              class="card"
+              :class="{
+                active: account.status === 'ACTIVE',
+                frozen: account.status === 'FROZEN',
+                pending: account.status === 'PENDING_APPROVAL',
+                rejected: account.status === 'REJECTED'
+              }"
+          >
+            <h3>{{ account.type }} Account</h3>
+            <p><strong>Balance:</strong> ${{ account.balance.toFixed(2) }}</p>
+            <p><strong>Status:</strong> {{ formatStatus(account.status) }}</p>
+            <p><strong>Created:</strong> {{ formatDate(account.createdAt) }}</p>
+            <p><strong>Account id:</strong> {{ account.id }}</p>
+
+            <template v-if="account.status === 'ACTIVE'">
+              <button @click="openFreezeConfirmModal(account.id)" class="freeze-btn">Freeze</button>
+            </template>
+
+            <template v-else-if="account.status === 'FROZEN'">
+              <button @click="openUnfreezeConfirmModal(account.id)" class="unfreeze-btn">Unfreeze</button>
+            </template>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div v-if="totalPages > 0" class="pagination-controls">
+      <button :disabled="currentPage <= 0" @click="changePage(currentPage - 1)" class="pagination-button">
+        Previous
+      </button>
+      <span>Page {{ currentPage + 1 }} of {{ totalPages }} ({{ totalAccounts }} total accounts)</span>
+      <button :disabled="currentPage + 1 >= totalPages" @click="changePage(currentPage + 1)" class="pagination-button">
+        Next
+      </button>
+    </div>
+
+    <br>
+    <br>
 
     <section class="create-account-section">
       <h2 class="section-title">New Account Application</h2>
@@ -77,55 +189,6 @@
       </Transition>
     </section>
 
-    <section class="section">
-      <h2 class="section-title">All Accounts</h2>
-      <p class="section-description">Review all your banking accounts, paginated for easy viewing.</p>
-
-      <div v-if="accountsError" class="error">{{ accountsError }}</div>
-      <div v-else-if="accounts.length === 0 && totalAccounts === 0" class="empty-state-message">
-        No accounts found for this user.
-      </div>
-      <div v-else>
-        <div class="card-grid">
-          <div
-              v-for="account in accounts"
-              :key="account.id"
-              class="card"
-              :class="{
-                active: account.status === 'ACTIVE',
-                frozen: account.status === 'FROZEN',
-                pending: account.status === 'PENDING_APPROVAL',
-                rejected: account.status === 'REJECTED'
-              }"
-          >
-            <h3>{{ account.type }} Account</h3>
-            <p><strong>Balance:</strong> ${{ account.balance.toFixed(2) }}</p>
-            <p><strong>Status:</strong> {{ account.status.toLowerCase() }}</p>
-            <p><strong>Created:</strong> {{ formatDate(account.createdAt) }}</p>
-            <p><strong>Account id:</strong> {{ account.id }}</p>
-
-            <template v-if="account.status === 'ACTIVE'">
-              <button @click="openFreezeConfirmModal(account.id)" class="freeze-btn">Freeze</button>
-            </template>
-
-            <template v-else-if="account.status === 'FROZEN'">
-              <button @click="openUnfreezeConfirmModal(account.id)" class="unfreeze-btn">Unfreeze</button>
-            </template>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <div v-if="totalPages > 0" class="pagination-controls">
-      <button :disabled="currentPage <= 0" @click="changePage(currentPage - 1)" class="pagination-button">
-        Previous
-      </button>
-      <span>Page {{ currentPage + 1 }} of {{ totalPages }} ({{ totalAccounts }} total accounts)</span>
-      <button :disabled="currentPage + 1 >= totalPages" @click="changePage(currentPage + 1)" class="pagination-button">
-        Next
-      </button>
-    </div>
-
     <ConfirmationModal
         :is-open="showConfirmationModal"
         :title="confirmationModalTitle"
@@ -136,7 +199,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, reactive, watch, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useAccountsStore } from '@/stores/acccountsStore.js'
 import ConfirmationModal from '@/components/ConfirmModal.vue'
@@ -149,8 +212,19 @@ const {
   totalAccounts,
   totalPages,
   currentPage,
-  pageSize
+  pageSize,
+  filters
 } = storeToRefs(accountsStore)
+
+const accountStatuses = [
+  'ACTIVE',
+  'INACTIVE',
+  'SUSPENDED',
+  'CLOSED',
+  'FROZEN',
+  'PENDING_APPROVAL',
+  'REJECTED'
+]
 
 const showForm = ref(false)
 const createError = ref('')
@@ -167,9 +241,21 @@ const confirmationModalTitle = ref('')
 const currentActionType = ref(null)
 const currentAccountId = ref(null)
 
+let filterDebounceTimer = null
+
+const debouncedFetch = () => {
+  if (filterDebounceTimer) clearTimeout(filterDebounceTimer)
+  filterDebounceTimer = setTimeout(async () => {
+    currentPage.value = 0;
+    await fetchAccounts();
+  }, 500)
+}
+
+watch(filters, debouncedFetch, { deep: true })
+
 onMounted(async () => {
   document.title = "Accounts"
-  await accountsStore.fetchAccounts(currentPage.value, pageSize.value)
+  await accountsStore.fetchAccounts()
   await accountsStore.fetchAccountTypes()
 
   if (accountTypes.value.length > 0) {
@@ -177,14 +263,43 @@ onMounted(async () => {
   }
 })
 
-function formatDate(isoString) {
-  if (!isoString) return ''
-  const date = new Date(isoString)
-  return date.toLocaleDateString(undefined, {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
+async function fetchAccounts(page = currentPage.value) {
+  const hasFilters = Object.values(filters.value).some(val =>
+      val !== null && val !== '' && val !== undefined
+  )
+
+  if (hasFilters) {
+    console.log(filters.value)
+    await accountsStore.fetchFilteredAccounts(page, pageSize.value)
+  } else {
+    await accountsStore.fetchAccounts(page, pageSize.value)
+  }
+}
+
+function clearFilters() {
+  Object.keys(filters.value).forEach(key => {
+    filters.value[key] = typeof filters.value[key] === 'number' ? null : ''
   })
+}
+
+async function submitApplication() {
+  createError.value = ''
+  try {
+    newAccount.value.userId = localStorage.getItem('userId')
+    await accountsStore.applyForNewAccount({ ...newAccount.value })
+
+    newAccount.value = {
+      type: accountTypes.value[0] || '',
+      status: 'PENDING_APPROVAL',
+      balance: 0,
+      userId: localStorage.getItem('userId') || ''
+    }
+
+    showForm.value = false
+  } catch (err) {
+    createError.value = err.message || 'Failed to create account.'
+    throw err
+  }
 }
 
 function openNewAccountConfirmModal() {
@@ -217,10 +332,9 @@ async function handleConfirmationModalConfirm() {
       await unfreeze(currentAccountId.value)
     }
   } catch (err) {
-    console.error("Error during modal action:", err)
   } finally {
     resetConfirmationModalState()
-    await accountsStore.fetchAccounts(currentPage.value, pageSize.value)
+    await fetchAccounts()
   }
 }
 
@@ -235,31 +349,10 @@ function resetConfirmationModalState() {
   currentAccountId.value = null
 }
 
-async function submitApplication() {
-  createError.value = ''
-  try {
-    newAccount.value.userId = localStorage.getItem('userId')
-    await accountsStore.applyForNewAccount({ ...newAccount.value })
-
-    newAccount.value = {
-      type: accountTypes.value[0] || '',
-      status: 'PENDING_APPROVAL',
-      balance: 0,
-      userId: localStorage.getItem('userId') || ''
-    }
-
-    showForm.value = false
-  } catch (err) {
-    createError.value = err.message || 'Failed to create account.'
-    throw err
-  }
-}
-
 async function freeze(accountId) {
   try {
     await accountsStore.freezeAccount(accountId)
   } catch (err) {
-    console.error("Error freezing account:", err)
     throw err
   }
 }
@@ -268,7 +361,6 @@ async function unfreeze(accountId) {
   try {
     await accountsStore.unfreezeAccount(accountId)
   } catch (err) {
-    console.error("Error unfreezing account:", err)
     throw err
   }
 }
@@ -276,8 +368,26 @@ async function unfreeze(accountId) {
 async function changePage(newPage) {
   if (newPage >= 0 && newPage < totalPages.value) {
     currentPage.value = newPage
-    await accountsStore.fetchAccounts(currentPage.value, pageSize.value)
+    await fetchAccounts(newPage)
   }
+}
+
+function formatStatus(status) {
+  if (!status) return ''
+  return status
+      .toLowerCase()
+      .replace(/_/g, ' ')
+      .replace(/\b\w/g, c => c.toUpperCase())
+}
+
+function formatDate(isoString) {
+  if (!isoString) return ''
+  const date = new Date(isoString)
+  return date.toLocaleDateString(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  })
 }
 </script>
 
@@ -567,6 +677,74 @@ async function changePage(newPage) {
   background-color: #fdecea;
   border-left-color: #e74c3c;
   box-shadow: 0 5px 15px rgba(231, 76, 60, 0.1);
+}
+
+.filter-controls-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.filter-group label {
+  font-size: 0.9rem;
+  color: #546e7a;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.filter-input {
+  padding: 0.8rem 1rem;
+  border: 1px solid #cfd8dc;
+  border-radius: 8px;
+  font-size: 1rem;
+  color: #455a64;
+  background-color: #ffffff;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.filter-input:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+}
+
+.filter-input::placeholder {
+  color: #90a4ae;
+}
+
+.filter-buttons {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.clear-filters-btn {
+  background-color: #95a5a6;
+  color: #ffffff;
+  padding: 0.8rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(149, 165, 166, 0.2);
+}
+
+.clear-filters-btn:hover {
+  background-color: #7f8c8d;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 15px rgba(149, 165, 166, 0.3);
 }
 
 </style>

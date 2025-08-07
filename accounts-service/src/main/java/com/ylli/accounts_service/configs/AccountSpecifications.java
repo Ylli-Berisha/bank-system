@@ -14,7 +14,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
-public class AdminAccountSpecifications {
+public class AccountSpecifications {
 
     public static Specification<Account> withFilters(
             String accountId,

@@ -1,21 +1,18 @@
 package com.ylli.accounts_service.services.impls;
 
-import com.ylli.accounts_service.configs.AdminAccountSpecifications;
+import com.ylli.accounts_service.configs.AccountSpecifications;
 import com.ylli.accounts_service.repositories.AccountsRepository;
 import com.ylli.accounts_service.services.AccountsService;
 import com.ylli.shared.base.AuditHelper;
 import com.ylli.shared.base.BaseServiceImpl;
-import com.ylli.shared.clients.AuditFeignClient;
 import com.ylli.shared.clients.UsersFeignClient;
 import com.ylli.shared.dtos.AccountDto;
 import com.ylli.accounts_service.mappers.AccountMapper;
-import com.ylli.shared.dtos.AuditDto;
 import com.ylli.shared.dtos.UserDto;
 import com.ylli.shared.enums.AccountStatus;
 import com.ylli.shared.enums.AccountType;
 import com.ylli.shared.enums.AuditType;
 import com.ylli.shared.enums.UserRole;
-import com.ylli.shared.exceptions.AccountLockedException;
 import com.ylli.shared.exceptions.ResourceNotFoundException;
 import com.ylli.shared.models.Account;
 import com.ylli.shared.models.User;
@@ -31,7 +28,6 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Optional;
 
 
 @Service
@@ -250,7 +246,7 @@ public class AccountsServiceImpl extends BaseServiceImpl<Account, AccountDto, St
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
 
         Page<Account> accountsPage = repository.findAll(
-                AdminAccountSpecifications.withFilters(
+                AccountSpecifications.withFilters(
                         accountId,
                         parsedType,
                         actualMinBalance,
@@ -267,6 +263,50 @@ public class AccountsServiceImpl extends BaseServiceImpl<Account, AccountDto, St
 
         return accountsPage.map(mapper::toDto);
     }
+
+    @Override
+    public Page<AccountDto> filterUserAccounts(
+            String accountId,
+            String userId,
+            AccountType accountType,
+            BigDecimal minBalance,
+            BigDecimal maxBalance,
+            AccountStatus accountStatus,
+            int page,
+            int size
+    ) {
+        if (!(accountId == null || accountId.isBlank())) {
+            var account = repository.findById(accountId).orElseThrow(() -> new ResourceNotFoundException("Account not found with ID: " + accountId));
+
+            if (!account.getUser().getId().equals(userId)) {
+                log.warn("User with ID {} does not own account with ID {}", userId, accountId);
+                throw new IllegalArgumentException("User does not own the account with ID: " + accountId);
+            }
+        }
+        BigDecimal actualMinBalance = (minBalance != null) ? minBalance : BigDecimal.ZERO;
+        BigDecimal actualMaxBalance = (maxBalance != null) ? maxBalance : new BigDecimal("999999999999999.99");
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+
+        Page<Account> accountsPage = repository.findAll(
+                AccountSpecifications.withFilters(
+                        accountId,
+                        accountType,
+                        actualMinBalance,
+                        actualMaxBalance,
+                        accountStatus,
+                        userId,
+                        null,
+                        null,
+                        null,
+                        null
+                ),
+                pageable
+        );
+
+        return accountsPage.map(mapper::toDto);
+    }
+
 
     private void validateAdmin(String adminId) {
         UserDto admin = usersFeignClient.getUser(adminId).getBody();

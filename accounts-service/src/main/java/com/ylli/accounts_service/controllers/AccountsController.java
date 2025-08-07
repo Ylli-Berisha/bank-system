@@ -4,12 +4,15 @@ import com.ylli.shared.base.BaseController;
 import com.ylli.accounts_service.services.AccountsService;
 import com.ylli.shared.dtos.AccountDto;
 import com.ylli.shared.enums.AccountStatus;
+import com.ylli.shared.enums.AccountType;
 import com.ylli.shared.exceptions.ResourceNotFoundException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.media.Content;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -28,6 +31,8 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/api/accounts")
 public class AccountsController extends BaseController<AccountDto, String, AccountsService> {
+
+    private static final Logger log = LoggerFactory.getLogger(AccountsController.class);
 
     @Autowired
     public AccountsController(AccountsService accountsService) {
@@ -257,6 +262,67 @@ public class AccountsController extends BaseController<AccountDto, String, Accou
         return ResponseEntity.ok(accounts);
     }
 
+    @Operation(summary = "Filter user accounts", description = "Filter accounts for a user based on optional criteria")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Accounts filtered successfully"),
+            @ApiResponse(responseCode = "204", description = "No matching accounts found", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Account not found"),
+            @ApiResponse(responseCode = "400", description = "User id does not match the account queried")
+    })
+    @GetMapping("/filter/user-accounts")
+    public ResponseEntity<Page<AccountDto>> filterUserAccounts(
+            @RequestHeader("X-User-ID") String userId,
+            @RequestParam(required = false) String accountId,
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) BigDecimal minBalance,
+            @RequestParam(required = false) BigDecimal maxBalance,
+            @RequestParam(required = false) String status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "6") int size
+    ) {
+        log.info("Received request to filter user accounts for user ID: " + userId);
+        if (userId == null || userId.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+        if (page < 0 || size <= 0) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        AccountType parsedType = null;
+        if (type != null && !type.isEmpty()) {
+            try {
+                parsedType = AccountType.valueOf(type.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.badRequest().build();
+            }
+        }
+
+        AccountStatus parsedStatus = null;
+        if (status != null && !status.isEmpty()) {
+            try {
+                parsedStatus = AccountStatus.valueOf(status.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.badRequest().build();
+            }
+        }
+
+        Page<AccountDto> accounts = service.filterUserAccounts(
+                accountId,
+                userId,
+                parsedType,
+                minBalance,
+                maxBalance,
+                parsedStatus,
+                page,
+                size
+        );
+
+        if (accounts == null || accounts.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+
+        return ResponseEntity.ok(accounts);
+    }
 
 
 

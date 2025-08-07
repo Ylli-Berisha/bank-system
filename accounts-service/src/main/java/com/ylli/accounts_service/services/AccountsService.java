@@ -2,6 +2,8 @@ package com.ylli.accounts_service.services;
 
 import com.ylli.shared.base.BaseService;
 import com.ylli.shared.dtos.AccountDto;
+import com.ylli.shared.enums.AccountStatus;
+import com.ylli.shared.enums.AccountType;
 import org.springframework.data.domain.Page;
 
 import java.math.BigDecimal;
@@ -44,4 +46,6 @@ public interface AccountsService extends BaseService<AccountDto, String> {
             int page,
             int size
     );
+
+    Page<AccountDto> filterUserAccounts(String accountId, String userId, AccountType accountType, BigDecimal minBalance, BigDecimal maxBalance, AccountStatus accountStatus, int page, int size);
 }
