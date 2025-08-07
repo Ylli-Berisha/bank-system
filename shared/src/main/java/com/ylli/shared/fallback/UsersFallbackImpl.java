@@ -43,6 +43,11 @@ public class UsersFallbackImpl implements FallbackFactory<UsersFeignClient> {
             public ResponseEntity<Page<UserDto>> filterAdminUsers(String adminId, String userId, String username, String email, String firstName, String lastName, String phoneNumber, Boolean isActive, String accountId, String loanId, String transactionId, int page, int size) {
                 return new ResponseEntity<>(Page.empty(), ResponseEntity.status(503).build().getStatusCode());
             }
+
+            @Override
+            public ResponseEntity<Page<UserDto>> getAllUsers(String adminId, int page, int size) {
+                return new ResponseEntity<>(Page.empty(), ResponseEntity.status(503).build().getStatusCode());
+            }
         };
     }
 }

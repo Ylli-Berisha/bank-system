@@ -6,6 +6,7 @@ import com.ylli.users_service.repositories.UserRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
 import java.util.Set;
 
 @Component
@@ -23,6 +24,13 @@ public class DataInitializer implements CommandLineRunner {
             User defaultUser = new User();
             defaultUser.setUsername("admin");
             defaultUser.setPassword("$2a$10$UwFYu3sxtbg5YeueWojgqetHOyinFQVWceEADlwiP1VMDAzhuUdS2");
+            defaultUser.setFirstName("john");
+            defaultUser.setLastName("doe");
+            defaultUser.setPhoneNumber("1234567890");
+            defaultUser.setAddress("Some address at bla bla bla");
+            defaultUser.setBirthDate(LocalDate.now());
+            defaultUser.setEmail("someEmail@gmail.com");
+            defaultUser.setActive(true);
             defaultUser.setRoles(Set.of(UserRole.ROLE_ADMIN));
             userRepository.save(defaultUser);
             System.out.println("Default admin user created.");

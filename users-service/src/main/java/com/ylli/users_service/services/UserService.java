@@ -16,4 +16,6 @@ public interface UserService extends BaseService<UserDto, String> {
     UserDto getDefaultUser();
 
     Page<UserDto> filterAdminUsers(String adminId, UserFilterDto filterDto, int page, int size);
+
+    Page<UserDto> getAllUsers(String adminId, int page, int size);
 }

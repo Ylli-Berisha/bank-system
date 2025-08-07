@@ -13,6 +13,7 @@ import AdminAccountsView from "@/components/admin/AdminAccountsView.vue";
 import AdminTransactionsView from "@/components/admin/AdminTransactionsView.vue";
 import AdminLoansView from "@/components/admin/AdminLoansView.vue";
 import AdminAuditsView from "@/components/admin/AdminAuditsView.vue";
+import AdminUserList from "@/components/admin/AdminUserList.vue";
 
 const ROLE_USER = 'ROLE_USER';
 const ROLE_ADMIN = 'ROLE_ADMIN';
@@ -82,6 +83,12 @@ const routes = [
         path: '/admin/audit',
         name: 'AdminAudit',
         component: AdminAuditsView,
+        meta: { requiresAuth: true, requiredRole: ROLE_ADMIN }
+    },
+    {
+        path: '/admin/users',
+        name: 'AdminUsers',
+        component: AdminUserList,
         meta: { requiresAuth: true, requiredRole: ROLE_ADMIN }
     }
 ];

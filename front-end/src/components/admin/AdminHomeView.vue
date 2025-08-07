@@ -28,6 +28,11 @@
           <p>Review audits and actions performed by users and accounts.</p>
         </router-link>
 
+        <router-link to="/admin/users" class="card admin-card">
+          <h3>👥 Users List and Management</h3>
+          <p>Review and manage users and their accounts, transactions and loans</p>
+        </router-link>
+
       </div>
     </section>
 

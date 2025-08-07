@@ -139,6 +139,17 @@ public class UserServiceImpl extends BaseServiceImpl<User, UserDto, String, User
         return usersPage.map(mapper::toDto);
     }
 
+    @Override
+    public Page<UserDto> getAllUsers(String adminId, int page, int size){
+        validateAdmin(adminId);
+
+        Pageable pageable  = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+
+        Page<User> users = repository.findAll(pageable);
+
+        return users.map(mapper::toDto);
+    }
+
     private void validateAdmin(String userId) {
         User user = repository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));

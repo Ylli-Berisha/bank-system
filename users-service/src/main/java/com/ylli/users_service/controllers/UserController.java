@@ -119,4 +119,27 @@ public class UserController extends BaseController<UserDto, String, UserService>
         return ResponseEntity.ok(usersPage);
     }
 
+    @Operation(summary = "Get all users", description = "Get all users endpoint (pageable) for admin actions")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Users returned successfully "),
+            @ApiResponse(responseCode = "204", description = "No users found")
+    })
+    @GetMapping("/get/all-users")
+    public ResponseEntity<Page<UserDto>> getAllUsers(
+            @RequestHeader("X-User-Id") String adminId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "6") int size
+
+    ) {
+        if (adminId == null || adminId.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        Page<UserDto> usersPage = service.getAllUsers(adminId, page, size);
+        if (usersPage == null || usersPage.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(usersPage);
+    }
+
 }

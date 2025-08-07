@@ -41,4 +41,11 @@ public interface UsersFeignClient {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     );
+
+    @GetMapping("/get/all-users")
+    ResponseEntity<Page<UserDto>> getAllUsers(
+            @RequestHeader("X-User-Id") String adminId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "6") int size
+    );
 }
