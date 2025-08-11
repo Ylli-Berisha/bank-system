@@ -261,6 +261,6 @@ onMounted(() => {
 }
 .clickable-row:hover {
   cursor: pointer;
-  transition: background-color 0.2s ease-in-out; 
+  transition: background-color 0.2s ease-in-out;
 }
 </style>

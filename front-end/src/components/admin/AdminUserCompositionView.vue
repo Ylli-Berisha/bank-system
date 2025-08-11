@@ -41,6 +41,11 @@
           </li>
         </ul>
         <p v-else class="no-data">No accounts found.</p>
+        <div class="pagination" v-if="accounts.length">
+          <button @click="prevAccounts" :disabled="accountsPage === 1">Prev</button>
+          <span>Page {{ accountsPage }} of {{ accountsTotalPages }}</span>
+          <button @click="nextAccounts" :disabled="accountsPage === accountsTotalPages">Next</button>
+        </div>
       </section>
 
       <section class="card transactions-card">
@@ -68,6 +73,11 @@
           </li>
         </ul>
         <p v-else class="no-data">No transactions found.</p>
+        <div class="pagination" v-if="transactions.length">
+          <button @click="prevTransactions" :disabled="transactionsPage === 1">Prev</button>
+          <span>Page {{ transactionsPage }} of {{ transactionsTotalPages }}</span>
+          <button @click="nextTransactions" :disabled="transactionsPage === transactionsTotalPages">Next</button>
+        </div>
       </section>
 
       <section class="card loans-card">
@@ -93,6 +103,11 @@
           </li>
         </ul>
         <p v-else class="no-data">No loans found.</p>
+        <div class="pagination" v-if="loans.length">
+          <button @click="prevLoans" :disabled="loansPage === 1">Prev</button>
+          <span>Page {{ loansPage }} of {{ loansTotalPages }}</span>
+          <button @click="nextLoans" :disabled="loansPage === loansTotalPages">Next</button>
+        </div>
       </section>
     </div>
   </div>
@@ -113,16 +128,57 @@ const store = useAdminUserCompositionStore()
 
 const loading = computed(() => store.loading)
 const error = computed(() => store.error)
-
 const user = computed(() => store.user || null)
+
 const accounts = computed(() => store.accounts || [])
 const transactions = computed(() => store.transactions || [])
 const loans = computed(() => store.loans || [])
 
-const fetchData = (id) => {
-  if (id) {
-    store.getUserComposition(id)
+const accountsPage = computed(() => store.accountsCurrentPage + 1)
+const accountsTotalPages = computed(() => store.totalAccountsPages)
+
+const transactionsPage = computed(() => store.transactionsCurrentPage + 1)
+const transactionsTotalPages = computed(() => store.totalTransactionsPages)
+
+const loansPage = computed(() => store.loansCurrentPage + 1)
+const loansTotalPages = computed(() => store.totalLoansPages)
+
+const prevAccounts = () => {
+  if (store.accountsCurrentPage > 0) {
+    store.fetchAccountsPage(props.userId, store.accountsCurrentPage - 1, store.accountsPageSize)
   }
+}
+const nextAccounts = () => {
+  if (store.accountsCurrentPage < store.totalAccountsPages - 1) {
+    store.fetchAccountsPage(props.userId, store.accountsCurrentPage + 1, store.accountsPageSize)
+  }
+}
+
+const prevTransactions = () => {
+  if (store.transactionsCurrentPage > 0) {
+    store.fetchTransactionsPage(props.userId, store.transactionsCurrentPage - 1, store.transactionsPageSize)
+  }
+}
+const nextTransactions = () => {
+  if (store.transactionsCurrentPage < store.totalTransactionsPages - 1) {
+    store.fetchTransactionsPage(props.userId, store.transactionsCurrentPage + 1, store.transactionsPageSize)
+  }
+}
+
+const prevLoans = () => {
+  if (store.loansCurrentPage > 0) {
+    store.fetchLoansPage(props.userId, store.loansCurrentPage - 1, store.loansPageSize)
+  }
+}
+const nextLoans = () => {
+  if (store.loansCurrentPage < store.totalLoansPages - 1) {
+    store.fetchLoansPage(props.userId, store.loansCurrentPage + 1, store.loansPageSize)
+  }
+}
+
+const fetchData = (id) => {
+  if (!id) return
+  store.getUserComposition(id)
 }
 
 onMounted(() => {
@@ -133,6 +189,7 @@ watch(() => props.userId, (newUserId) => {
   fetchData(newUserId)
 })
 </script>
+
 
 <style scoped>
 /* Base Styles */
@@ -484,4 +541,40 @@ watch(() => props.userId, (newUserId) => {
     gap: 0.5rem;
   }
 }
+
+/* Pagination */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.pagination button {
+  padding: 0.4rem 0.75rem;
+  border: 1px solid #ccc;
+  background: #f8f9fa;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.pagination button:hover:not(:disabled) {
+  background: #e2e6ea;
+  border-color: #bbb;
+}
+
+.pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pagination .active {
+  background: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
 </style>

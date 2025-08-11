@@ -44,11 +44,11 @@ public class UserCompositionController {
 
         Mono<UserDto> userMono = usersWebClient.getUserById(userId);
 
-        Mono<Page<AccountDto>> accountsMono = accountsWebClient.getUserAccounts(userId, 0, 10);
+        Mono<Page<AccountDto>> accountsMono = accountsWebClient.getUserAccounts(userId, 0, 6);
 
-        Mono<Page<TransactionDto>> transactionsMono = transactionsWebClient.getUserTransactions(userId, 0, 10);
+        Mono<Page<TransactionDto>> transactionsMono = transactionsWebClient.getUserTransactions(userId, 0, 6);
 
-        Mono<Page<LoanDto>> loansMono = transactionsWebClient.getUserLoans(userId, null, 0, 10);
+        Mono<Page<LoanDto>> loansMono = transactionsWebClient.getUserLoans(userId, null, 0, 6);
 
         return Mono.zip(userMono, accountsMono, transactionsMono, loansMono)
                 .map(tuple -> {
@@ -61,6 +61,81 @@ public class UserCompositionController {
                 });
     }
 
+    @Operation(summary = "Get user accounts page", description = "Get user accounts page endpoint for admin actions")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "User accounts page returned successfully"),
+            @ApiResponse(responseCode = "404", description = "User not found"),
+            @ApiResponse(responseCode = "400", description = "Bad request")
+    })
+    @GetMapping("/get/accounts-page")
+    public Mono<ResponseEntity<Page<AccountDto>>> getAccountsPage(
+            @RequestHeader("X-User-Id") String adminId,
+            @RequestParam String userId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "6") int size) {
+
+        try {
+            validateAdmin(adminId);
+        } catch (ResourceNotFoundException e) {
+            return Mono.just(ResponseEntity.notFound().build());
+        } catch (RuntimeException e) {
+            return Mono.just(ResponseEntity.badRequest().build());
+        }
+
+        return accountsWebClient.getUserAccounts(userId, page, size)
+                .map(accountsPage -> ResponseEntity.ok(accountsPage));
+    }
+
+
+    @Operation(summary = "Get user transactions page", description = "Get user transactions page endpoint for admin actions")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "User transactions page returned successfully"),
+            @ApiResponse(responseCode = "404", description = "User not found"),
+            @ApiResponse(responseCode = "400", description = "Bad request")
+    })
+    @GetMapping("/get/transactions-page")
+    public Mono<ResponseEntity<Page<TransactionDto>>> getTransactionsPage(
+            @RequestHeader("X-User-Id") String adminId,
+            @RequestParam String userId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "6") int size) {
+
+        try {
+            validateAdmin(adminId);
+        } catch (ResourceNotFoundException e) {
+            return Mono.just(ResponseEntity.notFound().build());
+        } catch (RuntimeException e) {
+            return Mono.just(ResponseEntity.badRequest().build());
+        }
+
+        return transactionsWebClient.getUserTransactions(userId, page, size)
+                .map(transactionsPage -> ResponseEntity.ok(transactionsPage));
+    }
+
+    @Operation(summary = "Get user loans page", description = "Get user loans page endpoint for admin actions")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "User loans page returned successfully"),
+            @ApiResponse(responseCode = "404", description = "User not found"),
+            @ApiResponse(responseCode = "400", description = "Bad request")
+    })
+    @GetMapping("/get/loans-page")
+    public Mono<ResponseEntity<Page<LoanDto>>> getLoansPage(
+            @RequestHeader("X-User-Id") String adminId,
+            @RequestParam String userId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "6") int size) {
+
+        try {
+            validateAdmin(adminId);
+        } catch (ResourceNotFoundException e) {
+            return Mono.just(ResponseEntity.notFound().build());
+        } catch (RuntimeException e) {
+            return Mono.just(ResponseEntity.badRequest().build());
+        }
+
+        return transactionsWebClient.getUserLoans(userId, null, page, size)
+                .map(loansPage -> ResponseEntity.ok(loansPage));
+    }
 
     private void validateAdmin(String adminId) {
         usersWebClient.getUserById(adminId)
