@@ -11,24 +11,20 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
-import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.reactive.CorsWebFilter;
 import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
-
 import java.time.Duration;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
-import static org.springframework.security.config.Customizer.withDefaults;
 
 @ComponentScan(basePackages = {
         "com.ylli.gatewayserver",
-        "com.ylli.shared.configs"
-    }
-)
+        "com.ylli.shared.configs",
+        "com.ylli.shared.webClients",
+})
 @EnableWebFluxSecurity
 @SpringBootApplication(exclude = {
         DataSourceAutoConfiguration.class,

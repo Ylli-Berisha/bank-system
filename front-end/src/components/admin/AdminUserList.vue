@@ -28,18 +28,24 @@
         </tr>
         </thead>
         <tbody>
-        <tr v-for="user in users" :key="user.id" @click="goToUser(user.id)" class="clickable-row">
+        <tr
+            v-for="user in users"
+            :key="user.id"
+            @click="goToUser(user.id)"
+            class="clickable-row"
+        >
           <td>{{ user.id }}</td>
           <td>{{ user.firstName + ' ' + user.lastName || '-' }}</td>
           <td>{{ user.username }}</td>
           <td>{{ user.phoneNumber || '-' }}</td>
-          <td>{{user.address}}</td>
-          <td>{{formatDate(user.birthDate)}}</td>
+          <td>{{ user.address }}</td>
+          <td>{{ formatDate(user.birthDate) }}</td>
           <td>{{ user.email || '-' }}</td>
-          <td>{{user.active?'Yes':'No'}}</td>
+          <td>{{ user.active ? 'Yes' : 'No' }}</td>
           <td>{{ formatDate(user.createdAt) }}</td>
         </tr>
         </tbody>
+
       </table>
     </section>
 
@@ -253,5 +259,8 @@ onMounted(() => {
   background-color: #90caf9;
   cursor: not-allowed;
 }
-
+.clickable-row:hover {
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out; 
+}
 </style>

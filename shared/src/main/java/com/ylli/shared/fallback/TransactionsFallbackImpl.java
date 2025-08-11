@@ -3,6 +3,7 @@ package com.ylli.shared.fallback;
 import com.ylli.shared.clients.TransactionsFeignClient;
 import com.ylli.shared.dtos.LoanDto;
 import com.ylli.shared.dtos.TransactionDto;
+import com.ylli.shared.enums.LoanStatus;
 import org.springframework.cloud.openfeign.FallbackFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
@@ -78,6 +79,16 @@ public class TransactionsFallbackImpl implements FallbackFactory<TransactionsFei
 
             @Override
             public ResponseEntity<LoanDto> rejectLoan(String adminId, Long loanId) {
+                return ResponseEntity.status(503).build();
+            }
+
+            @Override
+            public ResponseEntity<Page<TransactionDto>> getUserTransactions(String userId, int page, int size) {
+                return ResponseEntity.status(503).build();
+            }
+
+            @Override
+            public ResponseEntity<Page<LoanDto>> getUserLoans(String userId, LoanStatus status, int page, int size) {
                 return ResponseEntity.status(503).build();
             }
         };

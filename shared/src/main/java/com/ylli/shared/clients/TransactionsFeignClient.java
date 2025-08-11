@@ -2,6 +2,7 @@ package com.ylli.shared.clients;
 
 import com.ylli.shared.dtos.LoanDto;
 import com.ylli.shared.dtos.TransactionDto;
+import com.ylli.shared.enums.LoanStatus;
 import com.ylli.shared.fallback.TransactionsFallbackImpl;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.data.domain.Page;
@@ -88,4 +89,16 @@ public interface TransactionsFeignClient {
             @RequestHeader("X-User-ID") String adminId,
             @PathVariable Long loanId
     );
+
+    @GetMapping("/transactions/get/user-transactions")
+    ResponseEntity<Page<TransactionDto>> getUserTransactions(@RequestHeader("X-User-ID") String userId,
+                                                                    @RequestParam(defaultValue = "0") int page,
+                                                                    @RequestParam(defaultValue = "10") int size);
+
+    @GetMapping("/loans/get/user-loans")
+     ResponseEntity<Page<LoanDto>> getUserLoans(
+            @RequestHeader("X-User-ID") String userId,
+            @RequestParam(required = false) LoanStatus status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "6") int size);
 }

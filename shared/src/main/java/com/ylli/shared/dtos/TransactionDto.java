@@ -24,7 +24,7 @@ public class TransactionDto implements IdentifiableDto<String> {
     @Schema(description = "Unique identifier for the transaction (Pass as null or blank, id is generated server-side)", example = "")
     private String id;
 
-    @NotBlank(message = "Account ID cannot be blank") // This is the source account ID
+    @NotBlank(message = "Account ID cannot be blank")
     @Schema(description = "Account associated with the transaction (Source account ID)", example = "123e4567-e89b-12d3-a456-426614174000")
     private String accountId;
 
