@@ -71,6 +71,10 @@ public class User extends BaseEntity<String> {
     @Column(nullable = false)
     private boolean isActive = true;
 
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    private Set<Account> accounts = new HashSet<>();
+
+
     @Override
     public String getId() {
         return id;

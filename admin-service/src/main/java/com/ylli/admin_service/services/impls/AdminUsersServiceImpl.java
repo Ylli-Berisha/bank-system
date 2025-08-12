@@ -25,4 +25,17 @@ public class AdminUsersServiceImpl implements AdminUsersService {
             throw e;
         }
     }
+
+    @Override
+    public Page<UserDto> getFilteredUsers(String userId, String id, String username, String firstName, String lastName, String email, String phoneNumber, Boolean isActive, String accountId, String loanId, String transactionId, int page, int size) {
+        try {
+            Page<UserDto> userDtos = usersFeignClient.filterAdminUsers(userId, id, username, firstName, lastName, email, phoneNumber, isActive, accountId, loanId, transactionId, page, size).getBody();
+            return userDtos;
+        } catch (FeignException e) {
+            log.error("Feign error when filtering users by userId:{}", userId);
+            throw e;
+        }
+    }
+
+
 }

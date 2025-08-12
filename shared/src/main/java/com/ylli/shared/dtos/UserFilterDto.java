@@ -20,6 +20,6 @@ public class UserFilterDto {
     private String accountId;
     private String loanId;
     private String transactionId;
-    private int page = 0;
-    private int size = 10;
+//    private int page = 0;
+//    private int size = 6;
 }

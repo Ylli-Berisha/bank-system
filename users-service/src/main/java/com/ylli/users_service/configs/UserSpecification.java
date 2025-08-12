@@ -17,46 +17,59 @@ public class UserSpecification {
 
     public static Specification<User> filterUsers(UserFilterDto filter) {
         return (root, query, cb) -> {
-            root.fetch("accounts", JoinType.LEFT);
-            root.fetch("loans", JoinType.LEFT);
-            root.fetch("transactions", JoinType.LEFT);
             query.distinct(true);
 
             List<Predicate> predicates = new ArrayList<>();
 
-            if (filter.getId() != null)
+            if (filter.getId() != null) {
                 predicates.add(cb.equal(root.get("id"), filter.getId()));
+            }
 
-            if (filter.getUsername() != null)
+            if (filter.getUsername() != null) {
                 predicates.add(cb.like(cb.lower(root.get("username")), "%" + filter.getUsername().toLowerCase() + "%"));
+            }
 
-            if (filter.getFirstName() != null)
+            if (filter.getFirstName() != null) {
                 predicates.add(cb.like(cb.lower(root.get("firstName")), "%" + filter.getFirstName().toLowerCase() + "%"));
+            }
 
-            if (filter.getLastName() != null)
+            if (filter.getLastName() != null) {
                 predicates.add(cb.like(cb.lower(root.get("lastName")), "%" + filter.getLastName().toLowerCase() + "%"));
+            }
 
-            if (filter.getEmail() != null)
+            if (filter.getEmail() != null) {
                 predicates.add(cb.like(cb.lower(root.get("email")), "%" + filter.getEmail().toLowerCase() + "%"));
+            }
 
-            if (filter.getPhoneNumber() != null)
+            if (filter.getPhoneNumber() != null) {
                 predicates.add(cb.like(root.get("phoneNumber"), "%" + filter.getPhoneNumber() + "%"));
+            }
 
-            if (filter.getIsActive() != null)
+            if (filter.getIsActive() != null) {
                 predicates.add(cb.equal(root.get("isActive"), filter.getIsActive()));
+            }
+
+            // Declare accountJoin only if needed:
+            Join<User, Account> accountJoin = null;
+            boolean needAccountJoin = filter.getAccountId() != null
+                    || filter.getLoanId() != null
+                    || filter.getTransactionId() != null;
+
+            if (needAccountJoin) {
+                accountJoin = root.join("accounts", JoinType.LEFT);
+            }
 
             if (filter.getAccountId() != null) {
-                Join<User, Account> accountJoin = root.join("accounts", JoinType.LEFT);
                 predicates.add(cb.equal(accountJoin.get("id"), filter.getAccountId()));
             }
 
             if (filter.getLoanId() != null) {
-                Join<User, Loan> loanJoin = root.join("loans", JoinType.LEFT);
+                Join<Account, Loan> loanJoin = accountJoin.join("loans", JoinType.LEFT);
                 predicates.add(cb.equal(loanJoin.get("id"), filter.getLoanId()));
             }
 
             if (filter.getTransactionId() != null) {
-                Join<User, Transaction> transactionJoin = root.join("transactions", JoinType.LEFT);
+                Join<Account, Transaction> transactionJoin = accountJoin.join("transactions", JoinType.LEFT);
                 predicates.add(cb.equal(transactionJoin.get("id"), filter.getTransactionId()));
             }
 

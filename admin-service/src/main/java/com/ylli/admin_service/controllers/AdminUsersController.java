@@ -3,6 +3,7 @@ package com.ylli.admin_service.controllers;
 import com.ylli.admin_service.services.AdminUsersService;
 import com.ylli.shared.dtos.UserDto;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -41,4 +42,39 @@ public class AdminUsersController {
         return ResponseEntity.ok(usersPage);
     }
 
- }
+    @Operation(summary = "Filter admin users", description = "Filter users for admin panel based on optional criteria")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Users filtered successfully"),
+            @ApiResponse(responseCode = "204", description = "No matching users found", content = @Content)
+    })
+    @GetMapping("/filter/admin-users")
+    public ResponseEntity<Page<UserDto>> filterAdminUsers(
+            @RequestHeader("X-User-ID") String adminId,
+            @RequestParam(required = false) String userId,
+            @RequestParam(required = false) String username,
+            @RequestParam(required = false) String email,
+            @RequestParam(required = false) String firstName,
+            @RequestParam(required = false) String lastName,
+            @RequestParam(required = false) String phoneNumber,
+            @RequestParam(required = false) Boolean isActive,
+            @RequestParam(required = false) String accountId,
+            @RequestParam(required = false) String loanId,
+            @RequestParam(required = false) String transactionId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        if (adminId == null || adminId.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+        if (page < 0 || size <= 0) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        Page<UserDto> usersPage = service.getFilteredUsers(adminId, userId, username, email, firstName, lastName,
+                phoneNumber, isActive, accountId, loanId, transactionId, page, size);
+        if (usersPage == null || usersPage.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(usersPage);
+    }
+}

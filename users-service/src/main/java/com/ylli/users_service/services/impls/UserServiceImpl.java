@@ -13,6 +13,8 @@ import com.ylli.users_service.mappers.UserMapper;
 import com.ylli.users_service.repositories.UserRepository;
 import com.ylli.users_service.services.UserService;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -25,10 +27,10 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 
-@Slf4j
 @Service
 public class UserServiceImpl extends BaseServiceImpl<User, UserDto, String, UserRepository, UserMapper> implements UserService {
 
+    private static final Logger log = LoggerFactory.getLogger(UserService.class);
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final AuditHelper auditHelper;
@@ -122,21 +124,50 @@ public class UserServiceImpl extends BaseServiceImpl<User, UserDto, String, User
 
     @Override
     public Page<UserDto> filterAdminUsers(String adminId, UserFilterDto filterDto, int page, int size) {
+        log.info("Starting filterAdminUsers method for adminId: {}", adminId);
+        log.debug("Received filterDto: {}", filterDto);
+        log.debug("Received pagination: page={}, size={}", page, size);
+
         validateAdmin(adminId);
 
         if (page < 0 || size <= 0) {
+            log.warn("Invalid pagination parameters received: page={} , size={}. Throwing IllegalArgumentException.", page, size);
             throw new IllegalArgumentException("Page number must be >= 0 and size must be > 0");
         }
 
         if (filterDto == null) {
+            log.info("Input filterDto was null. Initializing a new, empty UserFilterDto to return all users.");
             filterDto = new UserFilterDto();
+        } else {
+            log.debug("Using provided UserFilterDto for filtering.");
         }
 
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        log.debug("Constructed Pageable object: {}", pageable);
 
-        Page<User> usersPage = repository.findAll(UserSpecification.filterUsers(filterDto), pageable);
+        Page<User> usersPage;
+        try {
+            log.info("Calling repository.findAll with UserSpecification and Pageable.");
+            usersPage = repository.findAll(UserSpecification.filterUsers(filterDto), pageable);
+            log.info("Repository returned a page with {} total elements and {} current elements.", usersPage.getTotalElements(), usersPage.getNumberOfElements());
+            if (log.isDebugEnabled()) {
+                usersPage.getContent().stream()
+                        .limit(5)
+                        .forEach(user -> log.debug("Fetched User ID: {}, Username: {}", user.getId(), user.getUsername()));
+                if (usersPage.getNumberOfElements() > 5) {
+                    log.debug("(Showing first 5 user IDs for brevity. Total fetched on this page: {})", usersPage.getNumberOfElements());
+                }
+            }
+        } catch (Exception e) {
+            log.error("An error occurred during user fetching from repository: {}", e.getMessage(), e);
+            throw e;
+        }
 
-        return usersPage.map(mapper::toDto);
+        log.info("Mapping fetched User entities to UserDto objects.");
+        Page<UserDto> userDtoPage = usersPage.map(mapper::toDto);
+        log.info("Finished mapping. Returning Page<UserDto> with {} total elements.", userDtoPage.getTotalElements());
+
+        return userDtoPage;
     }
 
     @Override

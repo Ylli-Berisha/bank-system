@@ -71,3 +71,18 @@ resilience4j.retry:
       wait-duration: 100
       enable-exponential-backoff: true
       exponential-backoff-multiplier: 2
+
+logging:
+  level:
+    org:
+      springframework:
+        data:
+          jpa:
+            repository:
+              query: DEBUG
+      hibernate:
+        SQL: DEBUG
+        type:
+          descriptor:
+            sql:
+              BasicBinder: TRACE

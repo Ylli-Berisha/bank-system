@@ -10,7 +10,10 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.GenericGenerator;
+
 import java.math.BigDecimal;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity(name = "accounts")
 @AllArgsConstructor
@@ -44,6 +47,12 @@ public class Account extends BaseEntity<String> {
     @NotNull(message = "Account status cannot be null")
     @Enumerated(EnumType.STRING)
     private AccountStatus status;
+
+    @OneToMany(mappedBy = "account", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private Set<Loan> loans = new HashSet<>();
+
+    @OneToMany(mappedBy = "account", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private Set<Transaction> transactions = new HashSet<>();
 
     @Override
     public String getId() {

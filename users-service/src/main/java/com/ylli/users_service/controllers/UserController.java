@@ -89,7 +89,7 @@ public class UserController extends BaseController<UserDto, String, UserService>
             @RequestParam(required = false) String loanId,
             @RequestParam(required = false) String transactionId,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "6") int size
     ) {
         if (adminId == null || adminId.isEmpty()) {
             return ResponseEntity.badRequest().build();
@@ -109,6 +109,8 @@ public class UserController extends BaseController<UserDto, String, UserService>
         filterDto.setAccountId(accountId);
         filterDto.setLoanId(loanId);
         filterDto.setTransactionId(transactionId);
+
+        log.debug("Controller received and populated filterDto: {}", filterDto);
 
         Page<UserDto> usersPage = service.filterAdminUsers(adminId, filterDto, page, size);
 
