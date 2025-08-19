@@ -12,7 +12,8 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.util.List;
 
-@FeignClient(name = "transactions-service", url = "http://localhost:8110", path = "/api", fallbackFactory = TransactionsFallbackImpl.class)
+//@FeignClient(name = "transactions-service", url = "http://localhost:8110", path = "/api", fallbackFactory = TransactionsFallbackImpl.class)
+@FeignClient(name = "transactions-service", url = "${transactions.service.url}", path = "/api", fallbackFactory = TransactionsFallbackImpl.class)
 public interface TransactionsFeignClient {
 
     @GetMapping("/transactions/get/{id}")

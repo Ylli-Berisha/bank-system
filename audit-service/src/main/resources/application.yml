@@ -68,3 +68,19 @@ resilience4j.retry:
       wait-duration: 100
       enable-exponential-backoff: true
       exponential-backoff-multiplier: 2
+
+accounts:
+  service:
+    url: http://localhost:8080
+admin:
+  service:
+    url: http://localhost:8090
+audit:
+  service:
+    url: http://localhost:8100
+transactions:
+  service:
+    url: http://localhost:8110
+users:
+  service:
+    url: http://localhost:8120

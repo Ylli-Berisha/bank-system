@@ -6,7 +6,8 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-@FeignClient(name = "audit-service", url = "http://localhost:8100", path = "/api/audit", fallbackFactory = AuditFallbackImpl.class)
+//@FeignClient(name = "audit-service", url = "http://localhost:8100", path = "/api/audit", fallbackFactory = AuditFallbackImpl.class)
+@FeignClient(name = "audit-service", url = "${audit.service.url}", path = "/api/audit", fallbackFactory = AuditFallbackImpl.class)
 public interface AuditFeignClient {
 
     @GetMapping("/get/{id}")

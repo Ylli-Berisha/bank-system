@@ -1,20 +1,25 @@
 package com.ylli.shared.webClients;
 
 import com.ylli.shared.dtos.AccountDto;
+import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
+@Slf4j
 @Component
 public class AccountsWebClient {
     private final WebClient webClient;
+    private final String accountsServiceUrl;
 
-
-    public AccountsWebClient(WebClient.Builder builder) {
+    public AccountsWebClient(WebClient.Builder builder, @Value("${accounts.service.url}") String accountsServiceUrl) {
+        this.accountsServiceUrl = accountsServiceUrl;
         this.webClient = builder
-                .baseUrl("http://localhost:8080/api/accounts")
+                .baseUrl(accountsServiceUrl + "/api/accounts")
                 .build();
     }
 
@@ -30,5 +35,11 @@ public class AccountsWebClient {
                 .retrieve()
                 .bodyToMono(new ParameterizedTypeReference<Page<AccountDto>>() {});
     }
+
+    @PostConstruct
+    public void init() {
+        log.info("USERS_SERVICE_URL resolved to: {}", accountsServiceUrl);
+    }
+
 
 }

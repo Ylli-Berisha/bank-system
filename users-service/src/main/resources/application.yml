@@ -86,3 +86,19 @@ logging:
           descriptor:
             sql:
               BasicBinder: TRACE
+
+accounts:
+  service:
+    url: http://localhost:8080
+admin:
+  service:
+    url: http://localhost:8090
+audit:
+  service:
+    url: http://localhost:8100
+transactions:
+  service:
+    url: http://localhost:8110
+users:
+  service:
+    url: http://localhost:8120

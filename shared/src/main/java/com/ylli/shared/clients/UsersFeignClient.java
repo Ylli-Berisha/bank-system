@@ -7,7 +7,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-@FeignClient(name = "users-service",url = "http://localhost:8120", path = "/api/users", fallbackFactory = UsersFallbackImpl.class)
+//@FeignClient(name = "users-service",url = "http://localhost:8120", path = "/api/users", fallbackFactory = UsersFallbackImpl.class)
+@FeignClient(name = "users-service",url = "${users.service.url}", path = "/api/users", fallbackFactory = UsersFallbackImpl.class)
 public interface UsersFeignClient {
 
     @GetMapping("/get/{id}")

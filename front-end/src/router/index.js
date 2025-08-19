@@ -15,6 +15,7 @@ import AdminLoansView from "@/components/admin/AdminLoansView.vue";
 import AdminAuditsView from "@/components/admin/AdminAuditsView.vue";
 import AdminUserList from "@/components/admin/AdminUserList.vue";
 import AdminUserCompositionView from "@/components/admin/AdminUserCompositionView.vue";
+import NotFoundView from "@/components/NotFoundView.vue";
 
 const ROLE_USER = 'ROLE_USER';
 const ROLE_ADMIN = 'ROLE_ADMIN';
@@ -98,6 +99,12 @@ const routes = [
         component: AdminUserCompositionView,
         props: true,
         meta: { requiresAuth: true, requiredRole: ROLE_ADMIN }
+    },
+    {
+        path: '/:pathMatch(.*)*',
+        name: 'NotFound',
+        component: NotFoundView,
+        meta: { requiresAuth: true }
     }
 ];
 

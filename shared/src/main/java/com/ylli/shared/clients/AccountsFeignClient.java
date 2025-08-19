@@ -11,7 +11,8 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.util.List;
 
-@FeignClient(name = "accounts-service", url = "http://localhost:8080", path = "/api/accounts", fallbackFactory = AccountsFallbackImpl.class)
+@FeignClient(name = "accounts-service", url = "${accounts.service.url}", path = "/api/accounts", fallbackFactory = AccountsFallbackImpl.class)
+//@FeignClient(name = "accounts-service", url = "http://localhost:8080", path = "/api/accounts", fallbackFactory = AccountsFallbackImpl.class)
 public interface AccountsFeignClient {
     @GetMapping("/get/all")
     ResponseEntity<List<AccountDto>> getAll();

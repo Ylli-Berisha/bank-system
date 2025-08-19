@@ -4,19 +4,22 @@ package com.ylli.shared.webClients;
 import com.ylli.shared.dtos.LoanDto;
 import com.ylli.shared.dtos.TransactionDto;
 import com.ylli.shared.enums.LoanStatus;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
+@Slf4j
 @Component
 public class TransactionsWebClient {
     private final WebClient webClient;
 
-    public TransactionsWebClient(WebClient.Builder builder) {
+    public TransactionsWebClient(WebClient.Builder builder, @Value("${transactions.service.url}") String transactionsUrl) {
         this.webClient = builder
-                .baseUrl("http://localhost:8110/api")
+                .baseUrl(transactionsUrl + "/api")
                 .build();
     }
 

@@ -1,3 +1,21 @@
+name: bank-microservices
+
+x-service-urls: &service-urls
+  ACCOUNTS_SERVICE_URL: http://accounts-service:8080
+  ADMIN_SERVICE_URL: http://admin-service:8090
+  AUDIT_SERVICE_URL: http://audit-service:8100
+  TRANSACTIONS_SERVICE_URL: http://transactions-service:8110
+  USERS_SERVICE_URL: http://users-service:8120
+
+x-spring-env: &spring-env
+  SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/bankdb
+  SPRING_DATASOURCE_USERNAME: yllbaba
+  SPRING_DATASOURCE_PASSWORD: secret
+  SPRING_JPA_HIBERNATE_DDL_AUTO: update
+  SPRING_PROFILES_ACTIVE: docker
+  <<: *service-urls
+  EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eurekaserver:8070/eureka/
+
 services:
   db:
     image: postgres:latest
@@ -15,6 +33,7 @@ services:
       start_period: 10s
     networks:
       - backend_network
+
   eurekaserver:
     image: "ylli-berisha/eurekaserver"
     container_name: "eurekaserver"
@@ -32,6 +51,7 @@ services:
           memory: 600m
     networks:
       - backend_network
+
   accounts:
     image: "ylli-berisha/accounts-service"
     container_name: "accounts-service"
@@ -42,11 +62,7 @@ services:
         limits:
           memory: 600m
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/bankdb
-      SPRING_DATASOURCE_USERNAME: yllbaba
-      SPRING_DATASOURCE_PASSWORD: secret
-      SPRING_JPA_HIBERNATE_DDL_AUTO: create-drop
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eurekaserver:8070/eureka/
+      <<: *spring-env
     networks:
       - backend_network
     depends_on:
@@ -54,12 +70,38 @@ services:
         condition: service_healthy
       eurekaserver:
         condition: service_healthy
-    healthcheck: # Added healthcheck
+    healthcheck:
       test: "curl --fail --silent localhost:8080/actuator/health/readiness | grep UP || exit 1"
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 15s
+
+  admin:
+    image: "ylli-berisha/admin-service"
+    container_name: "admin-service"
+    ports:
+      - "8090:8090"
+    deploy:
+      resources:
+        limits:
+          memory: 600m
+    environment:
+      <<: *spring-env
+    networks:
+      - backend_network
+    depends_on:
+      db:
+        condition: service_healthy
+      eurekaserver:
+        condition: service_healthy
+    healthcheck:
+      test: "curl --fail --silent localhost:8090/actuator/health/readiness | grep UP || exit 1"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
   audit:
     image: "ylli-berisha/audit-service"
     container_name: "audit-service"
@@ -70,11 +112,7 @@ services:
         limits:
           memory: 600m
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/bankdb
-      SPRING_DATASOURCE_USERNAME: yllbaba
-      SPRING_DATASOURCE_PASSWORD: secret
-      SPRING_JPA_HIBERNATE_DDL_AUTO: update
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eurekaserver:8070/eureka/
+      <<: *spring-env
     networks:
       - backend_network
     depends_on:
@@ -82,12 +120,13 @@ services:
         condition: service_healthy
       eurekaserver:
         condition: service_healthy
-    healthcheck: # Added healthcheck
+    healthcheck:
       test: "curl --fail --silent localhost:8100/actuator/health/readiness | grep UP || exit 1"
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 15s
+
   transactions:
     image: "ylli-berisha/transactions-service"
     container_name: "transactions-service"
@@ -98,11 +137,7 @@ services:
         limits:
           memory: 600m
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/bankdb
-      SPRING_DATASOURCE_USERNAME: yllbaba
-      SPRING_DATASOURCE_PASSWORD: secret
-      SPRING_JPA_HIBERNATE_DDL_AUTO: update
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eurekaserver:8070/eureka/
+      <<: *spring-env
     networks:
       - backend_network
     depends_on:
@@ -110,12 +145,13 @@ services:
         condition: service_healthy
       eurekaserver:
         condition: service_healthy
-    healthcheck: # Added healthcheck
+    healthcheck:
       test: "curl --fail --silent localhost:8110/actuator/health/readiness | grep UP || exit 1"
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 15s
+
   users:
     image: "ylli-berisha/users-service"
     container_name: "users-service"
@@ -126,11 +162,7 @@ services:
         limits:
           memory: 600m
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/bankdb
-      SPRING_DATASOURCE_USERNAME: yllbaba
-      SPRING_DATASOURCE_PASSWORD: secret
-      SPRING_JPA_HIBERNATE_DDL_AUTO: update
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eurekaserver:8070/eureka/
+      <<: *spring-env
     networks:
       - backend_network
     depends_on:
@@ -138,7 +170,7 @@ services:
         condition: service_healthy
       eurekaserver:
         condition: service_healthy
-    healthcheck: # Added healthcheck
+    healthcheck:
       test: "curl --fail --silent localhost:8120/actuator/health/readiness | grep UP || exit 1"
       interval: 10s
       timeout: 5s
@@ -146,20 +178,20 @@ services:
       start_period: 15s
 
   gatewayserver:
-    image: ylli-berisha/gatewayserver
+    image: "ylli-berisha/gatewayserver"
     container_name: "gatewayserver"
     ports:
       - "8072:8072"
     environment:
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eurekaserver:8070/eureka/
+      <<: *spring-env
     networks:
       - backend_network
     depends_on:
-      db:
-        condition: service_healthy
       eurekaserver:
         condition: service_healthy
       accounts:
+        condition: service_healthy
+      admin:
         condition: service_healthy
       audit:
         condition: service_healthy
@@ -167,6 +199,16 @@ services:
         condition: service_healthy
       users:
         condition: service_healthy
+
+  front-end:
+    build: ./front-end
+    container_name: "front-end"
+    ports:
+      - "3000:80"
+    networks:
+      - backend_network
+    depends_on:
+      - gatewayserver
 
 networks:
   backend_network:
