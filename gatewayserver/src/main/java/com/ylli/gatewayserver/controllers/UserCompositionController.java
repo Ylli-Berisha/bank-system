@@ -9,6 +9,7 @@ import com.ylli.shared.exceptions.ResourceNotFoundException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +19,7 @@ import reactor.core.publisher.Mono;
 @RestController
 @RequestMapping("/user/composition")
 @RequiredArgsConstructor
+@Tag(name = "User Composition", description = "Composition of user-related data for admin actions")
 public class UserCompositionController {
     private final UsersWebClient usersWebClient;
     private final AccountsWebClient accountsWebClient;

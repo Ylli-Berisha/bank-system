@@ -2,6 +2,7 @@ package com.ylli.accounts_service.services;
 
 import com.ylli.shared.base.BaseService;
 import com.ylli.shared.dtos.AccountDto;
+import com.ylli.shared.dtos.PageResponseDto;
 import com.ylli.shared.enums.AccountStatus;
 import com.ylli.shared.enums.AccountType;
 import org.springframework.data.domain.Page;
@@ -33,7 +34,7 @@ public interface AccountsService extends BaseService<AccountDto, String> {
 
     List<AccountDto> getTopAccounts (String userId);
 
-    Page<AccountDto> filterAdminAccounts(
+    PageResponseDto<AccountDto> filterAdminAccounts(
             String adminId,
             String accountId,
             String typeString,
@@ -50,4 +51,11 @@ public interface AccountsService extends BaseService<AccountDto, String> {
     );
 
     Page<AccountDto> filterUserAccounts(String accountId, String userId, AccountType accountType, BigDecimal minBalance, BigDecimal maxBalance, AccountStatus accountStatus, int page, int size);
+
+    PageResponseDto<AccountDto> getByStatus(
+            String userId,
+            AccountStatus status,
+            int page,
+            int size
+    );
 }

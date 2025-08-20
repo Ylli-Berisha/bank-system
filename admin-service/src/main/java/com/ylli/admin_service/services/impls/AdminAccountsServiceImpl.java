@@ -7,6 +7,7 @@ import com.ylli.shared.clients.AuditFeignClient;
 import com.ylli.shared.clients.UsersFeignClient;
 import com.ylli.shared.dtos.AccountDto;
 import com.ylli.shared.dtos.AuditDto;
+import com.ylli.shared.dtos.PageResponseDto;
 import com.ylli.shared.enums.AccountStatus;
 import com.ylli.shared.enums.AuditType;
 import com.ylli.shared.enums.UserRole;
@@ -150,7 +151,7 @@ public class AdminAccountsServiceImpl implements AdminAccountsService {
     }
 
     @Override
-    public Page<AccountDto> filterAdminAccounts(String adminId, String accountId, String typeString, BigDecimal minBalance, BigDecimal maxBalance, String statusString, String userId, String username, String email, String loanId, String transactionId, int page, int size) {
+    public PageResponseDto<AccountDto> filterAdminAccounts(String adminId, String accountId, String typeString, BigDecimal minBalance, BigDecimal maxBalance, String statusString, String userId, String username, String email, String loanId, String transactionId, int page, int size) {
         try {
             return accountsFeignClient.filterAdminAccounts(adminId, accountId, userId, username, email, loanId, transactionId, typeString, statusString, minBalance, maxBalance, page, size).getBody();
         } catch (FeignException e) {

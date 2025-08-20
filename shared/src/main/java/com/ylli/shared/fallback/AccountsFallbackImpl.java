@@ -2,6 +2,7 @@ package com.ylli.shared.fallback;
 
 import com.ylli.shared.clients.AccountsFeignClient;
 import com.ylli.shared.dtos.AccountDto;
+import com.ylli.shared.dtos.PageResponseDto;
 import org.springframework.cloud.openfeign.FallbackFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
@@ -87,8 +88,8 @@ public class AccountsFallbackImpl implements FallbackFactory<AccountsFeignClient
             }
 
             @Override
-            public ResponseEntity<Page<AccountDto>> filterAdminAccounts(String adminId, String accountId, String userId, String username, String email, String loanId, String transactionId, String type, String status, BigDecimal minBalance, BigDecimal maxBalance, int page, int size) {
-                return new ResponseEntity<>(Page.empty(), org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE);
+            public ResponseEntity<PageResponseDto<AccountDto>> filterAdminAccounts(String adminId, String accountId, String userId, String username, String email, String loanId, String transactionId, String type, String status, BigDecimal minBalance, BigDecimal maxBalance, int page, int size) {
+                return ResponseEntity.status(503).build();
             }
         };
     }

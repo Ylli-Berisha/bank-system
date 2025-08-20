@@ -1,6 +1,7 @@
 package com.ylli.admin_service.services;
 
 import com.ylli.shared.dtos.AccountDto;
+import com.ylli.shared.dtos.PageResponseDto;
 import org.springframework.data.domain.Page;
 
 import java.math.BigDecimal;
@@ -18,7 +19,7 @@ public interface AdminAccountsService {
 
     void rejectAccount(String accountId, String userId);
 
-    Page<AccountDto> filterAdminAccounts(
+    PageResponseDto<AccountDto> filterAdminAccounts(
             String adminId,
             String accountId,
             String typeString,

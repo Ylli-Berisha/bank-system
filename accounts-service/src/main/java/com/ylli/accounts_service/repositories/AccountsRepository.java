@@ -22,4 +22,6 @@ public interface AccountsRepository extends JpaRepository<Account, String>, JpaS
 
     List<Account> findTop4ByUserAndStatusOrderByCreatedAtDesc(User user, AccountStatus status);
 
+    Page<Account> findByStatus(AccountStatus status, Pageable pageable);
+
 }

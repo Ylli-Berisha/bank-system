@@ -2,6 +2,7 @@ package com.ylli.admin_service.controllers;
 
 import com.ylli.admin_service.services.AdminAccountsService;
 import com.ylli.shared.dtos.AccountDto;
+import com.ylli.shared.dtos.PageResponseDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -94,7 +95,7 @@ public class AdminAccountsController {
             @ApiResponse(responseCode = "204", description = "No matching accounts found", content = @Content)
     })
     @GetMapping("/filter/admin-accounts")
-    public ResponseEntity<Page<AccountDto>> filterAdminAccounts(
+    public ResponseEntity<PageResponseDto<AccountDto>> filterAdminAccounts(
             @RequestHeader("X-User-ID") String adminId,
             @RequestParam(required = false) String accountId,
             @RequestParam(required = false) String userId,
@@ -116,7 +117,7 @@ public class AdminAccountsController {
             return ResponseEntity.badRequest().build();
         }
 
-        Page<AccountDto> accounts = adminAccountsService.filterAdminAccounts(
+        PageResponseDto<AccountDto> accounts = adminAccountsService.filterAdminAccounts(
                 adminId,
                 accountId,
                 type,

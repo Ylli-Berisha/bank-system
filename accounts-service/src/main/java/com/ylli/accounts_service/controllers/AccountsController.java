@@ -3,6 +3,7 @@ package com.ylli.accounts_service.controllers;
 import com.ylli.shared.base.BaseController;
 import com.ylli.accounts_service.services.AccountsService;
 import com.ylli.shared.dtos.AccountDto;
+import com.ylli.shared.dtos.PageResponseDto;
 import com.ylli.shared.enums.AccountStatus;
 import com.ylli.shared.enums.AccountType;
 import com.ylli.shared.exceptions.ResourceNotFoundException;
@@ -226,7 +227,7 @@ public class AccountsController extends BaseController<AccountDto, String, Accou
             @ApiResponse(responseCode = "204", description = "No matching accounts found", content = @Content)
     })
     @GetMapping("/filter/admin-accounts")
-    public ResponseEntity<Page<AccountDto>> filterAdminAccounts(
+    public ResponseEntity<PageResponseDto<AccountDto>> filterAdminAccounts(
             @RequestHeader("X-User-ID") String adminId,
             @RequestParam(required = false) String accountId,
             @RequestParam(required = false) String userId,
@@ -248,7 +249,7 @@ public class AccountsController extends BaseController<AccountDto, String, Accou
             return ResponseEntity.badRequest().build();
         }
 
-        Page<AccountDto> accounts = service.filterAdminAccounts(
+        PageResponseDto<AccountDto> accounts = service.filterAdminAccounts(
                 adminId,
                 accountId,
                 type,
@@ -336,25 +337,29 @@ public class AccountsController extends BaseController<AccountDto, String, Accou
 
 
 
-//    @GetMapping("/get/by-status")
-//    @Operation(summary = "Get accounts by status")
-//    public ResponseEntity<List<AccountDto>> getAccountsByStatus(@RequestParam String status) {
-//        if (status == null) {
-//            return ResponseEntity.badRequest().build();
-//        }
-//        AccountStatus accountStatus;
-//        try {
-//            accountStatus = AccountStatus.valueOf(status.toUpperCase());
-//        }
-//        catch (IllegalArgumentException e) {
-//            return ResponseEntity.badRequest().body(null);
-//        }
-//        List<AccountDto> accounts = service.getByStatus(accountStatus);
-//        if (accounts == null || accounts.isEmpty()) {
-//            return ResponseEntity.notFound().build();
-//        }
-//        return ResponseEntity.ok(accounts);
-//    }
+    @GetMapping("/get/by-status")
+    @Operation(summary = "Get accounts by status")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Accounts retrieved successfully"),
+            @ApiResponse(responseCode = "204", description = "No accounts found for the given status", content = @Content),
+            @ApiResponse(responseCode = "400", description = "Invalid status or parameters", content = @Content)})
+    public ResponseEntity<PageResponseDto<AccountDto>> getAccountsByStatus(@RequestHeader("X-User-Id") String userId, @RequestParam String status, int page, int size) {
+        if (status == null) {
+            return ResponseEntity.badRequest().build();
+        }
+        AccountStatus accountStatus;
+        try {
+            accountStatus = AccountStatus.valueOf(status.toUpperCase());
+        }
+        catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(null);
+        }
+        PageResponseDto<AccountDto> accounts = service.getByStatus(userId, accountStatus, page, size);
+        if (accounts == null || accounts.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(accounts);
+    }
 
 //    @GetMapping("/get/account-statuses")
 //    @Operation(summary = "Get all account statuses")

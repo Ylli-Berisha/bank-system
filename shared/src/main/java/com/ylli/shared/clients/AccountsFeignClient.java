@@ -1,6 +1,7 @@
 package com.ylli.shared.clients;
 
 import com.ylli.shared.dtos.AccountDto;
+import com.ylli.shared.dtos.PageResponseDto;
 import com.ylli.shared.fallback.AccountsFallbackImpl;
 import jakarta.validation.Valid;
 import org.springframework.cloud.openfeign.FeignClient;
@@ -60,7 +61,7 @@ public interface AccountsFeignClient {
     ResponseEntity<?> freezeAccountFromAdmin(@PathVariable String id);
 
     @GetMapping("/filter/admin-accounts")
-    ResponseEntity<Page<AccountDto>> filterAdminAccounts(
+    ResponseEntity<PageResponseDto<AccountDto>> filterAdminAccounts(
             @RequestHeader("X-User-ID") String adminId,
             @RequestParam(required = false) String accountId,
             @RequestParam(required = false) String userId,

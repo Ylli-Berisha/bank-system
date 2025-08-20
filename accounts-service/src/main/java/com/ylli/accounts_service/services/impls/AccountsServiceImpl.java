@@ -8,6 +8,7 @@ import com.ylli.shared.base.BaseServiceImpl;
 import com.ylli.shared.clients.UsersFeignClient;
 import com.ylli.shared.dtos.AccountDto;
 import com.ylli.accounts_service.mappers.AccountMapper;
+import com.ylli.shared.dtos.PageResponseDto;
 import com.ylli.shared.dtos.UserDto;
 import com.ylli.shared.enums.AccountStatus;
 import com.ylli.shared.enums.AccountType;
@@ -216,20 +217,20 @@ public class AccountsServiceImpl extends BaseServiceImpl<Account, AccountDto, St
     }
 
     @Override
-    public Page<AccountDto> filterAdminAccounts(
-            String adminId,
-            String accountId,
-            String typeString,
-            BigDecimal minBalance,
-            BigDecimal maxBalance,
-            String statusString,
-            String userId,
-            String username,
-            String email,
-            String loanId,
-            String transactionId,
-            int page,
-            int size
+    public PageResponseDto<AccountDto> filterAdminAccounts(
+                                                            String adminId,
+                                                            String accountId,
+                                                            String typeString,
+                                                            BigDecimal minBalance,
+                                                            BigDecimal maxBalance,
+                                                            String statusString,
+                                                            String userId,
+                                                            String username,
+                                                            String email,
+                                                            String loanId,
+                                                            String transactionId,
+                                                            int page,
+                                                            int size
     ) {
         validateAdmin(adminId);
 
@@ -274,7 +275,17 @@ public class AccountsServiceImpl extends BaseServiceImpl<Account, AccountDto, St
                 pageable
         );
 
-        return accountsPage.map(mapper::toDto);
+        Page<AccountDto> accountDtoPage = accountsPage.map(mapper::toDto);
+
+        return new PageResponseDto<>(
+                accountDtoPage.getContent(),
+                accountDtoPage.getNumber(),
+                accountDtoPage.getSize(),
+                accountDtoPage.getTotalElements(),
+                accountDtoPage.getTotalPages(),
+                accountDtoPage.isFirst(),
+                accountDtoPage.isLast()
+        );
     }
 
     @Override
@@ -318,6 +329,43 @@ public class AccountsServiceImpl extends BaseServiceImpl<Account, AccountDto, St
         );
 
         return accountsPage.map(mapper::toDto);
+    }
+
+    @Override
+    public PageResponseDto<AccountDto> getByStatus(
+                                                    String userId,
+                                                    AccountStatus status,
+                                                    int page,
+                                                    int size
+    ) {
+        validateAdmin(userId);
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<Account> accountPage = repository.findByStatus(status, pageable);
+
+        if (accountPage == null || !accountPage.hasContent()) {
+            return new PageResponseDto<>(
+                    java.util.Collections.emptyList(), // content
+                    page,
+                    size,
+                    0,
+                    0,
+                    true,
+                    true
+            );
+        }
+
+        Page<AccountDto> accountDtoPage = accountPage.map(mapper::toDto);
+
+        return new PageResponseDto<>(
+                accountDtoPage.getContent(),
+                accountDtoPage.getNumber(),
+                accountDtoPage.getSize(),
+                accountDtoPage.getTotalElements(),
+                accountDtoPage.getTotalPages(),
+                accountDtoPage.isFirst(),
+                accountDtoPage.isLast()
+        );
     }
 
 
