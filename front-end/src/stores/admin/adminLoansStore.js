@@ -7,6 +7,10 @@ export const useAdminLoansStore = defineStore('adminLoansStore', () => {
     const totalPages = ref(0)
     const totalElements = ref(0)
     const currentPage = ref(0)
+    const pendingLoans = ref([])
+    const pendingTotalPages = ref(0)
+    const pendingTotalElements = ref(0)
+    const pendingCurrentPage = ref(0)
     const error = ref(null)
 
     const paginatedLoans = computed(() => loans.value)
@@ -36,6 +40,42 @@ export const useAdminLoansStore = defineStore('adminLoansStore', () => {
             totalPages.value = 0
             totalElements.value = 0
             console.error(err)
+        }
+    }
+
+    async function fetchPendingLoans(page = pendingCurrentPage.value, size = 12) {
+        error.value = null
+        const status = 'PENDING'
+
+        try {
+            const response = await client.get('/admin-service/api/loans/filter/loans', {
+                params: { status, page, size },
+            })
+
+            if (response.status === 204) {
+                pendingLoans.value = []
+                pendingTotalPages.value = 0
+                pendingTotalElements.value = 0
+                pendingCurrentPage.value = 0
+            } else {
+                pendingLoans.value = response.data.content || []
+                pendingTotalPages.value = response.data.totalPages
+                pendingTotalElements.value = response.data.totalElements
+                pendingCurrentPage.value = response.data.number
+            }
+        } catch (err) {
+            pendingLoans.value = []
+            pendingTotalPages.value = 0
+            pendingTotalElements.value = 0
+            pendingCurrentPage.value = 0
+
+            if (err.response && err.response.data && err.response.data.message) {
+                error.value = `Failed to fetch pending loans: ${err.response.data.message}`
+            } else if (err.response && err.response.status) {
+                error.value = `Failed to fetch pending loans. Server responded with status ${err.response.status}: ${err.response.statusText}`
+            } else {
+                error.value = 'Failed to fetch pending loans due to a network error or unexpected issue.'
+            }
         }
     }
 
@@ -129,5 +169,10 @@ export const useAdminLoansStore = defineStore('adminLoansStore', () => {
         acceptLoan,
         rejectLoan,
         proposeChanges,
-    }
+        pendingLoans,
+        pendingTotalPages,
+        pendingTotalElements,
+        pendingCurrentPage,
+        fetchPendingLoans,
+            }
 })

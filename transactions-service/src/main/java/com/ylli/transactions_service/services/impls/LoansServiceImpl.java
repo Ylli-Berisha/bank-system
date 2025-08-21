@@ -207,6 +207,9 @@ public class LoansServiceImpl extends BaseServiceImpl<Loan, LoanDto, Long, Loans
     public Page<LoanDto> filterAdminLoans(String adminId, String userId, String username, String email, String typeString, String statusString, String startDate, String endDate, BigDecimal minAmount, BigDecimal maxAmount, int page, int size) {
         validateAdmin(adminId);
 
+        log.info("Filtering admin loans with parameters: userId={}, username={}, email={}, type={}, status={}, startDate={}, endDate={}, minAmount={}, maxAmount={}, page={}, size={}",
+                userId, username, email, typeString, statusString, startDate, endDate, minAmount, maxAmount, page, size);
+
         LoanStatus parsedStatus = null;
         if (statusString != null && !statusString.isEmpty()) {
             try {
@@ -243,6 +246,11 @@ public class LoansServiceImpl extends BaseServiceImpl<Loan, LoanDto, Long, Loans
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
 
         Page<Loan> loansPage = repository.findAll(AdminLoanSpecifications.withFilters(userId, username, email, parsedType, parsedStatus, parsedStartDate, parsedEndDate, actualMinAmount, actualMaxAmount), pageable);
+
+        log.info("loans fetched from repo: {}", loansPage.getTotalElements());
+        loansPage.forEach(loan -> {
+            log.info("loan: {}", loan);
+        });
 
         return loansPage.map(mapper::toDto);
     }

@@ -76,13 +76,13 @@
     <section class="section">
       <h2 class="section-title">Pending Loans</h2>
 
-      <div v-if="pendingLoans.length === 0" class="empty-state-message">
+      <div v-if="adminLoansStore.pendingLoans.length === 0" class="empty-state-message">
         No pending loans found.
       </div>
 
       <div v-else class="card-grid">
         <div
-            v-for="loan in pendingLoans"
+            v-for="loan in adminLoansStore.pendingLoans"
             :key="loan.id"
             :class="['card', {
             'type-pending': loan.status.toLowerCase() === 'pending',
@@ -117,23 +117,43 @@
           </div>
         </div>
       </div>
+
+      <div v-if="adminLoansStore.pendingTotalPages > 1" class="pagination-controls">
+        <button
+            @click="prevPendingPage"
+            :disabled="adminLoansStore.pendingCurrentPage === 0"
+            class="pagination-btn"
+        >
+          Previous
+        </button>
+        <span class="page-info">
+          Page {{ adminLoansStore.pendingCurrentPage + 1 }} of {{ adminLoansStore.pendingTotalPages }}
+        </span>
+        <button
+            @click="nextPendingPage"
+            :disabled="adminLoansStore.pendingCurrentPage >= adminLoansStore.pendingTotalPages - 1"
+            class="pagination-btn"
+        >
+          Next
+        </button>
+      </div>
     </section>
 
     <section class="section">
       <h2 class="section-title">Filtered Loans</h2>
 
-      <div v-if="filteredLoans.length === 0" class="empty-state-message">
+      <div v-if="adminLoansStore.loans.length === 0" class="empty-state-message">
         No filtered loans found.
       </div>
 
       <div v-else class="card-grid">
         <div
-            v-for="loan in filteredLoans"
+            v-for="loan in adminLoansStore.loans"
             :key="loan.id"
             :class="['card', 'type-' + loan.status.toLowerCase()]"
         >
           <div class="card-header">
-            <span class="loan-type">{{ formatLabel(loan.type) }}</span>
+            <span class="loan-type">{{ formatLabel(loan.loanType) }}</span>
             <span class="loan-amount">${{ loan.leftAmount.toFixed(2) }}</span>
           </div>
 
@@ -151,6 +171,26 @@
             </p>
           </div>
         </div>
+      </div>
+
+      <div v-if="adminLoansStore.totalPages > 1" class="pagination-controls">
+        <button
+            @click="prevPage"
+            :disabled="adminLoansStore.currentPage === 0"
+            class="pagination-btn"
+        >
+          Previous
+        </button>
+        <span class="page-info">
+          Page {{ adminLoansStore.currentPage + 1 }} of {{ adminLoansStore.totalPages }}
+        </span>
+        <button
+            @click="nextPage"
+            :disabled="adminLoansStore.currentPage >= adminLoansStore.totalPages - 1"
+            class="pagination-btn"
+        >
+          Next
+        </button>
       </div>
     </section>
 
@@ -241,14 +281,6 @@ const loanStatuses = ['pending', 'approved', 'rejected', 'active', 'repaid', 'ov
 
 const adminLoansStore = useAdminLoansStore()
 
-const pendingLoans = computed(() =>
-    adminLoansStore.loans.filter(loan => loan.status.toLowerCase() === 'pending' || loan.status.toLowerCase() === 'changes_proposed')
-)
-
-const filteredLoans = computed(() =>
-    adminLoansStore.paginatedLoans.filter(loan => loan.status.toLowerCase() !== 'pending' && loan.status.toLowerCase() !== 'changes_proposed')
-)
-
 function clearFilters() {
   Object.assign(filters, {
     type: '',
@@ -268,7 +300,7 @@ function formatLabel(value) {
   return value?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) || ''
 }
 
-function fetchLoans() {
+function fetchFilteredLoans() {
   const cleanFilters = {}
   for (const key in filters) {
     if (filters[key] !== '' && filters[key] !== null) {
@@ -278,15 +310,25 @@ function fetchLoans() {
   adminLoansStore.fetchFilteredLoans(cleanFilters, adminLoansStore.currentPage)
 }
 
+function fetchPendingLoans() {
+  adminLoansStore.fetchPendingLoans(adminLoansStore.pendingCurrentPage)
+}
+
 onMounted(() => {
   document.title = 'Admin Loans'
-  fetchLoans()
+  fetchFilteredLoans()
+  fetchPendingLoans()
 })
 
 watch(
     () => [filters, adminLoansStore.currentPage],
-    () => fetchLoans(),
+    () => fetchFilteredLoans(),
     { deep: true }
+)
+
+watch(
+    () => adminLoansStore.pendingCurrentPage,
+    () => fetchPendingLoans()
 )
 
 function nextPage() {
@@ -295,6 +337,18 @@ function nextPage() {
 
 function prevPage() {
   adminLoansStore.decrementPage()
+}
+
+function nextPendingPage() {
+  if (adminLoansStore.pendingCurrentPage < adminLoansStore.pendingTotalPages - 1) {
+    adminLoansStore.pendingCurrentPage++
+  }
+}
+
+function prevPendingPage() {
+  if (adminLoansStore.pendingCurrentPage > 0) {
+    adminLoansStore.pendingCurrentPage--
+  }
 }
 
 const isAcceptModalOpen = ref(false)
@@ -335,12 +389,16 @@ function closeModal() {
   isAcceptModalOpen.value = false
   isRejectModalOpen.value = false
   selectedLoanId.value = null
+  fetchPendingLoans()
+  fetchFilteredLoans()
 }
 
 function closeProposeModal() {
   isProposeModalOpen.value = false
   proposedLoanId.value = null
   proposeError.value = null
+  fetchPendingLoans()
+  fetchFilteredLoans()
 }
 
 async function confirmAccept() {
@@ -348,7 +406,6 @@ async function confirmAccept() {
     await adminLoansStore.acceptLoan(selectedLoanId.value)
     alert('Loan accepted successfully.')
     closeModal()
-    fetchLoans()
   } catch {
     alert('Failed to accept loan.')
   }
@@ -359,7 +416,6 @@ async function confirmReject() {
     await adminLoansStore.rejectLoan(selectedLoanId.value)
     alert('Loan rejected successfully.')
     closeModal()
-    fetchLoans()
   } catch {
     alert('Failed to reject loan.')
   }
@@ -386,7 +442,6 @@ async function submitProposeChanges() {
     )
     alert('Changes proposed successfully.')
     closeProposeModal()
-    fetchLoans()
   } catch (err) {
     proposeError.value = adminLoansStore.error || 'Failed to propose changes.'
   }
@@ -402,8 +457,6 @@ function formatDate(isoString) {
   })
 }
 </script>
-
-
 
 <style scoped>
 .page-container {
@@ -959,8 +1012,35 @@ function formatDate(isoString) {
   background-color: #d4af1f;
 }
 
+.pagination-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
 
+.pagination-btn {
+  padding: 0.5rem 1rem;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
 
+.pagination-btn:hover {
+  background-color: #0056b3;
+}
+
+.pagination-btn:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.page-info {
+  font-size: 1rem;
+  color: #555;
+}
 </style>
-
-

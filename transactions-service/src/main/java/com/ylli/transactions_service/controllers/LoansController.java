@@ -164,7 +164,7 @@ public class LoansController extends BaseController<LoanDto, Long, LoansService>
             @RequestParam(required = false) BigDecimal minAmount,
             @RequestParam(required = false) BigDecimal maxAmount,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "12") int size
     ) {
         if (adminId == null || adminId.isEmpty() || page < 0 || size <= 0) {
             return ResponseEntity.badRequest().build();

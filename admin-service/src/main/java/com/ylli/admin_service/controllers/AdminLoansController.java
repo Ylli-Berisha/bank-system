@@ -49,8 +49,8 @@ public class AdminLoansController {
             @RequestParam(defaultValue = "12") int size
     ) {
         Page<LoanDto> loans = adminLoansService.getFilteredLoans(
-                adminId, userId, username, email, startDate, endDate, type, status, minAmount, maxAmount,
-                 page, size
+                adminId, userId, username, email, type, status, startDate, endDate, minAmount, maxAmount,
+                page, size
         );
         return ResponseEntity.ok(loans);
     }

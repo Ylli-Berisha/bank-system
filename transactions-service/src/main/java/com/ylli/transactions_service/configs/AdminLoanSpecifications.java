@@ -57,6 +57,8 @@ public class AdminLoanSpecifications {
 
             if (status != null) {
                 predicates.add(criteriaBuilder.equal(root.get("status"), status));
+            } else {
+                predicates.add(criteriaBuilder.notEqual(root.get("status"), LoanStatus.PENDING));
             }
 
             if (startDate != null) {

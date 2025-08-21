@@ -52,7 +52,7 @@ public class Transaction extends BaseEntity<String> {
     @Size(max = 255, message = "Details cannot exceed 255 characters")
     private String details;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "recipient_account_id")
     private Account recipientAccount;
 
