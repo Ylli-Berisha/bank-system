@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import client from '@/helpers/client.js'
+import { apiWrapper, globalError } from '@/helpers/apiWrapper.js'
 
 export const useAdminLoansStore = defineStore('adminLoansStore', () => {
     const loans = ref([])
@@ -11,71 +12,59 @@ export const useAdminLoansStore = defineStore('adminLoansStore', () => {
     const pendingTotalPages = ref(0)
     const pendingTotalElements = ref(0)
     const pendingCurrentPage = ref(0)
-    const error = ref(null)
+    const error = globalError
 
     const paginatedLoans = computed(() => loans.value)
 
     async function fetchFilteredLoans(filters, page = currentPage.value, size = 12) {
-        error.value = null
-
-        try {
+        const result = await apiWrapper(async () => {
             const params = {
                 ...filters,
                 page,
                 size,
             }
+            return client.get('/admin-service/api/loans/filter/loans', { params })
+        }, 'Failed to load loans.')
 
-            const response = await client.get('/admin-service/api/loans/filter/loans', {
-                params,
-            })
-
-            console.log(response)
-            loans.value = response.data.content || []
-            totalPages.value = response.data.totalPages
-            totalElements.value = response.data.totalElements
-            currentPage.value = response.data.number
-        } catch (err) {
-            error.value = 'Failed to load loans.'
+        if (result.success) {
+            loans.value = result.data.content || []
+            totalPages.value = result.data.totalPages
+            totalElements.value = result.data.totalElements
+            currentPage.value = result.data.number
+        } else {
             loans.value = []
             totalPages.value = 0
             totalElements.value = 0
-            console.error(err)
         }
     }
 
     async function fetchPendingLoans(page = pendingCurrentPage.value, size = 12) {
-        error.value = null
         const status = 'PENDING'
 
-        try {
-            const response = await client.get('/admin-service/api/loans/filter/loans', {
+        const result = await apiWrapper(async () => {
+            return client.get('/admin-service/api/loans/filter/loans', {
                 params: { status, page, size },
             })
+        }, 'Failed to fetch pending loans.')
 
-            if (response.status === 204) {
+        if (result.success) {
+            const responseData = result.data
+            if (!responseData || responseData.content.length === 0) {
                 pendingLoans.value = []
                 pendingTotalPages.value = 0
                 pendingTotalElements.value = 0
                 pendingCurrentPage.value = 0
             } else {
-                pendingLoans.value = response.data.content || []
-                pendingTotalPages.value = response.data.totalPages
-                pendingTotalElements.value = response.data.totalElements
-                pendingCurrentPage.value = response.data.number
+                pendingLoans.value = responseData.content || []
+                pendingTotalPages.value = responseData.totalPages
+                pendingTotalElements.value = responseData.totalElements
+                pendingCurrentPage.value = responseData.number
             }
-        } catch (err) {
+        } else {
             pendingLoans.value = []
             pendingTotalPages.value = 0
             pendingTotalElements.value = 0
             pendingCurrentPage.value = 0
-
-            if (err.response && err.response.data && err.response.data.message) {
-                error.value = `Failed to fetch pending loans: ${err.response.data.message}`
-            } else if (err.response && err.response.status) {
-                error.value = `Failed to fetch pending loans. Server responded with status ${err.response.status}: ${err.response.statusText}`
-            } else {
-                error.value = 'Failed to fetch pending loans due to a network error or unexpected issue.'
-            }
         }
     }
 
@@ -96,63 +85,33 @@ export const useAdminLoansStore = defineStore('adminLoansStore', () => {
     }
 
     async function acceptLoan(loanId) {
-        error.value = null
+        const result = await apiWrapper(async () => {
+            return client.put(`/admin-service/api/loans/${loanId}/accept`)
+        }, 'Failed to accept loan.')
 
-        try {
-            const response = await client.put(`/admin-service/api/loans/${loanId}/accept`)
-            return response.data
-        } catch (err) {
-            if (err.response && err.response.data && err.response.data.message) {
-                error.value = `Failed to accept loan: ${err.response.data.message}`
-            } else if (err.response && err.response.status) {
-                error.value = `Failed to accept loan. Server responded with status ${err.response.status}: ${err.response.statusText}`
-            } else {
-                error.value = 'Failed to accept loan due to a network error or unexpected issue.'
-            }
-            throw err
-        }
+        return result.success
     }
 
     async function rejectLoan(loanId) {
-        error.value = null
+        const result = await apiWrapper(async () => {
+            return client.put(`/admin-service/api/loans/${loanId}/reject`)
+        }, 'Failed to reject loan.')
 
-        try {
-            const response = await client.put(`/admin-service/api/loans/${loanId}/reject`)
-            return response.data
-        } catch (err) {
-            if (err.response && err.response.data && err.response.data.message) {
-                error.value = `Failed to reject loan: ${err.response.data.message}`
-            } else if (err.response && err.response.status) {
-                error.value = `Failed to reject loan. Server responded with status ${err.response.status}: ${err.response.statusText}`
-            } else {
-                error.value = 'Failed to reject loan due to a network error or unexpected issue.'
-            }
-            throw err
-        }
+        return result.success
     }
 
     async function proposeChanges(loanId, proposedAmount, proposedInterestRate, proposedTermInMonths) {
-        error.value = null
-
-        try {
-            const payload = {
-                proposedAmount,
-                proposedInterestRate,
-                proposedTermInMonths,
-            }
-
-            const response = await client.put(`/admin-service/api/loans/${loanId}/propose-changes`, payload)
-            return response.data
-        } catch (err) {
-            if (err.response && err.response.data && err.response.data.message) {
-                error.value = `Failed to propose changes: ${err.response.data.message}`
-            } else if (err.response && err.response.status) {
-                error.value = `Failed to propose changes. Server responded with status ${err.response.status}: ${err.response.statusText}`
-            } else {
-                error.value = 'Failed to propose changes due to a network error or unexpected issue.'
-            }
-            throw err
+        const payload = {
+            proposedAmount,
+            proposedInterestRate,
+            proposedTermInMonths,
         }
+
+        const result = await apiWrapper(async () => {
+            return client.put(`/admin-service/api/loans/${loanId}/propose-changes`, payload)
+        }, 'Failed to propose changes.')
+
+        return result.success
     }
 
     return {
@@ -174,5 +133,5 @@ export const useAdminLoansStore = defineStore('adminLoansStore', () => {
         pendingTotalElements,
         pendingCurrentPage,
         fetchPendingLoans,
-            }
+    }
 })

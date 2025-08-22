@@ -14,6 +14,8 @@ import com.ylli.shared.enums.AccountStatus;
 import com.ylli.shared.enums.AccountType;
 import com.ylli.shared.enums.AuditType;
 import com.ylli.shared.enums.UserRole;
+import com.ylli.shared.exceptions.InvalidRoleException;
+import com.ylli.shared.exceptions.ResourceDoesNotMatchException;
 import com.ylli.shared.exceptions.ResourceNotFoundException;
 import com.ylli.shared.models.Account;
 import com.ylli.shared.models.User;
@@ -139,7 +141,7 @@ public class AccountsServiceImpl extends BaseServiceImpl<Account, AccountDto, St
 
         if (!account.getUser().getId().equals(userId)) {
             log.warn("User with ID {} does not own account with ID {}", userId, accountId);
-            throw new IllegalArgumentException("User does not own the account with ID: " + accountId);
+            throw new ResourceDoesNotMatchException("User does not own the account with ID: " + accountId);
         }
 
         if (account.getStatus() != AccountStatus.ACTIVE) {
@@ -172,7 +174,7 @@ public class AccountsServiceImpl extends BaseServiceImpl<Account, AccountDto, St
         }
         if (!account.getUser().getId().equals(userId)) {
             log.warn("User with ID {} does not own account with ID {}", userId, accountId);
-            throw new IllegalArgumentException("User does not own the account with ID: " + accountId);
+            throw new ResourceDoesNotMatchException("User does not own the account with ID: " + accountId);
         }
 
         try {
@@ -195,9 +197,9 @@ public class AccountsServiceImpl extends BaseServiceImpl<Account, AccountDto, St
         User user = new User();
         user.setId(userId);
 
-        Account account = repository.findById(id).orElseThrow(() -> new IllegalArgumentException("Account not found with ID: " + id));
+        Account account = repository.findById(id).orElseThrow(() -> new EntityNotFoundException("Account not found with ID: " + id));
         if (!account.getUser().getId().equals(userId)) {
-            throw new IllegalArgumentException("Account does not belong to the user with ID: " + userId);
+            throw new ResourceDoesNotMatchException("Account does not belong to the user with ID: " + userId);
         }
 
         return mapper.toDto(account);
@@ -304,7 +306,7 @@ public class AccountsServiceImpl extends BaseServiceImpl<Account, AccountDto, St
 
             if (!account.getUser().getId().equals(userId)) {
                 log.warn("User with ID {} does not own account with ID {}", userId, accountId);
-                throw new IllegalArgumentException("User does not own the account with ID: " + accountId);
+                throw new ResourceDoesNotMatchException("User does not own the account with ID: " + accountId);
             }
         }
         BigDecimal actualMinBalance = (minBalance != null) ? minBalance : BigDecimal.ZERO;
@@ -372,7 +374,7 @@ public class AccountsServiceImpl extends BaseServiceImpl<Account, AccountDto, St
     private void validateAdmin(String adminId) {
         UserDto admin = usersFeignClient.getUser(adminId).getBody();
         if (admin == null || !admin.getRoles().contains(UserRole.ROLE_ADMIN)) {
-            throw new IllegalArgumentException("Invalid admin ID: " + adminId);
+            throw new InvalidRoleException("Invalid admin ID: " + adminId);
         }
     }
 }

@@ -91,6 +91,11 @@ public class TransactionsFallbackImpl implements FallbackFactory<TransactionsFei
             public ResponseEntity<Page<LoanDto>> getUserLoans(String userId, LoanStatus status, int page, int size) {
                 return ResponseEntity.status(503).build();
             }
+
+            @Override
+            public ResponseEntity<Void> evictUserLoansCache(String adminId, String userId) {
+                return ResponseEntity.status(503).build();
+            }
         };
     }
 }

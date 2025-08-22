@@ -44,4 +44,6 @@ public interface LoansService extends BaseService<LoanDto, Long> {
     LoanDto rejectProposedChanges(Long loanId, String userId);
 
     List<LoanDto> getTopActiveLoans(String userId);
+
+    void crossServiceEvictUserLoansCache(String adminId, String userId);
 }

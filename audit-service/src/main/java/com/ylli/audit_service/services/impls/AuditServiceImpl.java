@@ -9,6 +9,7 @@ import com.ylli.shared.clients.UsersFeignClient;
 import com.ylli.shared.dtos.AuditDto;
 import com.ylli.shared.enums.AuditType;
 import com.ylli.shared.enums.UserRole;
+import com.ylli.shared.exceptions.InvalidRoleException;
 import com.ylli.shared.exceptions.ResourceNotFoundException;
 import com.ylli.shared.models.Audit;
 import org.springframework.data.domain.Page;
@@ -91,7 +92,7 @@ public class AuditServiceImpl extends BaseServiceImpl<Audit, AuditDto, Long, Aud
             throw new ResourceNotFoundException("User with ID " + adminId + " is not an admin");
         }
         if (!user.getRoles().contains(UserRole.ROLE_ADMIN))
-            throw new IllegalArgumentException("User with ID " + adminId + " is not an admin");
+            throw new InvalidRoleException("User with ID " + adminId + " is not an admin");
     }
 
 }

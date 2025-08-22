@@ -11,6 +11,8 @@ import com.ylli.shared.enums.AuditType;
 import com.ylli.shared.enums.LoanStatus;
 import com.ylli.shared.enums.LoanType;
 import com.ylli.shared.enums.UserRole;
+import com.ylli.shared.exceptions.InvalidRoleException;
+import com.ylli.shared.exceptions.ResourceDoesNotMatchException;
 import com.ylli.shared.exceptions.ResourceNotFoundException;
 import com.ylli.shared.models.Account;
 import com.ylli.shared.models.Loan;
@@ -25,7 +27,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.*;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -111,7 +115,7 @@ public class LoansServiceImpl extends BaseServiceImpl<Loan, LoanDto, Long, Loans
                 throw new ResourceNotFoundException("Account with ID " + accountId + " not found.");
             }
             if (!accountDto.getUserId().equals(userId)) {
-                throw new IllegalArgumentException("Account with ID " + accountId + " does not belong to user with ID " + userId);
+                throw new ResourceDoesNotMatchException("Account with ID " + accountId + " does not belong to user with ID " + userId);
             }
 
             Account account = new Account();
@@ -310,7 +314,7 @@ public class LoansServiceImpl extends BaseServiceImpl<Loan, LoanDto, Long, Loans
     @Transactional
     public LoanDto acceptProposedChanges(Long loanId, String userId) {
         Loan loan = repository.findById(loanId)
-                .orElseThrow(() -> new ResourceNotFoundException("Loan not found with ID " + loanId));
+                .orElseThrow(() -> new EntityNotFoundException("Loan not found with ID " + loanId));
 
         if (!userId.equals(loan.getAccount().getUser().getId())) {
             throw new IllegalArgumentException("User with ID " + userId + " does not own the loan with ID " + loanId);
@@ -335,10 +339,10 @@ public class LoansServiceImpl extends BaseServiceImpl<Loan, LoanDto, Long, Loans
     @Transactional
     public LoanDto rejectProposedChanges(Long loanId, String userId) {
         Loan loan = repository.findById(loanId)
-                .orElseThrow(() -> new ResourceNotFoundException("Loan not found with ID " + loanId));
+                .orElseThrow(() -> new EntityNotFoundException("Loan not found with ID " + loanId));
 
         if (!userId.equals(loan.getAccount().getUser().getId())) {
-            throw new IllegalArgumentException("User with ID " + userId + " does not own the loan with ID " + loanId);
+            throw new ResourceDoesNotMatchException("User with ID " + userId + " does not own the loan with ID " + loanId);
         }
 
         if (loan.getStatus() != LoanStatus.CHANGES_PROPOSED) {
@@ -388,7 +392,7 @@ public class LoansServiceImpl extends BaseServiceImpl<Loan, LoanDto, Long, Loans
         }
         var adminUser = usersFeignClient.getUser(adminId).getBody();
         if (adminUser == null || !adminUser.getRoles().contains(UserRole.ROLE_ADMIN)) {
-            throw new IllegalArgumentException("User with ID " + adminId + " is not an admin.");
+            throw new InvalidRoleException("User with ID " + adminId + " is not an admin.");
         }
     }
 
@@ -443,5 +447,11 @@ public class LoansServiceImpl extends BaseServiceImpl<Loan, LoanDto, Long, Loans
             }
         }
         log.info("Evicted userLoans cache for user ID: {}", userId);
+    }
+
+    @Override
+    public void crossServiceEvictUserLoansCache(String adminId, String userId) {
+        validateAdmin(adminId);
+        evictUserLoansCache(userId);
     }
 }

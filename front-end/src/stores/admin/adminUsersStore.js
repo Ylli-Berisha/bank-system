@@ -1,10 +1,11 @@
 import { ref } from 'vue'
-import client from '@/helpers/client.js'
 import { defineStore } from 'pinia'
+import client from '@/helpers/client.js'
+import { apiWrapper, globalError } from '@/helpers/apiWrapper.js'
 
 export const useAdminUsersStore = defineStore('adminUsers', () => {
     const users = ref([])
-    const error = ref(null)
+    const error = globalError
 
     const currentPage = ref(0)
     const totalPages = ref(0)
@@ -14,39 +15,22 @@ export const useAdminUsersStore = defineStore('adminUsers', () => {
     const lastAdminId = ref(null)
 
     const getAllUsers = async (page = 0, size = 6) => {
-        error.value = null
-        users.value = []
-
-        try {
-            const response = await client.get('/admin-service/api/users/get/all', {
+        const result = await apiWrapper(async () => {
+            return client.get('/admin-service/api/users/get/all', {
                 params: { page, size },
             })
+        }, 'Failed to fetch all users.')
 
-            if (response.status === 204) {
-                users.value = []
-                totalPages.value = 0
-                totalElements.value = 0
-                currentPage.value = 0
-            } else {
-                users.value = response.data.content || []
-                totalPages.value = response.data.totalPages
-                totalElements.value = response.data.totalElements
-                currentPage.value = response.data.number
-            }
-        } catch (err) {
+        if (result.success) {
+            users.value = result.data.content || []
+            totalPages.value = result.data.totalPages
+            totalElements.value = result.data.totalElements
+            currentPage.value = result.data.number
+        } else {
             users.value = []
             totalPages.value = 0
             totalElements.value = 0
             currentPage.value = 0
-
-            if (err.response && err.response.data && err.response.data.message) {
-                error.value = `Failed to fetch users: ${err.response.data.message}`
-            } else if (err.response && err.response.status) {
-                error.value = `Failed to fetch users. Server responded with status ${err.response.status}: ${err.response.statusText}`
-            } else {
-                error.value = 'Failed to fetch users due to a network error or unexpected issue.'
-            }
-            console.error(err)
         }
     }
 
@@ -56,53 +40,36 @@ export const useAdminUsersStore = defineStore('adminUsers', () => {
         page = 0,
         size = 6
     ) => {
-        error.value = null
-        users.value = []
-
         if (!adminId) {
-            error.value = 'Admin ID is required for filtering users'
+            globalError.value = 'Admin ID is required for filtering users'
             return
         }
 
-        try {
+        const result = await apiWrapper(async () => {
             lastFilters.value = filters
             lastAdminId.value = adminId
 
-            const response = await client.get('/admin-service/api/users/filter/admin-users', {
+            return client.get('/admin-service/api/users/filter/admin-users', {
                 params: { page, size, ...filters },
             })
+        }, 'Failed to filter users.')
 
-            if (response.status === 204) {
-                users.value = []
-                totalPages.value = 0
-                totalElements.value = 0
-                currentPage.value = 0
-            } else {
-                users.value = response.data.content || []
-                totalPages.value = response.data.totalPages
-                totalElements.value = response.data.totalElements
-                currentPage.value = response.data.number
-            }
-        } catch (err) {
+        if (result.success) {
+            users.value = result.data.content || []
+            totalPages.value = result.data.totalPages
+            totalElements.value = result.data.totalElements
+            currentPage.value = result.data.number
+        } else {
             users.value = []
             totalPages.value = 0
             totalElements.value = 0
             currentPage.value = 0
-
-            if (err.response && err.response.data && err.response.data.message) {
-                error.value = `Failed to filter users: ${err.response.data.message}`
-            } else if (err.response && err.response.status) {
-                error.value = `Failed to filter users. Server responded with status ${err.response.status}: ${err.response.statusText}`
-            } else {
-                error.value = 'Failed to filter users due to a network error or unexpected issue.'
-            }
-            console.error(err)
         }
     }
 
     const fetchFilteredPage = async (page = 0, size = 6) => {
         if (!lastAdminId.value) {
-            error.value = 'Admin ID is required for fetching filtered pages'
+            globalError.value = 'Admin ID is required for fetching filtered pages'
             return
         }
         await filterUsers(lastAdminId.value, lastFilters.value, page, size)

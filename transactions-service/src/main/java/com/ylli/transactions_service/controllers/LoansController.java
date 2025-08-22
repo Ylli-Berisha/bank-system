@@ -313,4 +313,13 @@ public class LoansController extends BaseController<LoanDto, Long, LoansService>
         }
     }
 
+    @PutMapping("/evict/user-loans-cache")
+    public ResponseEntity<Void> evictUserLoansCache(@RequestHeader("X-User-ID") String adminId, @RequestParam String userId) {
+        if (userId == null || userId.isBlank()) {
+            return ResponseEntity.badRequest().build();
+        }
+        service.crossServiceEvictUserLoansCache(adminId, userId);
+        return ResponseEntity.ok().build();
+    }
+
 }

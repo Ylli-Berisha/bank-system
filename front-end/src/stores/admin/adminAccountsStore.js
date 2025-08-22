@@ -1,9 +1,10 @@
-import { ref, reactive, watch } from 'vue'
-import client from '@/helpers/client.js'
+import { reactive, watch } from 'vue'
 import { defineStore } from 'pinia'
+import client from '@/helpers/client.js'
+import { apiWrapper, globalError } from '@/helpers/apiWrapper.js'
 
 export const useAdminAccountsStore = defineStore('adminAccounts', () => {
-    const error = ref(null)
+    const error = globalError;
 
     const filters = reactive({
         accountId: '',
@@ -18,12 +19,11 @@ export const useAdminAccountsStore = defineStore('adminAccounts', () => {
         maxBalance: null,
     })
 
-    const activeAccounts = ref({ content: [], pageNumber: 0, pageSize: 6, totalPages: 0, totalElements: 0, first: true, last: true })
-    const frozenAccounts = ref({ content: [], pageNumber: 0, pageSize: 6, totalPages: 0, totalElements: 0, first: true, last: true })
-    const pendingAccounts = ref({ content: [], pageNumber: 0, pageSize: 6, totalPages: 0, totalElements: 0, first: true, last: true })
-    const closedAccounts = ref({ content: [], pageNumber: 0, pageSize: 6, totalPages: 0, totalElements: 0, first: true, last: true })
-
-    const allFilteredAccounts = ref({ content: [], pageNumber: 0, pageSize: 12, totalPages: 0, totalElements: 0, first: true, last: true });
+    const activeAccounts = reactive({ content: [], pageNumber: 0, pageSize: 6, totalPages: 0, totalElements: 0, first: true, last: true })
+    const frozenAccounts = reactive({ content: [], pageNumber: 0, pageSize: 6, totalPages: 0, totalElements: 0, first: true, last: true })
+    const pendingAccounts = reactive({ content: [], pageNumber: 0, pageSize: 6, totalPages: 0, totalElements: 0, first: true, last: true })
+    const closedAccounts = reactive({ content: [], pageNumber: 0, pageSize: 6, totalPages: 0, totalElements: 0, first: true, last: true })
+    const allFilteredAccounts = reactive({ content: [], pageNumber: 0, pageSize: 12, totalPages: 0, totalElements: 0, first: true, last: true });
 
     const checkFiltersApplied = (currentFilters) => {
         for (const key in currentFilters) {
@@ -37,129 +37,119 @@ export const useAdminAccountsStore = defineStore('adminAccounts', () => {
     }
 
     const freezeAccount = async (accountId) => {
-        error.value = null
-        try {
-            const res = await client.patch(`/admin-service/api/accounts/${accountId}/freeze`)
-            await fetchSectionAccounts('ACTIVE', activeAccounts.value.pageNumber)
-            await fetchSectionAccounts('FROZEN', frozenAccounts.value.pageNumber)
-            if (checkFiltersApplied(filters)) await fetchFilteredAccounts(filters, allFilteredAccounts.value.pageNumber)
-            return res.status === 200
-        } catch (err) {
-            error.value = err.response?.data?.message || 'Failed to freeze account.'
-            throw err
+        const result = await apiWrapper(async () => {
+            return client.patch(`/admin-service/api/accounts/${accountId}/freeze`)
+        }, 'Failed to freeze the account.');
+
+        if (result.success) {
+            await fetchSectionAccounts('ACTIVE', activeAccounts.pageNumber)
+            await fetchSectionAccounts('FROZEN', frozenAccounts.pageNumber)
+            if (checkFiltersApplied(filters)) await fetchFilteredAccounts(filters, allFilteredAccounts.pageNumber)
         }
-    }
+
+        return result.success;
+    };
 
     const unfreezeAccount = async (accountId) => {
-        error.value = null
-        try {
-            const res = await client.patch(`/admin-service/api/accounts/${accountId}/unfreeze`)
-            await fetchSectionAccounts('FROZEN', frozenAccounts.value.pageNumber)
-            await fetchSectionAccounts('ACTIVE', activeAccounts.value.pageNumber)
-            if (checkFiltersApplied(filters)) await fetchFilteredAccounts(filters, allFilteredAccounts.value.pageNumber)
-            return res.status === 200
-        } catch (err) {
-            error.value = err.response?.data?.message || 'Failed to unfreeze account.'
-            throw err
+        const result = await apiWrapper(async () => {
+            return client.patch(`/admin-service/api/accounts/${accountId}/unfreeze`);
+        }, 'Failed to unfreeze the account.');
+
+        if (result.success) {
+            await fetchSectionAccounts('FROZEN', frozenAccounts.pageNumber)
+            await fetchSectionAccounts('ACTIVE', activeAccounts.pageNumber)
+            if (checkFiltersApplied(filters)) await fetchFilteredAccounts(filters, allFilteredAccounts.pageNumber)
         }
-    }
+
+        return result.success;
+    };
 
     const approveAccount = async (accountId) => {
-        error.value = null
-        try {
-            const res = await client.patch(`/admin-service/api/accounts/approve/account/${accountId}`)
-            await fetchSectionAccounts('PENDING_APPROVAL', pendingAccounts.value.pageNumber)
-            await fetchSectionAccounts('ACTIVE', activeAccounts.value.pageNumber)
-            if (checkFiltersApplied(filters)) await fetchFilteredAccounts(filters, allFilteredAccounts.value.pageNumber)
-            return res.status === 200
-        } catch (err) {
-            error.value = err.response?.data?.message || 'Failed to approve account.'
-            throw err
+        const result = await apiWrapper(async () => {
+            return client.patch(`/admin-service/api/accounts/approve/account/${accountId}`);
+        }, 'Failed to approve the account.');
+
+        if (result.success) {
+            await fetchSectionAccounts('PENDING_APPROVAL', pendingAccounts.pageNumber)
+            await fetchSectionAccounts('ACTIVE', activeAccounts.pageNumber)
+            if (checkFiltersApplied(filters)) await fetchFilteredAccounts(filters, allFilteredAccounts.pageNumber)
         }
-    }
+
+        return result.success;
+    };
 
     const rejectAccount = async (accountId) => {
-        error.value = null
-        try {
-            const res = await client.patch(`/admin-service/api/accounts/reject/account/${accountId}`)
-            await fetchSectionAccounts('PENDING_APPROVAL', pendingAccounts.value.pageNumber)
-            await fetchSectionAccounts('CLOSED', closedAccounts.value.pageNumber)
-            if (checkFiltersApplied(filters)) await fetchFilteredAccounts(filters, allFilteredAccounts.value.pageNumber)
-            return res.status === 200
-        } catch (err) {
-            error.value = err.response?.data?.message || 'Failed to reject account.'
-            throw err
+        const result = await apiWrapper(async () => {
+            return client.patch(`/admin-service/api/accounts/reject/account/${accountId}`);
+        }, 'Failed to reject the account.');
+
+        if (result.success) {
+            await fetchSectionAccounts('PENDING_APPROVAL', pendingAccounts.pageNumber)
+            await fetchSectionAccounts('CLOSED', closedAccounts.pageNumber)
+            if (checkFiltersApplied(filters)) await fetchFilteredAccounts(filters, allFilteredAccounts.pageNumber)
         }
-    }
+
+        return result.success;
+    };
 
     async function fetchFirstPages() {
-        error.value = null
-        try {
-            const response = await client.get('/api/accounts/composition/get/first-pages')
-            const data = response.data
+        const result = await apiWrapper(async () => {
+            return client.get('/api/accounts/composition/get/first-pages')
+        }, 'Failed to fetch initial account data.');
 
-            activeAccounts.value = data.activeAccounts || { content: [], pageNumber: 0, pageSize: 6, totalPages: 0, totalElements: 0, first: true, last: true }
-            frozenAccounts.value = data.frozenAccounts || { content: [], pageNumber: 0, pageSize: 6, totalPages: 0, totalElements: 0, first: true, last: true }
-            pendingAccounts.value = data.pendingAccounts || { content: [], pageNumber: 0, pageSize: 6, totalPages: 0, totalElements: 0, first: true, last: true }
-            closedAccounts.value = data.closedAccounts || { content: [], pageNumber: 0, pageSize: 6, totalPages: 0, totalElements: 0, first: true, last: true }
+        if (result.success) {
+            const data = result.data;
+            Object.assign(activeAccounts, data.activeAccounts || { content: [], pageNumber: 0, pageSize: 6, totalPages: 0, totalElements: 0, first: true, last: true });
+            Object.assign(frozenAccounts, data.frozenAccounts || { content: [], pageNumber: 0, pageSize: 6, totalPages: 0, totalElements: 0, first: true, last: true });
+            Object.assign(pendingAccounts, data.pendingAccounts || { content: [], pageNumber: 0, pageSize: 6, totalPages: 0, totalElements: 0, first: true, last: true });
+            Object.assign(closedAccounts, data.closedAccounts || { content: [], pageNumber: 0, pageSize: 6, totalPages: 0, totalElements: 0, first: true, last: true });
 
             if (checkFiltersApplied(filters)) await fetchFilteredAccounts(filters, 0)
-            else allFilteredAccounts.value = { content: [], pageNumber: 0, pageSize: 12, totalPages: 0, totalElements: 0, first: true, last: true }
-
-        } catch (err) {
-            error.value = err.response?.data?.message || err.message || 'Failed to fetch accounts.'
-            console.error(err)
-            activeAccounts.value = { content: [], pageNumber: 0, pageSize: 6, totalPages: 0, totalElements: 0, first: true, last: true }
-            frozenAccounts.value = { content: [], pageNumber: 0, pageSize: 6, totalPages: 0, totalElements: 0, first: true, last: true }
-            pendingAccounts.value = { content: [], pageNumber: 0, pageSize: 6, totalPages: 0, totalElements: 0, first: true, last: true }
-            closedAccounts.value = { content: [], pageNumber: 0, pageSize: 6, totalPages: 0, totalElements: 0, first: true, last: true }
-            allFilteredAccounts.value = { content: [], pageNumber: 0, pageSize: 12, totalPages: 0, totalElements: 0, first: true, last: true }
+            else Object.assign(allFilteredAccounts, { content: [], pageNumber: 0, pageSize: 12, totalPages: 0, totalElements: 0, first: true, last: true })
+        } else {
+            Object.assign(activeAccounts, { content: [], pageNumber: 0, pageSize: 6, totalPages: 0, totalElements: 0, first: true, last: true });
+            Object.assign(frozenAccounts, { content: [], pageNumber: 0, pageSize: 6, totalPages: 0, totalElements: 0, first: true, last: true });
+            Object.assign(pendingAccounts, { content: [], pageNumber: 0, pageSize: 6, totalPages: 0, totalElements: 0, first: true, last: true });
+            Object.assign(closedAccounts, { content: [], pageNumber: 0, pageSize: 6, totalPages: 0, totalElements: 0, first: true, last: true });
+            Object.assign(allFilteredAccounts, { content: [], pageNumber: 0, pageSize: 12, totalPages: 0, totalElements: 0, first: true, last: true });
         }
     }
 
     async function fetchSectionAccounts(status, page = 0, size = 6) {
-        error.value = null
-        try {
-            const cleanFilters = {}
-            for (const key in filters) {
-                const val = filters[key]
-                if (key !== 'status' && val !== null && val !== '' && val !== undefined) cleanFilters[key] = val
-            }
+        const cleanFilters = {};
+        for (const key in filters) {
+            const val = filters[key];
+            if (key !== 'status' && val !== null && val !== '' && val !== undefined) cleanFilters[key] = val;
+        }
 
-            const params = { ...cleanFilters, status, page, size }
-            const res = await client.get('/accounts-service/api/accounts/get/by-status', { params })
-            const pageData = res.data
+        const params = { ...cleanFilters, status, page, size };
 
-            switch (status) {
-                case 'ACTIVE': activeAccounts.value = pageData; break
-                case 'FROZEN': frozenAccounts.value = pageData; break
-                case 'PENDING_APPROVAL': pendingAccounts.value = pageData; break
-                case 'CLOSED': closedAccounts.value = pageData; break
-            }
-        } catch (err) {
-            error.value = `Failed to fetch accounts for ${status}`
-            console.error(err)
-            switch (status) {
-                case 'ACTIVE': activeAccounts.value = { content: [], pageNumber: 0, pageSize: 6, totalPages: 0, totalElements: 0, first: true, last: true }; break
-                case 'FROZEN': frozenAccounts.value = { content: [], pageNumber: 0, pageSize: 6, totalPages: 0, totalElements: 0, first: true, last: true }; break
-                case 'PENDING_APPROVAL': pendingAccounts.value = { content: [], pageNumber: 0, pageSize: 6, totalPages: 0, totalElements: 0, first: true, last: true }; break
-                case 'CLOSED': closedAccounts.value = { content: [], pageNumber: 0, pageSize: 6, totalPages: 0, totalElements: 0, first: true, last: true }; break
-            }
+        const result = await apiWrapper(async () => {
+            return client.get('/accounts-service/api/accounts/get/by-status', { params });
+        }, `Failed to fetch accounts for status: ${status}.`);
+
+        const pageData = result.data || { content: [], pageNumber: 0, pageSize: 6, totalPages: 0, totalElements: 0, first: true, last: true };
+
+        switch (status) {
+            case 'ACTIVE': Object.assign(activeAccounts, pageData); break;
+            case 'FROZEN': Object.assign(frozenAccounts, pageData); break;
+            case 'PENDING_APPROVAL': Object.assign(pendingAccounts, pageData); break;
+            case 'CLOSED': Object.assign(closedAccounts, pageData); break;
         }
     }
 
-    let filterDebounceTimer = null
+    let filterDebounceTimer = null;
     const debouncedFetch = () => {
-        if (filterDebounceTimer) clearTimeout(filterDebounceTimer)
+        if (filterDebounceTimer) clearTimeout(filterDebounceTimer);
         filterDebounceTimer = setTimeout(async () => {
-            await fetchSectionAccounts('ACTIVE', 0)
-            await fetchSectionAccounts('FROZEN', 0)
-            await fetchSectionAccounts('PENDING_APPROVAL', 0)
-            await fetchSectionAccounts('CLOSED', 0)
+            await fetchSectionAccounts('ACTIVE', 0);
+            await fetchSectionAccounts('FROZEN', 0);
+            await fetchSectionAccounts('PENDING_APPROVAL', 0);
+            await fetchSectionAccounts('CLOSED', 0);
 
-            if (checkFiltersApplied(filters)) await fetchFilteredAccounts(filters, 0)
-            else allFilteredAccounts.value = { content: [], pageNumber: 0, pageSize: 12, totalPages: 0, totalElements: 0, first: true, last: true }
-        }, 500)
+            if (checkFiltersApplied(filters)) await fetchFilteredAccounts(filters, 0);
+            else Object.assign(allFilteredAccounts, { content: [], pageNumber: 0, pageSize: 12, totalPages: 0, totalElements: 0, first: true, last: true });
+        }, 500);
     }
 
     watch(filters, debouncedFetch, { deep: true })
@@ -173,59 +163,59 @@ export const useAdminAccountsStore = defineStore('adminAccounts', () => {
     }
 
     function goToNextPage(status) {
-        let section
+        let section;
         switch (status) {
-            case 'ACTIVE': section = activeAccounts.value; break
-            case 'FROZEN': section = frozenAccounts.value; break
-            case 'PENDING_APPROVAL': section = pendingAccounts.value; break
-            case 'CLOSED': section = closedAccounts.value; break
-            case 'ALL_FILTERED': section = allFilteredAccounts.value; break
-            default: return
+            case 'ACTIVE': section = activeAccounts; break;
+            case 'FROZEN': section = frozenAccounts; break;
+            case 'PENDING_APPROVAL': section = pendingAccounts; break;
+            case 'CLOSED': section = closedAccounts; break;
+            case 'ALL_FILTERED': section = allFilteredAccounts; break;
+            default: return;
         }
         if (section.pageNumber < section.totalPages - 1) {
-            if (status === 'ALL_FILTERED') fetchFilteredAccounts(filters, section.pageNumber + 1)
-            else fetchSectionAccounts(status, section.pageNumber + 1)
+            if (status === 'ALL_FILTERED') fetchFilteredAccounts(filters, section.pageNumber + 1);
+            else fetchSectionAccounts(status, section.pageNumber + 1);
         }
     }
 
     function goToPreviousPage(status) {
-        let section
+        let section;
         switch (status) {
-            case 'ACTIVE': section = activeAccounts.value; break
-            case 'FROZEN': section = frozenAccounts.value; break
-            case 'PENDING_APPROVAL': section = pendingAccounts.value; break
-            case 'CLOSED': section = closedAccounts.value; break
-            case 'ALL_FILTERED': section = allFilteredAccounts.value; break
-            default: return
+            case 'ACTIVE': section = activeAccounts; break;
+            case 'FROZEN': section = frozenAccounts; break;
+            case 'PENDING_APPROVAL': section = pendingAccounts; break;
+            case 'CLOSED': section = closedAccounts; break;
+            case 'ALL_FILTERED': section = allFilteredAccounts; break;
+            default: return;
         }
         if (section.pageNumber > 0) {
-            if (status === 'ALL_FILTERED') fetchFilteredAccounts(filters, section.pageNumber - 1)
-            else fetchSectionAccounts(status, section.pageNumber - 1)
+            if (status === 'ALL_FILTERED') fetchFilteredAccounts(filters, section.pageNumber - 1);
+            else fetchSectionAccounts(status, section.pageNumber - 1);
         }
     }
 
     async function fetchFilteredAccounts(currentFilters, page = 0, size = 12) {
         if (!checkFiltersApplied(currentFilters)) {
-            allFilteredAccounts.value = { content: [], pageNumber: 0, pageSize: 12, totalPages: 0, totalElements: 0, first: true, last: true }
-            return
+            Object.assign(allFilteredAccounts, { content: [], pageNumber: 0, pageSize: 12, totalPages: 0, totalElements: 0, first: true, last: true });
+            return;
         }
 
-        error.value = null
-        try {
-            const cleanFilters = {}
-            for (const key in currentFilters) {
-                const val = currentFilters[key]
-                if (val !== null && val !== '' && val !== undefined) cleanFilters[key] = val
-            }
+        const cleanFilters = {};
+        for (const key in currentFilters) {
+            const val = currentFilters[key];
+            if (val !== null && val !== '' && val !== undefined) cleanFilters[key] = val;
+        }
 
-            const params = { ...cleanFilters, page, size }
-            const response = await client.get('/admin-service/api/accounts/filter/admin-accounts', { params })
-            allFilteredAccounts.value = response.data || { content: [], pageNumber: 0, pageSize: 12, totalPages: 0, totalElements: 0, first: true, last: true }
+        const params = { ...cleanFilters, page, size };
 
-        } catch (err) {
-            error.value = 'Failed to load all filtered accounts.'
-            allFilteredAccounts.value = { content: [], pageNumber: 0, pageSize: 12, totalPages: 0, totalElements: 0, first: true, last: true }
-            console.error(err)
+        const result = await apiWrapper(async () => {
+            return client.get('/admin-service/api/accounts/filter/admin-accounts', { params });
+        }, 'Failed to load filtered accounts.');
+
+        if (result.success) {
+            Object.assign(allFilteredAccounts, result.data || { content: [], pageNumber: 0, pageSize: 12, totalPages: 0, totalElements: 0, first: true, last: true });
+        } else {
+            Object.assign(allFilteredAccounts, { content: [], pageNumber: 0, pageSize: 12, totalPages: 0, totalElements: 0, first: true, last: true });
         }
     }
 

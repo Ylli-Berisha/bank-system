@@ -7,6 +7,7 @@ import com.ylli.shared.dtos.AccountDto;
 import com.ylli.shared.dtos.AuditDto;
 import com.ylli.shared.enums.AuditType;
 import com.ylli.shared.enums.LoanStatus;
+import com.ylli.shared.exceptions.BadGatewayException;
 import com.ylli.shared.models.Loan;
 import com.ylli.transactions_service.repositories.LoansRepository;
 import org.slf4j.Logger;
@@ -18,7 +19,6 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 
-// ... all your imports remain the same
 
 @Service
 public class LoanProcessingService  {
@@ -95,7 +95,7 @@ public class LoanProcessingService  {
         account.setBalance(account.getBalance().subtract(installmentAmount));
         var response = accountsFeignClient.updateAccount(account.getId(), account);
         if (response == null || !response.getStatusCode().is2xxSuccessful()) {
-            throw new RuntimeException("Failed to update account balance for account ID " + account.getId());
+            throw new BadGatewayException("Failed to update account balance for account ID " + account.getId());
         }
 
         loan.setLeftAmount(loan.getLeftAmount().subtract(installmentAmount));

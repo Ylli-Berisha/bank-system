@@ -1,190 +1,153 @@
-import { ref } from 'vue'
-import client from '@/helpers/client.js'
-import { defineStore } from 'pinia'
+import { ref } from "vue";
+import { defineStore } from "pinia";
+import client from "@/helpers/client.js";
+import { apiWrapper, globalError } from "@/helpers/apiWrapper.js";
 
 export const useLoansStore = defineStore('loans', () => {
-    const loans = ref([])
-    const totalLoans = ref(0)
-    const totalPages = ref(0)
-    const currentPage = ref(0)
-    const pageSize = ref(10)
-    const error = ref(null)
-    const topActiveLoans = ref([])
-    const loanTypes = ref([])
-    const createError = ref(null)
-    const adminLoansPage = ref(null)
+    const loans = ref([]);
+    const totalLoans = ref(0);
+    const totalPages = ref(0);
+    const currentPage = ref(0);
+    const pageSize = ref(10);
+    const error = globalError;
+    const topActiveLoans = ref([]);
+    const loanTypes = ref([]);
+    const createError = globalError;
+    const adminLoansPage = ref(null);
 
     const fetchAllLoans = async (status = null, page = 0, size = 6) => {
-        error.value = null
+        const result = await apiWrapper(async () => {
+            const params = new URLSearchParams();
+            params.append('page', page.toString());
+            params.append('size', size.toString());
+            if (status) {
+                params.append('status', status);
+            }
+            const url = `/transactions-service/api/loans/get/user-loans?${params.toString()}`;
+            return client.get(url);
+        }, 'Failed to fetch loans.');
 
-        const params = new URLSearchParams()
-        params.append('page', page.toString())
-        params.append('size', size.toString())
-
-        if (status) {
-            params.append('status', status)
+        if (result.success) {
+            const data = result.data || {};
+            loans.value = data.content || [];
+            totalLoans.value = data.totalElements || 0;
+            totalPages.value = data.totalPages || 0;
+            currentPage.value = data.number || page;
+            pageSize.value = data.size || size;
+        } else {
+            loans.value = [];
+            totalLoans.value = 0;
+            totalPages.value = 0;
+            currentPage.value = 0;
         }
-
-        const url = `/transactions-service/api/loans/get/user-loans?${params.toString()}`
-
-        try {
-            const response = await client.get(url)
-
-            loans.value = response.data.content || []
-            totalLoans.value = response.data.totalElements || 0
-            totalPages.value = response.data.totalPages || 0
-            currentPage.value = response.data.number || page
-            pageSize.value = response.data.size || size
-
-        } catch (err) {
-            loans.value = []
-            totalLoans.value = 0
-            totalPages.value = 0
-            error.value = (err.response?.data?.message)
-                ? `Failed to fetch loans: ${err.response.data.message}`
-                : 'Failed to fetch loans due to an unexpected error.'
-        }
-    }
+    };
 
     const fetchFilteredLoans = async (filters = {}) => {
-        error.value = null
-        loans.value = []
-        try {
-            const params = new URLSearchParams()
+        const result = await apiWrapper(async () => {
+            const params = new URLSearchParams();
             for (const key in filters) {
-                const value = filters[key]
+                const value = filters[key];
                 if (value !== undefined && value !== null && value !== '') {
-                    params.append(key, value)
+                    params.append(key, value);
                 }
             }
-            const url = `/transactions-service/api/loans/filter/user-loans?${params.toString()}`
-            const response = await client.get(url)
-            if (response.status === 204) {
-                loans.value = []
-            } else {
-                loans.value = response.data.content || []
-                totalLoans.value = response.data.totalElements || 0
-                totalPages.value = response.data.totalPages || 0
-            }
-        } catch (err) {
-            if (err.response && (err.response.status === 404 || err.response.status === 204)) {
-                loans.value = []
-                error.value = 'No loans found matching your criteria.'
-            } else {
-                error.value = 'Failed to fetch filtered loans. Please try again.'
-            }
+            const url = `/transactions-service/api/loans/filter/user-loans?${params.toString()}`;
+            return client.get(url);
+        }, 'Failed to fetch filtered loans.');
+
+        if (result.success) {
+            const data = result.data || {};
+            loans.value = data.content || [];
+            totalLoans.value = data.totalElements || 0;
+            totalPages.value = data.totalPages || 0;
+        } else {
+            loans.value = [];
+            totalLoans.value = 0;
+            totalPages.value = 0;
         }
-    }
+    };
 
     const fetchLoanTypes = async () => {
-        error.value = null
-        try {
-            const response = await client.get(`/transactions-service/api/loans/get/loan-types`)
-            loanTypes.value = response.data
-        } catch (err) {
-            error.value = (err.response?.data?.message)
-                ? `Failed to fetch loan types: ${err.response.data.message}`
-                : 'Failed to fetch loan types due to an unexpected error.'
+        const result = await apiWrapper(async () => {
+            return client.get(`/transactions-service/api/loans/get/loan-types`);
+        }, 'Failed to fetch loan types.');
+
+        if (result.success) {
+            loanTypes.value = result.data;
+        } else {
+            loanTypes.value = [];
         }
-    }
+    };
 
     const fetchTopActiveLoans = async () => {
-        error.value = null
-        try {
-            const url = `/transactions-service/api/loans/get/top-active-loans`
-            const response = await client.get(url)
-            if (response.status === 204) {
-                topActiveLoans.value = []
-            } else {
-                topActiveLoans.value = response.data
-            }
-        } catch (err) {
-            if (err.response && (err.response.status === 404 || err.response.status === 204)) {
-                topActiveLoans.value = []
-                error.value = 'No active loans found.'
-            } else {
-                error.value = 'Failed to fetch active loans. Please try again.'
-            }
+        const result = await apiWrapper(async () => {
+            return client.get(`/transactions-service/api/loans/get/top-active-loans`);
+        }, 'Failed to fetch top active loans.');
+
+        if (result.success) {
+            topActiveLoans.value = result.data || [];
+        } else {
+            topActiveLoans.value = [];
         }
-    }
+    };
 
     const applyForNewLoan = async (accountId, loanApplicationDetails) => {
-        createError.value = null
-        try {
-            const url = `/transactions-service/api/loans/apply?accountId=${accountId}`
-            const response = await client.post(url, loanApplicationDetails)
-            await fetchAllLoans()
-            return response.data
-        } catch (err) {
-            createError.value = (err.response?.data?.message) || 'Failed to apply for loan due to an unexpected error.'
-            throw err
+        const result = await apiWrapper(async () => {
+            const url = `/transactions-service/api/loans/apply?accountId=${accountId}`;
+            return client.post(url, loanApplicationDetails);
+        }, 'Failed to apply for loan.');
+
+        if (result.success) {
+            await fetchAllLoans();
         }
-    }
+        return result;
+    };
 
     const acceptLoan = async (loanId) => {
-        try {
-            const response = await client.put(`/transactions-service/api/loans/${loanId}/accept`)
-            return response.data
-        } catch (err) {
-            throw err
-        }
-    }
+        return apiWrapper(async () => {
+            return client.put(`/transactions-service/api/loans/${loanId}/accept`);
+        }, 'Failed to accept loan.');
+    };
 
     const rejectLoan = async (loanId) => {
-        try {
-            const response = await client.put(`/transactions-service/api/loans/${loanId}/reject`)
-            return response.data
-        } catch (err) {
-            throw err
-        }
-    }
+        return apiWrapper(async () => {
+            return client.put(`/transactions-service/api/loans/${loanId}/reject`);
+        }, 'Failed to reject loan.');
+    };
 
     const acceptProposedChanges = async (loanId) => {
-        try {
-            const response = await client.put(`/transactions-service/api/loans/${loanId}/accept-changes`)
-            return response.data
-        } catch (err) {
-            throw err
-        }
-    }
+        return apiWrapper(async () => {
+            return client.put(`/transactions-service/api/loans/${loanId}/accept-changes`);
+        }, 'Failed to accept proposed changes.');
+    };
 
     const rejectProposedChanges = async (loanId) => {
-        try {
-            const response = await client.put(`/transactions-service/api/loans/${loanId}/reject-changes`)
-            return response.data
-        } catch (err) {
-            throw err
-        }
-    }
+        return apiWrapper(async () => {
+            return client.put(`/transactions-service/api/loans/${loanId}/reject-changes`);
+        }, 'Failed to reject proposed changes.');
+    };
 
     const filterAdminLoans = async (filters = {}, page = 0, size = 6) => {
-        error.value = null
-        try {
-            const params = new URLSearchParams()
+        const result = await apiWrapper(async () => {
+            const params = new URLSearchParams();
             for (const key in filters) {
-                const value = filters[key]
+                const value = filters[key];
                 if (value !== undefined && value !== null && value !== '') {
-                    params.append(key, value)
+                    params.append(key, value);
                 }
             }
-            params.append('page', page.toString())
-            params.append('size', size.toString())
-            const url = `/transactions-service/api/loans/filter/admin-loans?${params.toString()}`
-            const response = await client.get(url)
-            if (response.status === 204) {
-                adminLoansPage.value = null
-            } else {
-                adminLoansPage.value = response.data
-            }
-        } catch (err) {
-            if (err.response && (err.response.status === 404 || err.response.status === 204)) {
-                adminLoansPage.value = null
-                error.value = 'No loans found matching your criteria.'
-            } else {
-                error.value = 'Failed to fetch admin filtered loans. Please try again.'
-            }
+            params.append('page', page.toString());
+            params.append('size', size.toString());
+            const url = `/transactions-service/api/loans/filter/admin-loans?${params.toString()}`;
+            return client.get(url);
+        }, 'Failed to fetch admin loans.');
+
+        if (result.success) {
+            adminLoansPage.value = result.data;
+        } else {
+            adminLoansPage.value = null;
         }
-    }
+    };
 
     return {
         loans,
@@ -207,5 +170,5 @@ export const useLoansStore = defineStore('loans', () => {
         acceptProposedChanges,
         rejectProposedChanges,
         filterAdminLoans
-    }
-})
+    };
+});

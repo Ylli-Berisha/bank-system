@@ -5,6 +5,9 @@ import com.ylli.shared.base.BaseServiceImpl;
 import com.ylli.shared.configs.JwtUtil;
 import com.ylli.shared.dtos.*;
 import com.ylli.shared.enums.AuditType;
+import com.ylli.shared.exceptions.DuplicateResourceException;
+import com.ylli.shared.exceptions.InvalidRoleException;
+import com.ylli.shared.exceptions.WrongPasswordException;
 import com.ylli.users_service.configs.UserSpecification;
 import com.ylli.users_service.dtos.UserLoginDto;
 import com.ylli.shared.enums.UserRole;
@@ -12,6 +15,7 @@ import com.ylli.shared.models.User;
 import com.ylli.users_service.mappers.UserMapper;
 import com.ylli.users_service.repositories.UserRepository;
 import com.ylli.users_service.services.UserService;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,7 +57,7 @@ public class UserServiceImpl extends BaseServiceImpl<User, UserDto, String, User
     @Override
     public SignUpResponseDto signUp(UserSignUpDto dto) {
         if (repository.existsByEmail(dto.getEmail())) {
-            throw new IllegalArgumentException("Email already in use");
+            throw new DuplicateResourceException("Email already in use");
         }
 
         User user = new User();
@@ -88,7 +92,7 @@ public class UserServiceImpl extends BaseServiceImpl<User, UserDto, String, User
     public LoginResponseDto login(UserLoginDto loginDto) {
         log.info("login user: {}", loginDto);
         User user = repository.findByUsername(loginDto.getUsername())
-                .orElseThrow(() -> new IllegalArgumentException("Invalid username or password"));
+                .orElseThrow(() -> new EntityNotFoundException("Invalid username or password"));
 
         if (!user.isActive()) {
             throw new IllegalStateException("User account is deactivated");
@@ -98,7 +102,10 @@ public class UserServiceImpl extends BaseServiceImpl<User, UserDto, String, User
             log.info("users password: {}", user.getPassword());
             log.info("loginDto password: {}", loginDto.getPassword());
             System.out.println(passwordEncoder.encode("Baba123@"));
-            throw new IllegalArgumentException("Invalid username or password");
+            auditHelper.createAuditWithUser(AuditType.ATTEMPTED_LOGIN,
+                    "Failed login attempt for user with username " + loginDto.getUsername(),
+                    user.getId());
+            throw new WrongPasswordException("Invalid username or password");
         }
 
         String accessToken = jwtUtil.generateToken(user.getId(), user.getRoles());
@@ -182,15 +189,18 @@ public class UserServiceImpl extends BaseServiceImpl<User, UserDto, String, User
     }
 
     private void validateAdmin(String userId) {
+        if (userId == null || userId.isEmpty()) {
+            throw new IllegalArgumentException("User ID cannot be null or empty");
+        }
         User user = repository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
+                .orElseThrow(() -> new EntityNotFoundException("User not found with ID: " + userId));
 
         if (user.getRoles() == null || user.getRoles().isEmpty()) {
             throw new IllegalArgumentException("User with ID " + userId + " does not have any roles");
         }
 
         if (!user.getRoles().contains(UserRole.ROLE_ADMIN)) {
-            throw new IllegalArgumentException("User with ID " + userId + " is not an admin");
+            throw new InvalidRoleException("User with ID " + userId + " is not an admin");
         }
     }
 }

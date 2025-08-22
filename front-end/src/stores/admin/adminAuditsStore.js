@@ -1,40 +1,37 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import client from '@/helpers/client.js';
+import { apiWrapper, globalError } from '@/helpers/apiWrapper.js';
 
 export const useAdminAuditsStore = defineStore('adminAuditsStore', () => {
     const audits = ref([]);
     const totalPages = ref(0);
     const totalElements = ref(0);
     const currentPage = ref(0);
-    const error = ref(null);
+    const error = globalError;
 
     const paginatedAudits = computed(() => audits.value);
 
     async function fetchFilteredAudits(filters, page = currentPage.value, size = 12) {
-        error.value = null;
-
-        try {
+        const result = await apiWrapper(async () => {
             const params = {
                 ...filters,
                 page,
                 size,
             };
+            return client.get('/audit-service/api/audit/filter/admin-audits', { params });
+        }, 'Failed to load audits.');
 
-            const response = await client.get('/audit-service/api/audit/filter/admin-audits', {
-                params,
-            });
-
-            audits.value = response.data.content || [];
-            totalPages.value = response.data.totalPages;
-            totalElements.value = response.data.totalElements;
-            currentPage.value = response.data.number;
-        } catch (err) {
-            error.value = 'Failed to load audits.';
+        if (result.success) {
+            audits.value = result.data.content || [];
+            totalPages.value = result.data.totalPages;
+            totalElements.value = result.data.totalElements;
+            currentPage.value = result.data.number;
+        } else {
             audits.value = [];
             totalPages.value = 0;
             totalElements.value = 0;
-            console.error(err);
+            currentPage.value = 0;
         }
     }
 

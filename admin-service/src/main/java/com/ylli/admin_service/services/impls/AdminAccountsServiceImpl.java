@@ -11,8 +11,11 @@ import com.ylli.shared.dtos.PageResponseDto;
 import com.ylli.shared.enums.AccountStatus;
 import com.ylli.shared.enums.AuditType;
 import com.ylli.shared.enums.UserRole;
+import com.ylli.shared.exceptions.BadGatewayException;
+import com.ylli.shared.exceptions.InvalidRoleException;
 import com.ylli.shared.exceptions.ResourceNotFoundException;
 import feign.FeignException;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -49,7 +52,7 @@ public class AdminAccountsServiceImpl implements AdminAccountsService {
             }
             return accounts;
         } catch (FeignException e) {
-            throw new IllegalArgumentException("Error fetching accounts: " + e.getMessage(), e);
+            throw new BadGatewayException("Error fetching accounts: " + e.getMessage());
         } catch (Exception e) {
             throw new RuntimeException("An unexpected error occurred while fetching accounts: " + e.getMessage(), e);
         }
@@ -68,10 +71,10 @@ public class AdminAccountsServiceImpl implements AdminAccountsService {
 
                 return true;
             } else {
-                throw new IllegalArgumentException("Failed to freeze account with ID: " + accountId);
+                throw new BadGatewayException("Failed to freeze account with ID: " + accountId);
             }
         } catch (FeignException e) {
-            throw new IllegalArgumentException("Error freezing account: " + e.getMessage(), e);
+            throw new BadGatewayException("Error freezing account: " + e.getMessage());
         } catch (Exception e) {
             throw new RuntimeException("An unexpected error occurred while freezing the account: " + e.getMessage(), e);
         }
@@ -90,10 +93,10 @@ public class AdminAccountsServiceImpl implements AdminAccountsService {
 
                 return true;
             } else {
-                throw new IllegalArgumentException("Failed to unfreeze account with ID: " + accountId);
+                throw new BadGatewayException("Failed to unfreeze account with ID: " + accountId);
             }
         } catch (FeignException e) {
-            throw new IllegalArgumentException("Error unfreezing account: " + e.getMessage(), e);
+            throw new BadGatewayException("Error unfreezing account: " + e.getMessage());
         } catch (Exception e) {
             throw new RuntimeException("An unexpected error occurred while unfreezing the account: " + e.getMessage(), e);
         }
@@ -105,10 +108,10 @@ public class AdminAccountsServiceImpl implements AdminAccountsService {
         try {
             AccountDto account = accountsFeignClient.getById(accountId).getBody();
             if (account == null) {
-                throw new IllegalArgumentException("Account with ID " + accountId + " not found");
+                throw new EntityNotFoundException("Account with ID " + accountId + " not found");
             }
             if (account.getStatus() != AccountStatus.PENDING_APPROVAL) {
-                throw new IllegalArgumentException("Account with ID " + accountId + " is not pending approval");
+                throw new IllegalStateException("Account with ID " + accountId + " is not pending approval");
             }
             account.setStatus(AccountStatus.ACTIVE);
             accountsFeignClient.update(accountId, account);
@@ -118,7 +121,7 @@ public class AdminAccountsServiceImpl implements AdminAccountsService {
                             accountId);
 
         } catch (FeignException e) {
-            throw new IllegalArgumentException("Error approving account: " + e.getMessage(), e);
+            throw new BadGatewayException("Error approving account: " + e.getMessage());
         } catch (Exception e) {
             throw new RuntimeException("An unexpected error occurred while approving the account: " + e.getMessage(), e);
         }
@@ -133,7 +136,7 @@ public class AdminAccountsServiceImpl implements AdminAccountsService {
                 throw new ResourceNotFoundException("Account with ID " + accountId + " not found");
             }
             if (account.getStatus() != AccountStatus.PENDING_APPROVAL) {
-                throw new IllegalStateException("Account with ID " + accountId + " is not pending approval");
+                throw new EntityNotFoundException("Account with ID " + accountId + " is not pending approval");
             }
             account.setStatus(AccountStatus.REJECTED);
             accountsFeignClient.update(accountId, account);
@@ -143,7 +146,7 @@ public class AdminAccountsServiceImpl implements AdminAccountsService {
                             accountId);
 
         } catch (FeignException e) {
-            throw new IllegalArgumentException("Error rejecting account: " + e.getMessage(), e);
+            throw new BadGatewayException("Error rejecting account: " + e.getMessage());
         } catch (Exception e) {
             log.error("An unexpected error occurred while rejecting the account: {}", e.getMessage(), e);
             throw e;
@@ -156,7 +159,7 @@ public class AdminAccountsServiceImpl implements AdminAccountsService {
             return accountsFeignClient.filterAdminAccounts(adminId, accountId, userId, username, email, loanId, transactionId, typeString, statusString, minBalance, maxBalance, page, size).getBody();
         } catch (FeignException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException("A feign error occurred while fetching transactions: " + e.getMessage(), e);
+            throw new BadGatewayException("A feign error occurred while fetching transactions: " + e.getMessage());
         }
     }
 
@@ -166,7 +169,7 @@ public class AdminAccountsServiceImpl implements AdminAccountsService {
             throw new IllegalArgumentException("User with ID " + userId + " does not have any roles");
         }
         if (!user.getRoles().contains(UserRole.ROLE_ADMIN)) {
-            throw new IllegalArgumentException("User with ID " + userId + " is not an admin");
+            throw new InvalidRoleException("User with ID " + userId + " is not an admin");
         }
     }
 }

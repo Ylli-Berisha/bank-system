@@ -102,4 +102,7 @@ public interface TransactionsFeignClient {
             @RequestParam(required = false) LoanStatus status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "6") int size);
+
+    @PutMapping("/loans/evict/user-loans-cache")
+    ResponseEntity<Void> evictUserLoansCache(@RequestHeader("X-User-ID") String adminId, @RequestParam String userId);
 }

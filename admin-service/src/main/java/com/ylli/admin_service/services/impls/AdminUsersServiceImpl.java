@@ -3,6 +3,7 @@ package com.ylli.admin_service.services.impls;
 import com.ylli.admin_service.services.AdminUsersService;
 import com.ylli.shared.clients.UsersFeignClient;
 import com.ylli.shared.dtos.UserDto;
+import com.ylli.shared.exceptions.BadGatewayException;
 import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,7 +23,10 @@ public class AdminUsersServiceImpl implements AdminUsersService {
             return userDtos;
         }catch (FeignException e){
             log.error("Feign error when query users by userId:{}", userId);
-            throw e;
+            throw new BadGatewayException("Error fetching users: " + e.getMessage());
+        } catch (Exception e){
+            log.error("Unexpected error when query users by userId:{}", userId, e);
+            throw new RuntimeException("An unexpected error occurred while fetching users: " + e.getMessage(), e);
         }
     }
 
@@ -33,7 +37,10 @@ public class AdminUsersServiceImpl implements AdminUsersService {
             return userDtos;
         } catch (FeignException e) {
             log.error("Feign error when filtering users by userId:{}", userId);
-            throw e;
+            throw new BadGatewayException("Error fetching filtered users: " + e.getMessage());
+        } catch (Exception e) {
+            log.error("Unexpected error when filtering users by userId:{}", userId, e);
+            throw new RuntimeException("An unexpected error occurred while fetching filtered users: " + e.getMessage(), e);
         }
     }
 

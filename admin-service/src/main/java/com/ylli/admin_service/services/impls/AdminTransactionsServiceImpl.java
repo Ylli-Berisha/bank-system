@@ -5,7 +5,10 @@ import com.ylli.shared.base.AuditHelper;
 import com.ylli.shared.clients.TransactionsFeignClient;
 import com.ylli.shared.dtos.TransactionDto;
 import com.ylli.shared.enums.AuditType;
+import com.ylli.shared.exceptions.BadGatewayException;
 import com.ylli.shared.exceptions.ResourceNotFoundException;
+import feign.Feign;
+import feign.FeignException;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
@@ -28,7 +31,10 @@ public class AdminTransactionsServiceImpl implements AdminTransactionsService {
                     adminId, userId, username, email,type, status, startDate, endDate,
                     minAmount, maxAmount, query, page, size
             ).getBody();
-        } catch (Exception e) {
+        } catch (FeignException e) {
+            throw new BadGatewayException("Error fetching filtered transactions: " + e.getMessage());
+        }
+        catch (Exception e) {
             throw new RuntimeException("An error occurred while fetching transactions: " + e.getMessage(), e);
         }
     }
@@ -47,7 +53,10 @@ public class AdminTransactionsServiceImpl implements AdminTransactionsService {
 
             return transactionDto;
 
-        } catch (Exception e) {
+        } catch (FeignException e) {
+            throw new BadGatewayException("Error reverting transaction: " + e.getMessage());
+        }
+        catch (Exception e) {
             throw new RuntimeException("An error occurred while reverting transaction: " + e.getMessage(), e);
         }
     }

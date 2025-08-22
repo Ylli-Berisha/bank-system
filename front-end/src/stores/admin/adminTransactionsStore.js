@@ -1,64 +1,58 @@
 import {defineStore} from 'pinia';
 import {ref, computed} from 'vue';
 import client from '@/helpers/client.js';
+import {apiWrapper, globalError} from '@/helpers/apiWrapper.js';
 
 export const useAdminTransactionsStore = defineStore('adminTransactionsStore', () => {
     const transactions = ref([]);
     const totalPages = ref(0);
     const totalElements = ref(0);
     const currentPage = ref(0);
-    const error = ref(null);
+    const error = globalError;
 
     const paginatedTransactions = computed(() => transactions.value);
 
     async function fetchFilteredTransactions(filters, page = currentPage.value, size = 12) {
-        error.value = null;
-
-        try {
+        const result = await apiWrapper(async () => {
             const params = {
                 ...filters,
                 page,
                 size,
             };
+            return client.get('/admin-service/api/transactions/filter/transactions', {params});
+        }, 'Failed to load transactions.');
 
-            const response = await client.get('/admin-service/api/transactions/filter/transactions', {
-                params,
-            });
-
-            transactions.value = response.data.content || [];
-            totalPages.value = response.data.totalPages;
-            totalElements.value = response.data.totalElements;
-            currentPage.value = response.data.number;
-        } catch (err) {
-            error.value = 'Failed to load transactions.';
+        if (result.success) {
+            transactions.value = result.data.content || [];
+            totalPages.value = result.data.totalPages;
+            totalElements.value = result.data.totalElements;
+            currentPage.value = result.data.number;
+        } else {
             transactions.value = [];
             totalPages.value = 0;
             totalElements.value = 0;
-            console.error(err);
         }
     }
 
     async function revertTransaction(transactionId) {
-        error.value = null;
-
-        try {
+        const result = await apiWrapper(async () => {
             const response = await client.put('/admin-service/api/transactions/revert', null, {
                 params: {transactionId},
             });
+            return response;
+        }, 'Failed to revert transaction.');
 
-            const index = transactions.value.findIndex(t => t.id === transactionId);
+        if (result.success) {
+            const revertedTransaction = result.data;
+            const index = transactions.value.findIndex(t => t.id === revertedTransaction.id);
             if (index !== -1) {
-                transactions.value[index] = response.data;
+                transactions.value[index] = revertedTransaction;
             }
-
-            return response.data;
-        } catch (err) {
-            error.value = 'Failed to revert transaction.';
-            console.error(err);
-            throw err;
+            return revertedTransaction;
+        } else {
+            return null;
         }
     }
-
 
     function resetPage() {
         currentPage.value = 0;

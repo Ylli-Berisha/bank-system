@@ -2,6 +2,7 @@ package com.ylli.admin_service.services.impls;
 
 import com.ylli.admin_service.services.AdminLoansService;
 import com.ylli.shared.base.AuditHelper;
+import com.ylli.shared.clients.AccountsFeignClient;
 import com.ylli.shared.clients.AuditFeignClient;
 import com.ylli.shared.clients.TransactionsFeignClient;
 import com.ylli.shared.clients.UsersFeignClient;
@@ -11,7 +12,10 @@ import com.ylli.shared.dtos.LoanDto;
 import com.ylli.shared.enums.AuditType;
 import com.ylli.shared.enums.LoanStatus;
 import com.ylli.shared.enums.UserRole;
+import com.ylli.shared.exceptions.BadGatewayException;
+import com.ylli.shared.exceptions.InvalidRoleException;
 import com.ylli.shared.exceptions.ResourceNotFoundException;
+import feign.FeignException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -28,11 +32,13 @@ public class AdminLoansServiceImpl implements AdminLoansService {
     private final TransactionsFeignClient transactionsFeignClient;
     private final UsersFeignClient usersFeignClient;
     private final AuditHelper auditHelper;
+    private final AccountsFeignClient accountsFeignClient;
 
-    public AdminLoansServiceImpl(TransactionsFeignClient transactionsFeignClient, UsersFeignClient usersFeignClient, AuditHelper auditHelper) {
+    public AdminLoansServiceImpl(TransactionsFeignClient transactionsFeignClient, UsersFeignClient usersFeignClient, AuditHelper auditHelper, AccountsFeignClient accountsFeignClient) {
         this.transactionsFeignClient = transactionsFeignClient;
         this.usersFeignClient = usersFeignClient;
         this.auditHelper = auditHelper;
+        this.accountsFeignClient = accountsFeignClient;
     }
 
     @Override
@@ -41,7 +47,11 @@ public class AdminLoansServiceImpl implements AdminLoansService {
             return transactionsFeignClient.filterAdminLoans( adminId,  userId,  username,  email,  typeString,  statusString,  startDate,  endDate,  minAmount,  maxAmount,
              page,  size
             ).getBody();
-        } catch (Exception e) {
+        } catch (FeignException e){
+            log.error("Error fetching filtered loans: {}", e.getMessage(), e);
+            throw new BadGatewayException("Error fetching filtered loans: " + e.getMessage());
+        }
+        catch (Exception e) {
             throw new RuntimeException("An error occurred while fetching transactions: " + e.getMessage(), e);
         }
     }
@@ -61,7 +71,11 @@ public class AdminLoansServiceImpl implements AdminLoansService {
 
             return loanDto;
 
-        } catch (Exception e) {
+        } catch (FeignException e) {
+            log.error("Error accepting loan ID {}: {}", loanId, e.getMessage(), e);
+            throw new BadGatewayException("Error accepting loan: " + e.getMessage());
+        }
+        catch (Exception e) {
             throw new RuntimeException("An error occurred while accepting loan: " + e.getMessage(), e);
         }
     }
@@ -80,7 +94,11 @@ public class AdminLoansServiceImpl implements AdminLoansService {
 
             return loanDto;
 
-        } catch (Exception e) {
+        } catch (FeignException e) {
+            log.error("Error rejecting loan ID {}: {}", loanId, e.getMessage(), e);
+            throw new BadGatewayException("Error rejecting loan: " + e.getMessage());
+        }
+        catch (Exception e) {
             throw new RuntimeException("An error occurred while rejecting loan: " + e.getMessage(), e);
         }
     }
@@ -105,7 +123,11 @@ public class AdminLoansServiceImpl implements AdminLoansService {
 
             loan.setStatus(LoanStatus.CHANGES_PROPOSED);
 
+            var account = accountsFeignClient.getAccount(loan.getAccountId()).getBody();
+
             transactionsFeignClient.updateLoan(loan.getId(), loan);
+            assert account != null;
+            transactionsFeignClient.evictUserLoansCache(adminId, account.getUserId());
 
             auditHelper.createAudit(AuditType.LOAN_CHANGES_PROPOSED,
                     "Changes proposed for loan with ID " + loanId + " by admin with ID " + adminId,
@@ -115,7 +137,11 @@ public class AdminLoansServiceImpl implements AdminLoansService {
         } catch (ResourceNotFoundException | IllegalStateException e) {
             log.warn("Failed to propose changes for loan ID {}. Error: {}", loanId, e.getMessage());
             throw e;
-        } catch (Exception e) {
+        } catch (FeignException e) {
+            log.error("Error proposing changes for loan ID {}: {}", loanId, e.getMessage(), e);
+            throw new BadGatewayException("Error proposing changes for loan: " + e.getMessage());
+        }
+        catch (Exception e) {
             log.error("Unexpected error while proposing changes for loan ID {}. Error: {}", loanId, e.getMessage(), e);
             throw new RuntimeException("Unexpected error while proposing loan changes.", e);
         }
@@ -127,7 +153,7 @@ public class AdminLoansServiceImpl implements AdminLoansService {
             throw new IllegalArgumentException("User with ID " + userId + " does not have any roles");
         }
         if (!user.getRoles().contains(UserRole.ROLE_ADMIN)) {
-            throw new IllegalArgumentException("User with ID " + userId + " is not an admin");
+            throw new InvalidRoleException("User with ID " + userId + " is not an admin");
         }
     }
 

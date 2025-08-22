@@ -7,6 +7,7 @@ import com.ylli.shared.clients.UsersFeignClient;
 import com.ylli.shared.dtos.AccountDto;
 import com.ylli.shared.dtos.TransactionDto;
 import com.ylli.shared.enums.*;
+import com.ylli.shared.exceptions.*;
 import com.ylli.shared.models.Account;
 import com.ylli.shared.models.Transaction;
 import com.ylli.transactions_service.configs.AdminTransactionSpecifications;
@@ -61,6 +62,7 @@ public class TransactionsServiceImpl extends BaseServiceImpl<Transaction, Transa
         }
         catch (FeignException e){
             log.error(e.getMessage());
+            throw new BadGatewayException("Error fetching user accounts: " + e.getMessage());
         }
         if (accounts == null || accounts.isEmpty()) {
             return Page.empty(pageable);
@@ -219,7 +221,7 @@ public class TransactionsServiceImpl extends BaseServiceImpl<Transaction, Transa
     public TransactionDto createTransaction(TransactionDto transactionDto, String userId) {
         String sourceAccountId = transactionDto.getAccountId();
         if (sourceAccountId == null || sourceAccountId.isBlank()) {
-            throw new IllegalArgumentException("Source account ID is required.");
+            throw new ResourceDoesNotMatchException("Source account ID is required.");
         }
 
         AccountDto sourceAccountDto = accountsFeignClient.getAccountByIdAndUserId(sourceAccountId, userId).getBody();
@@ -257,7 +259,7 @@ public class TransactionsServiceImpl extends BaseServiceImpl<Transaction, Transa
                 if (sourceAccountDto.getBalance().compareTo(newTransaction.getAmount()) < 0) {
                     newTransaction.setStatus(TransactionStatus.FAILED);
                     repository.save(newTransaction);
-                    throw new IllegalStateException("Insufficient funds in source account for withdrawal.");
+                    throw new InsufficientFundsException("Insufficient funds in source account for withdrawal.");
                 }
                 sourceAccountDto.setBalance(sourceAccountDto.getBalance().subtract(newTransaction.getAmount()));
                 newTransaction.setStatus(TransactionStatus.COMPLETED);
@@ -276,16 +278,16 @@ public class TransactionsServiceImpl extends BaseServiceImpl<Transaction, Transa
 
                 AccountDto recipientAccountDto = accountsFeignClient.getById(recipientAccountId).getBody();
                 if (recipientAccountDto == null) {
-                    throw new IllegalArgumentException("Recipient account not found.");
+                    throw new BadGatewayException("Recipient account not found.");
                 }
                 if (recipientAccountDto.getStatus() != AccountStatus.ACTIVE) {
-                    throw new IllegalStateException("Recipient account is not active.");
+                    throw new AccountLockedException("Recipient account is not active.");
                 }
 
                 if (sourceAccountDto.getBalance().compareTo(newTransaction.getAmount()) < 0) {
                     newTransaction.setStatus(TransactionStatus.FAILED);
                     repository.save(newTransaction);
-                    throw new IllegalStateException("Insufficient funds in source account for transfer.");
+                    throw new InsufficientFundsException("Insufficient funds in source account for transfer.");
                 }
 
                 sourceAccountDto.setBalance(sourceAccountDto.getBalance().subtract(newTransaction.getAmount()));
@@ -337,7 +339,7 @@ public class TransactionsServiceImpl extends BaseServiceImpl<Transaction, Transa
 
         assert recipient != null;
         if (recipient.getBalance().compareTo(original.getAmount()) < 0) {
-            throw new IllegalStateException("Recipient does not have enough balance to revert transfer");
+            throw new InsufficientFundsException("Recipient does not have enough balance to revert transfer");
         }
 
         recipient.setBalance(recipient.getBalance().subtract(original.getAmount()));
@@ -389,7 +391,7 @@ public class TransactionsServiceImpl extends BaseServiceImpl<Transaction, Transa
         }
         var adminUser = usersFeignClient.getUser(adminId).getBody();
         if (adminUser == null || !adminUser.getRoles().contains(UserRole.ROLE_ADMIN)) {
-            throw new IllegalArgumentException("User with ID " + adminId + " is not an admin.");
+            throw new InvalidRoleException("User with ID " + adminId + " is not an admin.");
         }
     }
 
