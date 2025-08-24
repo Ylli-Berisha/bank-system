@@ -48,8 +48,8 @@ public class AdminLoansServiceImpl implements AdminLoansService {
              page,  size
             ).getBody();
         } catch (FeignException e){
-            log.error("Error fetching filtered loans: {}", e.getMessage(), e);
-            throw new BadGatewayException("Error fetching filtered loans: " + e.getMessage());
+            log.error(e.getMessage(), e);
+            throw e;
         }
         catch (Exception e) {
             throw new RuntimeException("An error occurred while fetching transactions: " + e.getMessage(), e);
@@ -72,8 +72,8 @@ public class AdminLoansServiceImpl implements AdminLoansService {
             return loanDto;
 
         } catch (FeignException e) {
-            log.error("Error accepting loan ID {}: {}", loanId, e.getMessage(), e);
-            throw new BadGatewayException("Error accepting loan: " + e.getMessage());
+            log.error(e.getMessage(), e);
+            throw e;
         }
         catch (Exception e) {
             throw new RuntimeException("An error occurred while accepting loan: " + e.getMessage(), e);
@@ -95,8 +95,8 @@ public class AdminLoansServiceImpl implements AdminLoansService {
             return loanDto;
 
         } catch (FeignException e) {
-            log.error("Error rejecting loan ID {}: {}", loanId, e.getMessage(), e);
-            throw new BadGatewayException("Error rejecting loan: " + e.getMessage());
+            log.error(e.getMessage(), e);
+            throw e;
         }
         catch (Exception e) {
             throw new RuntimeException("An error occurred while rejecting loan: " + e.getMessage(), e);
@@ -138,8 +138,8 @@ public class AdminLoansServiceImpl implements AdminLoansService {
             log.warn("Failed to propose changes for loan ID {}. Error: {}", loanId, e.getMessage());
             throw e;
         } catch (FeignException e) {
-            log.error("Error proposing changes for loan ID {}: {}", loanId, e.getMessage(), e);
-            throw new BadGatewayException("Error proposing changes for loan: " + e.getMessage());
+            log.error(e.getMessage(), e);
+            throw e;
         }
         catch (Exception e) {
             log.error("Unexpected error while proposing changes for loan ID {}. Error: {}", loanId, e.getMessage(), e);

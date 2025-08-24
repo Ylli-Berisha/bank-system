@@ -2,6 +2,9 @@ package com.ylli.transactions_service.controllers;
 
 import com.ylli.shared.base.BaseController;
 import com.ylli.shared.dtos.TransactionDto;
+import com.ylli.shared.exceptions.AccountLockedException;
+import com.ylli.shared.exceptions.InsufficientFundsException;
+import com.ylli.shared.exceptions.ResourceDoesNotMatchException;
 import com.ylli.transactions_service.services.TransactionsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -28,15 +31,9 @@ public class TransactionsController extends BaseController<TransactionDto, Strin
     }
 
     @Operation(summary = "Get user transactions", description = "Retrieve all transactions for a specific user")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Transactions retrieved successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid or missing user ID", content = @Content),
-            @ApiResponse(responseCode = "204", description = "No transactions found", content = @Content)
-    })
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "Transactions retrieved successfully"), @ApiResponse(responseCode = "400", description = "Invalid or missing user ID", content = @Content), @ApiResponse(responseCode = "204", description = "No transactions found", content = @Content)})
     @GetMapping("/get/user-transactions")
-    public ResponseEntity<Page<TransactionDto>> getUserTransactions(@RequestHeader("X-User-ID") String userId,
-                                                                    @RequestParam(defaultValue = "0") int page,
-                                                                    @RequestParam(defaultValue = "10") int size) {
+    public ResponseEntity<Page<TransactionDto>> getUserTransactions(@RequestHeader("X-User-ID") String userId, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
         if (userId == null || userId.isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
@@ -51,29 +48,14 @@ public class TransactionsController extends BaseController<TransactionDto, Strin
     }
 
     @Operation(summary = "Filter user transactions", description = "Filter transactions for a user based on optional criteria")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Transactions filtered successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid or missing user ID", content = @Content),
-            @ApiResponse(responseCode = "204", description = "No matching transactions found", content = @Content)
-    })
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "Transactions filtered successfully"), @ApiResponse(responseCode = "400", description = "Invalid or missing user ID", content = @Content), @ApiResponse(responseCode = "204", description = "No matching transactions found", content = @Content)})
     @GetMapping("/filter/user-transactions")
-    public ResponseEntity<List<TransactionDto>> filterUserTransactions(
-            @RequestHeader("X-User-ID") String userId,
-            @RequestParam(required = false) String type,
-            @RequestParam(required = false) String status,
-            @RequestParam(required = false) String startDate,
-            @RequestParam(required = false) String endDate,
-            @RequestParam(required = false) BigDecimal minAmount,
-            @RequestParam(required = false) BigDecimal maxAmount,
-            @RequestParam(required = false) String query
-    ) {
+    public ResponseEntity<List<TransactionDto>> filterUserTransactions(@RequestHeader("X-User-ID") String userId, @RequestParam(required = false) String type, @RequestParam(required = false) String status, @RequestParam(required = false) String startDate, @RequestParam(required = false) String endDate, @RequestParam(required = false) BigDecimal minAmount, @RequestParam(required = false) BigDecimal maxAmount, @RequestParam(required = false) String query) {
         if (userId == null || userId.isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
 
-        List<TransactionDto> transactions = service.filterUserTransactions(
-                userId, type, status, startDate, endDate, minAmount, maxAmount, query
-        );
+        List<TransactionDto> transactions = service.filterUserTransactions(userId, type, status, startDate, endDate, minAmount, maxAmount, query);
 
         if (transactions == null || transactions.isEmpty()) {
             return ResponseEntity.noContent().build();
@@ -83,26 +65,9 @@ public class TransactionsController extends BaseController<TransactionDto, Strin
     }
 
     @Operation(summary = "Filter admin transactions", description = "Filter transactions for admin panel based on optional criteria")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Transactions filtered successfully"),
-            @ApiResponse(responseCode = "204", description = "No matching transactions found", content = @Content)
-    })
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "Transactions filtered successfully"), @ApiResponse(responseCode = "204", description = "No matching transactions found", content = @Content)})
     @GetMapping("/filter/admin-transactions")
-    public ResponseEntity<Page<TransactionDto>> filterAdminTransactions(
-            @RequestHeader("X-User-ID") String adminId,
-            @RequestParam(required = false) String userId,
-            @RequestParam(required = false) String username,
-            @RequestParam(required = false) String email,
-            @RequestParam(required = false) String type,
-            @RequestParam(required = false) String status,
-            @RequestParam(required = false) String startDate,
-            @RequestParam(required = false) String endDate,
-            @RequestParam(required = false) BigDecimal minAmount,
-            @RequestParam(required = false) BigDecimal maxAmount,
-            @RequestParam(required = false) String query,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
-    ) {
+    public ResponseEntity<Page<TransactionDto>> filterAdminTransactions(@RequestHeader("X-User-ID") String adminId, @RequestParam(required = false) String userId, @RequestParam(required = false) String username, @RequestParam(required = false) String email, @RequestParam(required = false) String type, @RequestParam(required = false) String status, @RequestParam(required = false) String startDate, @RequestParam(required = false) String endDate, @RequestParam(required = false) BigDecimal minAmount, @RequestParam(required = false) BigDecimal maxAmount, @RequestParam(required = false) String query, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
         if (adminId == null || adminId.isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
@@ -110,9 +75,7 @@ public class TransactionsController extends BaseController<TransactionDto, Strin
             return ResponseEntity.badRequest().build();
         }
 
-        Page<TransactionDto> transactions = service.filterAdminTransactions(
-                adminId, userId, username, email, type, status, startDate, endDate, minAmount, maxAmount, query, page, size
-        );
+        Page<TransactionDto> transactions = service.filterAdminTransactions(adminId, userId, username, email, type, status, startDate, endDate, minAmount, maxAmount, query, page, size);
 
         if (transactions == null || transactions.isEmpty()) {
             return ResponseEntity.noContent().build();
@@ -123,65 +86,29 @@ public class TransactionsController extends BaseController<TransactionDto, Strin
 
 
     @Operation(summary = "Create new transaction", description = "Create a new transaction for a user")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "Transaction created successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid input data", content = @Content),
-            @ApiResponse(responseCode = "404", description = "Related resource not found", content = @Content),
-            @ApiResponse(responseCode = "409", description = "Transaction conflict occurred", content = @Content),
-            @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
-    })
+    @ApiResponses(value = {@ApiResponse(responseCode = "201", description = "Transaction created successfully"), @ApiResponse(responseCode = "400", description = "Invalid input data", content = @Content), @ApiResponse(responseCode = "404", description = "Related resource not found", content = @Content), @ApiResponse(responseCode = "409", description = "Transaction conflict occurred", content = @Content), @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
     @PostMapping("/create-new")
-    public ResponseEntity<TransactionDto> createTransaction(
-            @Validated @RequestBody TransactionDto transactionDto,
-            @RequestHeader("X-User-ID") String userId
-    ) {
-        try {
-            TransactionDto createdTransaction = service.createTransaction(transactionDto, userId);
-            return new ResponseEntity<>(createdTransaction, HttpStatus.CREATED);
-        } catch (IllegalArgumentException e) {
-            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
-        } catch (IllegalStateException e) {
-            return new ResponseEntity<>(null, HttpStatus.CONFLICT);
-        } catch (EntityNotFoundException e) {
-            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
-        } catch (Exception e) {
-            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+    public ResponseEntity<?> createTransaction(@Validated @RequestBody TransactionDto transactionDto, @RequestHeader("X-User-ID") String userId) {
+        TransactionDto createdTransaction = service.createTransaction(transactionDto, userId);
+        return new ResponseEntity<>(createdTransaction, HttpStatus.CREATED);
+
     }
 
     @PutMapping("/admin/revert")
     @Operation(summary = "Revert a transaction", description = "Revert a transaction by ID (Admin privilege required)")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Transaction reverted successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid transaction ID or user ID", content = @Content),
-            @ApiResponse(responseCode = "404", description = "Transaction not found", content = @Content),
-            @ApiResponse(responseCode = "500", description = "Internal server error while reverting transaction", content = @Content)
-    })
-    public ResponseEntity<TransactionDto> revertTransaction(
-            @RequestParam String transactionId,
-            @RequestHeader("X-User-ID") String adminId
-    ) {
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "Transaction reverted successfully"), @ApiResponse(responseCode = "400", description = "Invalid transaction ID or user ID", content = @Content), @ApiResponse(responseCode = "404", description = "Transaction not found", content = @Content), @ApiResponse(responseCode = "500", description = "Internal server error while reverting transaction", content = @Content)})
+    public ResponseEntity<?> revertTransaction(@RequestParam String transactionId, @RequestHeader("X-User-ID") String adminId) {
         if (transactionId == null || transactionId.isEmpty() || adminId == null || adminId.isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
 
-        try {
-            TransactionDto revertedTransaction = service.revertTransaction(transactionId, adminId);
-            return ResponseEntity.ok(revertedTransaction);
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
+        TransactionDto revertedTransaction = service.revertTransaction(transactionId, adminId);
+        return ResponseEntity.ok(revertedTransaction);
+
     }
 
     @Operation(summary = "Get top user transactions", description = "Retrieve the top transactions for a specific user")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Top transactions retrieved successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid or missing user ID", content = @Content),
-            @ApiResponse(responseCode = "204", description = "No top transactions found", content = @Content),
-            @ApiResponse(responseCode = "404", description = "User not found", content = @Content)
-    })
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "Top transactions retrieved successfully"), @ApiResponse(responseCode = "400", description = "Invalid or missing user ID", content = @Content), @ApiResponse(responseCode = "204", description = "No top transactions found", content = @Content), @ApiResponse(responseCode = "404", description = "User not found", content = @Content)})
     @GetMapping("/get/top-user-transactions")
     public ResponseEntity<List<TransactionDto>> getTopUserTransactions(@RequestHeader("X-User-ID") String userId) {
         if (userId == null || userId.isEmpty()) {

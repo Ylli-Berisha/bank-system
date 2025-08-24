@@ -9,11 +9,13 @@ import com.ylli.shared.exceptions.BadGatewayException;
 import com.ylli.shared.exceptions.ResourceNotFoundException;
 import feign.Feign;
 import feign.FeignException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 
+@Slf4j
 @Service
 public class AdminTransactionsServiceImpl implements AdminTransactionsService {
     private final TransactionsFeignClient transactionsFeignClient;
@@ -27,14 +29,11 @@ public class AdminTransactionsServiceImpl implements AdminTransactionsService {
     @Override
     public Page<TransactionDto> getFilteredTransactions(String adminId, String userId, String username, String email, String startDate, String endDate, String type, String status, BigDecimal minAmount, BigDecimal maxAmount, String query, int page, int size) {
         try {
-            return transactionsFeignClient.filterAdminTransactions(
-                    adminId, userId, username, email,type, status, startDate, endDate,
-                    minAmount, maxAmount, query, page, size
-            ).getBody();
+            return transactionsFeignClient.filterAdminTransactions(adminId, userId, username, email, type, status, startDate, endDate, minAmount, maxAmount, query, page, size).getBody();
         } catch (FeignException e) {
-            throw new BadGatewayException("Error fetching filtered transactions: " + e.getMessage());
-        }
-        catch (Exception e) {
+            log.error(e.getMessage(), e);
+            throw e;
+        } catch (Exception e) {
             throw new RuntimeException("An error occurred while fetching transactions: " + e.getMessage(), e);
         }
     }
@@ -47,16 +46,14 @@ public class AdminTransactionsServiceImpl implements AdminTransactionsService {
                 throw new ResourceNotFoundException("Transaction with ID " + transactionId + " not found.");
             }
 
-            auditHelper.createAudit(AuditType.TRANSACTION_REVERTED,
-                    "Transaction with ID " + transactionId + " has been reverted by admin with ID " + adminId,
-                    transactionDto.getAccountId());
+            auditHelper.createAudit(AuditType.TRANSACTION_REVERTED, "Transaction with ID " + transactionId + " has been reverted by admin with ID " + adminId, transactionDto.getAccountId());
 
             return transactionDto;
 
         } catch (FeignException e) {
-            throw new BadGatewayException("Error reverting transaction: " + e.getMessage());
-        }
-        catch (Exception e) {
+            log.error(e.getMessage(), e);
+            throw e;
+        } catch (Exception e) {
             throw new RuntimeException("An error occurred while reverting transaction: " + e.getMessage(), e);
         }
     }

@@ -55,6 +55,7 @@ public class GlobalExceptionHandler {
             ValidationException.class,
             TransactionFailedException.class,
             IllegalArgumentException.class,
+            IllegalStateException.class,
             HttpMessageNotReadableException.class
     })
     public ResponseEntity<ErrorResponseDto> handleBadRequestExceptions(Exception ex, WebRequest request) {

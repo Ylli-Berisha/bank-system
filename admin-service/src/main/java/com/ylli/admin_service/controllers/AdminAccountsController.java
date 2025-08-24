@@ -3,6 +3,7 @@ package com.ylli.admin_service.controllers;
 import com.ylli.admin_service.services.AdminAccountsService;
 import com.ylli.shared.dtos.AccountDto;
 import com.ylli.shared.dtos.PageResponseDto;
+import com.ylli.shared.exceptions.BadGatewayException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -30,86 +31,33 @@ public class AdminAccountsController {
     }
 
     @Operation(summary = "Get all accounts (Admin)", description = "Retrieve all accounts in the system (Admin privilege required)")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Accounts retrieved successfully"),
-            @ApiResponse(responseCode = "404", description = "No accounts found", content = @Content),
-            @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
-    })
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "Accounts retrieved successfully"), @ApiResponse(responseCode = "404", description = "No accounts found", content = @Content), @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
     @GetMapping("/get/all")
     public ResponseEntity<?> getAllAccounts(@RequestHeader("X-User-ID") String userId) {
-        try {
-            List<AccountDto> accounts = adminAccountsService.getAllAccounts(userId);
-            return new ResponseEntity<>(accounts, HttpStatus.OK);
-        } catch (IllegalArgumentException e) {
-            System.err.println("Error fetching accounts: " + e.getMessage());
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
-        } catch (Exception e) {
-            System.err.println("An unexpected error occurred: " + e.getMessage());
-            return new ResponseEntity<>("An internal server error occurred while fetching accounts.", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        List<AccountDto> accounts = adminAccountsService.getAllAccounts(userId);
+        return new ResponseEntity<>(accounts, HttpStatus.OK);
     }
 
     @Operation(summary = "Approve account", description = "Approve a pending account using its ID")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Account approved successfully"),
-            @ApiResponse(responseCode = "404", description = "Account not found", content = @Content),
-            @ApiResponse(responseCode = "500", description = "Internal server error while approving account", content = @Content)
-    })
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "Account approved successfully"), @ApiResponse(responseCode = "404", description = "Account not found", content = @Content), @ApiResponse(responseCode = "500", description = "Internal server error while approving account", content = @Content)})
     @PatchMapping("/approve/account/{id}")
     public ResponseEntity<?> approveAccount(@PathVariable String id, @RequestHeader("X-User-ID") String userId) {
-        try {
-            adminAccountsService.approveAccount(id, userId);
-        } catch (IllegalArgumentException e) {
-            System.err.println("Error approving account: " + e.getMessage());
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
-        } catch (Exception e) {
-            System.err.println("An unexpected error occurred while approving the account: " + e.getMessage());
-            return new ResponseEntity<>("An internal server error occurred while approving the account.", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        adminAccountsService.approveAccount(id, userId);
         return ResponseEntity.ok().build();
     }
 
     @Operation(summary = "Reject account", description = "Reject a pending account using its ID")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Account rejected successfully"),
-            @ApiResponse(responseCode = "404", description = "Account not found", content = @Content),
-            @ApiResponse(responseCode = "500", description = "Internal server error while rejecting account", content = @Content)
-    })
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "Account rejected successfully"), @ApiResponse(responseCode = "404", description = "Account not found", content = @Content), @ApiResponse(responseCode = "500", description = "Internal server error while rejecting account", content = @Content)})
     @PatchMapping("/reject/account/{id}")
     public ResponseEntity<?> rejectAccount(@PathVariable String id, @RequestHeader("X-User-ID") String userId) {
-        try {
-            adminAccountsService.rejectAccount(id, userId);
-        } catch (IllegalArgumentException e) {
-            System.err.println("Error rejecting account: " + e.getMessage());
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
-        } catch (Exception e) {
-            System.err.println("An unexpected error occurred while rejecting the account: " + e.getMessage());
-            return new ResponseEntity<>("An internal server error occurred while rejecting the account.", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        adminAccountsService.rejectAccount(id, userId);
         return ResponseEntity.ok().build();
     }
 
     @Operation(summary = "Filter admin accounts", description = "Filter accounts for admin panel based on optional criteria")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Accounts filtered successfully"),
-            @ApiResponse(responseCode = "204", description = "No matching accounts found", content = @Content)
-    })
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "Accounts filtered successfully"), @ApiResponse(responseCode = "204", description = "No matching accounts found", content = @Content)})
     @GetMapping("/filter/admin-accounts")
-    public ResponseEntity<PageResponseDto<AccountDto>> filterAdminAccounts(
-            @RequestHeader("X-User-ID") String adminId,
-            @RequestParam(required = false) String accountId,
-            @RequestParam(required = false) String userId,
-            @RequestParam(required = false) String username,
-            @RequestParam(required = false) String email,
-            @RequestParam(required = false) String loanId,
-            @RequestParam(required = false) String transactionId,
-            @RequestParam(required = false) String type,
-            @RequestParam(required = false) String status,
-            @RequestParam(required = false) BigDecimal minBalance,
-            @RequestParam(required = false) BigDecimal maxBalance,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
-    ) {
+    public ResponseEntity<PageResponseDto<AccountDto>> filterAdminAccounts(@RequestHeader("X-User-ID") String adminId, @RequestParam(required = false) String accountId, @RequestParam(required = false) String userId, @RequestParam(required = false) String username, @RequestParam(required = false) String email, @RequestParam(required = false) String loanId, @RequestParam(required = false) String transactionId, @RequestParam(required = false) String type, @RequestParam(required = false) String status, @RequestParam(required = false) BigDecimal minBalance, @RequestParam(required = false) BigDecimal maxBalance, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
         if (adminId == null || adminId.isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
@@ -117,21 +65,7 @@ public class AdminAccountsController {
             return ResponseEntity.badRequest().build();
         }
 
-        PageResponseDto<AccountDto> accounts = adminAccountsService.filterAdminAccounts(
-                adminId,
-                accountId,
-                type,
-                minBalance,
-                maxBalance,
-                status,
-                userId,
-                username,
-                email,
-                loanId,
-                transactionId,
-                page,
-                size
-        );
+        PageResponseDto<AccountDto> accounts = adminAccountsService.filterAdminAccounts(adminId, accountId, type, minBalance, maxBalance, status, userId, username, email, loanId, transactionId, page, size);
 
         if (accounts == null || accounts.isEmpty()) {
             return ResponseEntity.noContent().build();

@@ -6,6 +6,7 @@ import com.ylli.shared.dtos.AccountDto;
 import com.ylli.shared.dtos.PageResponseDto;
 import com.ylli.shared.enums.AccountStatus;
 import com.ylli.shared.enums.AccountType;
+import com.ylli.shared.exceptions.ResourceDoesNotMatchException;
 import com.ylli.shared.exceptions.ResourceNotFoundException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -25,10 +26,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-@Tag(
-        name = "Accounts",
-        description = "Operations related to accounts"
-)
+@Tag(name = "Accounts", description = "Operations related to accounts")
 @RestController
 @RequestMapping("/api/accounts")
 public class AccountsController extends BaseController<AccountDto, String, AccountsService> {
@@ -41,10 +39,7 @@ public class AccountsController extends BaseController<AccountDto, String, Accou
     }
 
     @Operation(summary = "Get all accounts", description = "Retrieve all accounts from the system")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Accounts retrieved successfully"),
-            @ApiResponse(responseCode = "404", description = "No accounts found", content = @Content)
-    })
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "Accounts retrieved successfully"), @ApiResponse(responseCode = "404", description = "No accounts found", content = @Content)})
     @GetMapping("/get/all")
     public ResponseEntity<List<AccountDto>> getAll() {
         List<AccountDto> accounts = service.getAll();
@@ -55,19 +50,14 @@ public class AccountsController extends BaseController<AccountDto, String, Accou
     }
 
     @Operation(summary = "Get accounts by user ID", description = "Retrieve all accounts associated with a specific user")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Accounts retrieved successfully"),
-            @ApiResponse(responseCode = "204", description = "No accounts found for user"),
-            @ApiResponse(responseCode = "400", description = "Invalid user ID", content = @Content)
-    })
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "Accounts retrieved successfully"), @ApiResponse(responseCode = "204", description = "No accounts found for user"), @ApiResponse(responseCode = "400", description = "Invalid user ID", content = @Content)})
     @GetMapping("/get/user-accounts")
     public ResponseEntity<Page<AccountDto>> getUserAccounts(@RequestHeader("X-User-ID") String userId, @RequestParam(defaultValue = "0") Integer page, @RequestParam(defaultValue = "6") Integer size) {
         if (userId == null || userId.isEmpty()) {
             throw new IllegalArgumentException("User ID cannot be null or empty");
         }
         Page<AccountDto> accounts = service.getUserAccounts(userId, page, size);
-        if (accounts.isEmpty())
-            return ResponseEntity.noContent().build();
+        if (accounts.isEmpty()) return ResponseEntity.noContent().build();
         return ResponseEntity.ok(accounts);
     }
 
@@ -95,10 +85,7 @@ public class AccountsController extends BaseController<AccountDto, String, Accou
 //    }
 
     @Operation(summary = "Get available account types", description = "Retrieve a list of supported account types")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Account types retrieved successfully"),
-            @ApiResponse(responseCode = "404", description = "No account types found", content = @Content)
-    })
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "Account types retrieved successfully"), @ApiResponse(responseCode = "404", description = "No account types found", content = @Content)})
     @GetMapping("/get/account-types")
     public ResponseEntity<List<String>> getAccountTypes() {
         List<String> accountTypes = service.getAccountTypes();
@@ -109,11 +96,7 @@ public class AccountsController extends BaseController<AccountDto, String, Accou
     }
 
     @Operation(summary = "Apply for a new account", description = "Submit a request to apply for a new account")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Account application submitted successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid account data or status", content = @Content),
-            @ApiResponse(responseCode = "500", description = "Failed to process the application", content = @Content)
-    })
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "Account application submitted successfully"), @ApiResponse(responseCode = "400", description = "Invalid account data or status", content = @Content), @ApiResponse(responseCode = "500", description = "Failed to process the application", content = @Content)})
     @PostMapping("/apply-for-account")
     public ResponseEntity<Void> applyForNewAccount(@RequestBody AccountDto accountDto) {
         if (accountDto == null || accountDto.getUserId().isBlank() || accountDto.getStatus() != AccountStatus.PENDING_APPROVAL) {
@@ -127,89 +110,48 @@ public class AccountsController extends BaseController<AccountDto, String, Accou
     }
 
     @Operation(summary = "Freeze an account", description = "Freeze a specific account by ID")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Account frozen successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid account ID", content = @Content),
-            @ApiResponse(responseCode = "404", description = "Account not found", content = @Content),
-            @ApiResponse(responseCode = "409", description = "Account already frozen", content = @Content),
-            @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
-    })
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "Account frozen successfully"), @ApiResponse(responseCode = "400", description = "Invalid account ID", content = @Content), @ApiResponse(responseCode = "404", description = "Account not found", content = @Content), @ApiResponse(responseCode = "409", description = "Account already frozen", content = @Content), @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
     @PatchMapping("/{id}/freeze")
     public ResponseEntity<?> freezeAccount(@PathVariable String id, @RequestHeader("X-User-ID") String userId) {
         if (id == null || id.isEmpty()) {
             return ResponseEntity.badRequest().body("Account ID must be provided.");
         }
-
-        try {
-            boolean success = service.freezeAccount(id, userId);
-            if (!success) {
-                return ResponseEntity.status(HttpStatus.CONFLICT).body("Account already frozen.");
-            }
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Account not found.");
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Server error.");
+        boolean success = service.freezeAccount(id, userId);
+        if (!success) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("Account already frozen.");
         }
         return ResponseEntity.ok().build();
     }
 
     @Operation(summary = "Unfreeze an account", description = "Unfreeze a specific account by ID")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Account unfrozen successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid account ID", content = @Content),
-            @ApiResponse(responseCode = "404", description = "Account not found", content = @Content),
-            @ApiResponse(responseCode = "409", description = "Account is not frozen", content = @Content),
-            @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
-    })
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "Account unfrozen successfully"), @ApiResponse(responseCode = "400", description = "Invalid account ID", content = @Content), @ApiResponse(responseCode = "404", description = "Account not found", content = @Content), @ApiResponse(responseCode = "409", description = "Account is not frozen", content = @Content), @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
     @PatchMapping("/{id}/unfreeze")
     public ResponseEntity<?> unfreezeAccount(@PathVariable String id, @RequestHeader("X-User-ID") String userId) {
         if (id == null || id.isEmpty()) {
             return ResponseEntity.badRequest().body("Account ID must be provided.");
         }
 
-        try {
-            boolean success = service.unfreezeAccount(id, userId);
-            if (!success) {
-                return ResponseEntity.status(HttpStatus.CONFLICT).body("Account is not frozen.");
-            }
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Account not found.");
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Server error.");
+        boolean success = service.unfreezeAccount(id, userId);
+        if (!success) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("Account is not frozen.");
         }
         return ResponseEntity.ok().build();
     }
 
     @Operation(summary = "Get account by ID and user ID", description = "Retrieve an account using its ID and the user ID that owns it")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Account retrieved successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid ID or user ID", content = @Content),
-            @ApiResponse(responseCode = "404", description = "Account not found", content = @Content)
-    })
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "Account retrieved successfully"), @ApiResponse(responseCode = "400", description = "Invalid ID or user ID", content = @Content), @ApiResponse(responseCode = "404", description = "Account not found", content = @Content)})
     @GetMapping("/get/by-id-and-user-id")
-    public ResponseEntity<AccountDto> getAccountByIdAndUserId(
-            @RequestParam String id,
-            @RequestHeader("X-User-ID") String userId
-    ) {
+    public ResponseEntity<?> getAccountByIdAndUserId(@RequestParam String id, @RequestHeader("X-User-ID") String userId) {
         if (id == null || id.isEmpty() || userId == null || userId.isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
         AccountDto account;
-        try {
-            account = service.getByIdAndUserId(id, userId);
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(null);
-        }
+        account = service.getByIdAndUserId(id, userId);
         return ResponseEntity.ok(account);
     }
 
     @Operation(summary = "Get top user accounts", description = "Get the top accounts of the logged in user")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Top accounts retrieved successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid user ID", content = @Content)
-    })
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "Top accounts retrieved successfully"), @ApiResponse(responseCode = "400", description = "Invalid user ID", content = @Content)})
     @GetMapping("/get/top-accounts")
     public ResponseEntity<List<AccountDto>> getTopAccounts(@RequestHeader("X-User-ID") String userId) {
         System.out.println("Received request to get top accounts for user ID: " + userId);
@@ -222,26 +164,9 @@ public class AccountsController extends BaseController<AccountDto, String, Accou
     }
 
     @Operation(summary = "Filter admin accounts", description = "Filter accounts for admin panel based on optional criteria")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Accounts filtered successfully"),
-            @ApiResponse(responseCode = "204", description = "No matching accounts found", content = @Content)
-    })
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "Accounts filtered successfully"), @ApiResponse(responseCode = "204", description = "No matching accounts found", content = @Content)})
     @GetMapping("/filter/admin-accounts")
-    public ResponseEntity<PageResponseDto<AccountDto>> filterAdminAccounts(
-            @RequestHeader("X-User-ID") String adminId,
-            @RequestParam(required = false) String accountId,
-            @RequestParam(required = false) String userId,
-            @RequestParam(required = false) String username,
-            @RequestParam(required = false) String email,
-            @RequestParam(required = false) String loanId,
-            @RequestParam(required = false) String transactionId,
-            @RequestParam(required = false) String type,
-            @RequestParam(required = false) String status,
-            @RequestParam(required = false) BigDecimal minBalance,
-            @RequestParam(required = false) BigDecimal maxBalance,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
-    ) {
+    public ResponseEntity<PageResponseDto<AccountDto>> filterAdminAccounts(@RequestHeader("X-User-ID") String adminId, @RequestParam(required = false) String accountId, @RequestParam(required = false) String userId, @RequestParam(required = false) String username, @RequestParam(required = false) String email, @RequestParam(required = false) String loanId, @RequestParam(required = false) String transactionId, @RequestParam(required = false) String type, @RequestParam(required = false) String status, @RequestParam(required = false) BigDecimal minBalance, @RequestParam(required = false) BigDecimal maxBalance, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
         if (adminId == null || adminId.isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
@@ -249,21 +174,7 @@ public class AccountsController extends BaseController<AccountDto, String, Accou
             return ResponseEntity.badRequest().build();
         }
 
-        PageResponseDto<AccountDto> accounts = service.filterAdminAccounts(
-                adminId,
-                accountId,
-                type,
-                minBalance,
-                maxBalance,
-                status,
-                userId,
-                username,
-                email,
-                loanId,
-                transactionId,
-                page,
-                size
-        );
+        PageResponseDto<AccountDto> accounts = service.filterAdminAccounts(adminId, accountId, type, minBalance, maxBalance, status, userId, username, email, loanId, transactionId, page, size);
 
         if (accounts == null || accounts.isEmpty()) {
             return ResponseEntity.noContent().build();
@@ -273,23 +184,9 @@ public class AccountsController extends BaseController<AccountDto, String, Accou
     }
 
     @Operation(summary = "Filter user accounts", description = "Filter accounts for a user based on optional criteria")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Accounts filtered successfully"),
-            @ApiResponse(responseCode = "204", description = "No matching accounts found", content = @Content),
-            @ApiResponse(responseCode = "404", description = "Account not found"),
-            @ApiResponse(responseCode = "400", description = "User id does not match the account queried")
-    })
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "Accounts filtered successfully"), @ApiResponse(responseCode = "204", description = "No matching accounts found", content = @Content), @ApiResponse(responseCode = "404", description = "Account not found"), @ApiResponse(responseCode = "400", description = "User id does not match the account queried")})
     @GetMapping("/filter/user-accounts")
-    public ResponseEntity<Page<AccountDto>> filterUserAccounts(
-            @RequestHeader("X-User-ID") String userId,
-            @RequestParam(required = false) String accountId,
-            @RequestParam(required = false) String type,
-            @RequestParam(required = false) BigDecimal minBalance,
-            @RequestParam(required = false) BigDecimal maxBalance,
-            @RequestParam(required = false) String status,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "6") int size
-    ) {
+    public ResponseEntity<Page<AccountDto>> filterUserAccounts(@RequestHeader("X-User-ID") String userId, @RequestParam(required = false) String accountId, @RequestParam(required = false) String type, @RequestParam(required = false) BigDecimal minBalance, @RequestParam(required = false) BigDecimal maxBalance, @RequestParam(required = false) String status, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "6") int size) {
         log.info("Received request to filter user accounts for user ID: " + userId);
         if (userId == null || userId.isEmpty()) {
             return ResponseEntity.badRequest().build();
@@ -316,16 +213,7 @@ public class AccountsController extends BaseController<AccountDto, String, Accou
             }
         }
 
-        Page<AccountDto> accounts = service.filterUserAccounts(
-                accountId,
-                userId,
-                parsedType,
-                minBalance,
-                maxBalance,
-                parsedStatus,
-                page,
-                size
-        );
+        Page<AccountDto> accounts = service.filterUserAccounts(accountId, userId, parsedType, minBalance, maxBalance, parsedStatus, page, size);
 
         if (accounts == null || accounts.isEmpty()) {
             return ResponseEntity.noContent().build();
@@ -335,14 +223,9 @@ public class AccountsController extends BaseController<AccountDto, String, Accou
     }
 
 
-
-
     @GetMapping("/get/by-status")
     @Operation(summary = "Get accounts by status")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Accounts retrieved successfully"),
-            @ApiResponse(responseCode = "204", description = "No accounts found for the given status", content = @Content),
-            @ApiResponse(responseCode = "400", description = "Invalid status or parameters", content = @Content)})
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "Accounts retrieved successfully"), @ApiResponse(responseCode = "204", description = "No accounts found for the given status", content = @Content), @ApiResponse(responseCode = "400", description = "Invalid status or parameters", content = @Content)})
     public ResponseEntity<PageResponseDto<AccountDto>> getAccountsByStatus(@RequestHeader("X-User-Id") String userId, @RequestParam String status, int page, int size) {
         if (status == null) {
             return ResponseEntity.badRequest().build();
@@ -350,8 +233,7 @@ public class AccountsController extends BaseController<AccountDto, String, Accou
         AccountStatus accountStatus;
         try {
             accountStatus = AccountStatus.valueOf(status.toUpperCase());
-        }
-        catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(null);
         }
         PageResponseDto<AccountDto> accounts = service.getByStatus(userId, accountStatus, page, size);

@@ -221,7 +221,7 @@ public class TransactionsServiceImpl extends BaseServiceImpl<Transaction, Transa
     public TransactionDto createTransaction(TransactionDto transactionDto, String userId) {
         String sourceAccountId = transactionDto.getAccountId();
         if (sourceAccountId == null || sourceAccountId.isBlank()) {
-            throw new ResourceDoesNotMatchException("Source account ID is required.");
+            throw new IllegalArgumentException("Source account ID is required.");
         }
 
         AccountDto sourceAccountDto = accountsFeignClient.getAccountByIdAndUserId(sourceAccountId, userId).getBody();

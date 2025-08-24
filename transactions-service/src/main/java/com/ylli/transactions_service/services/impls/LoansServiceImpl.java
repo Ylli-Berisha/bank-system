@@ -11,6 +11,7 @@ import com.ylli.shared.enums.AuditType;
 import com.ylli.shared.enums.LoanStatus;
 import com.ylli.shared.enums.LoanType;
 import com.ylli.shared.enums.UserRole;
+import com.ylli.shared.exceptions.BadGatewayException;
 import com.ylli.shared.exceptions.InvalidRoleException;
 import com.ylli.shared.exceptions.ResourceDoesNotMatchException;
 import com.ylli.shared.exceptions.ResourceNotFoundException;
@@ -157,7 +158,7 @@ public class LoansServiceImpl extends BaseServiceImpl<Loan, LoanDto, Long, Loans
             throw e;
         } catch (FeignException e) {
             log.error("Loan application failed due to communication error with accounts service for account ID {}. Status: {}, Error: {}", accountId, e.status(), e.getMessage(), e);
-            throw new RuntimeException("Failed to communicate with account service.", e);
+            throw new BadGatewayException("Failed to communicate with account service.");
         } catch (DataAccessException e) {
             log.error("Loan application failed due to a database error for account ID {}. Error: {}", accountId, e.getMessage(), e);
             throw new RuntimeException("Failed to save loan application due to a database error.", e);
@@ -317,7 +318,7 @@ public class LoansServiceImpl extends BaseServiceImpl<Loan, LoanDto, Long, Loans
                 .orElseThrow(() -> new EntityNotFoundException("Loan not found with ID " + loanId));
 
         if (!userId.equals(loan.getAccount().getUser().getId())) {
-            throw new IllegalArgumentException("User with ID " + userId + " does not own the loan with ID " + loanId);
+            throw new ResourceDoesNotMatchException("User with ID " + userId + " does not own the loan with ID " + loanId);
         }
 
         if (loan.getStatus() != LoanStatus.CHANGES_PROPOSED) {
@@ -402,6 +403,14 @@ public class LoansServiceImpl extends BaseServiceImpl<Loan, LoanDto, Long, Loans
 
         List<Loan> loans = repository.findByStatus(LoanStatus.ACTIVE);
 
+        for (Loan loan : loans) {
+            try {
+                loanProcessingService.processSingleLoanInstallment(loan);
+            } catch (Exception e) {
+                log.error("Failed to process installment for loan {}: {}", loan.getId(), e.getMessage(), e);
+            }
+        }
+
         Set<String> affectedUserIds = loans.stream()
                 .filter(loan -> loan.getAccount() != null && loan.getAccount().getUser() != null)
                 .map(loan -> loan.getAccount().getUser().getId())
@@ -413,6 +422,7 @@ public class LoansServiceImpl extends BaseServiceImpl<Loan, LoanDto, Long, Loans
 
         log.info("Scheduled loan installment processing finished");
     }
+
 
     private LoanDto startLoan(Loan loan) {
         LocalDate now = LocalDate.now();

@@ -18,13 +18,13 @@ public class AdminUsersServiceImpl implements AdminUsersService {
 
     @Override
     public Page<UserDto> getAllUsers(String userId, int page, int size) {
-        try{
+        try {
             Page<UserDto> userDtos = usersFeignClient.getAllUsers(userId, page, size).getBody();
             return userDtos;
-        }catch (FeignException e){
-            log.error("Feign error when query users by userId:{}", userId);
-            throw new BadGatewayException("Error fetching users: " + e.getMessage());
-        } catch (Exception e){
+        } catch (FeignException e) {
+            log.error(e.getMessage(), e);
+            throw e;
+        } catch (Exception e) {
             log.error("Unexpected error when query users by userId:{}", userId, e);
             throw new RuntimeException("An unexpected error occurred while fetching users: " + e.getMessage(), e);
         }
@@ -36,8 +36,8 @@ public class AdminUsersServiceImpl implements AdminUsersService {
             Page<UserDto> userDtos = usersFeignClient.filterAdminUsers(userId, id, username, firstName, lastName, email, phoneNumber, isActive, accountId, loanId, transactionId, page, size).getBody();
             return userDtos;
         } catch (FeignException e) {
-            log.error("Feign error when filtering users by userId:{}", userId);
-            throw new BadGatewayException("Error fetching filtered users: " + e.getMessage());
+            log.error(e.getMessage(), e);
+            throw e;
         } catch (Exception e) {
             log.error("Unexpected error when filtering users by userId:{}", userId, e);
             throw new RuntimeException("An unexpected error occurred while fetching filtered users: " + e.getMessage(), e);

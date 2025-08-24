@@ -52,7 +52,8 @@ public class AdminAccountsServiceImpl implements AdminAccountsService {
             }
             return accounts;
         } catch (FeignException e) {
-            throw new BadGatewayException("Error fetching accounts: " + e.getMessage());
+            log.error(e.getMessage(), e);
+            throw e;
         } catch (Exception e) {
             throw new RuntimeException("An unexpected error occurred while fetching accounts: " + e.getMessage(), e);
         }
@@ -65,16 +66,15 @@ public class AdminAccountsServiceImpl implements AdminAccountsService {
             HttpStatusCode code = accountsFeignClient.freezeAccountFromAdmin(accountId).getStatusCode();
             if (code.is2xxSuccessful()) {
 
-                auditHelper.createAudit(AuditType.ACCOUNT_LOCKED,
-                        "Account with ID " + accountId + " has been frozen by admin: " + userId,
-                                accountId);
+                auditHelper.createAudit(AuditType.ACCOUNT_LOCKED, "Account with ID " + accountId + " has been frozen by admin: " + userId, accountId);
 
                 return true;
             } else {
                 throw new BadGatewayException("Failed to freeze account with ID: " + accountId);
             }
         } catch (FeignException e) {
-            throw new BadGatewayException("Error freezing account: " + e.getMessage());
+            log.error(e.getMessage(), e);
+            throw e;
         } catch (Exception e) {
             throw new RuntimeException("An unexpected error occurred while freezing the account: " + e.getMessage(), e);
         }
@@ -87,16 +87,15 @@ public class AdminAccountsServiceImpl implements AdminAccountsService {
             HttpStatusCode code = accountsFeignClient.unfreezeAccount(accountId).getStatusCode();
             if (code.is2xxSuccessful()) {
 
-                auditHelper.createAudit(AuditType.ACCOUNT_UNLOCKED,
-                        "Account with ID " + accountId + " has been unfrozen by admin: " + userId,
-                                accountId);
+                auditHelper.createAudit(AuditType.ACCOUNT_UNLOCKED, "Account with ID " + accountId + " has been unfrozen by admin: " + userId, accountId);
 
                 return true;
             } else {
                 throw new BadGatewayException("Failed to unfreeze account with ID: " + accountId);
             }
         } catch (FeignException e) {
-            throw new BadGatewayException("Error unfreezing account: " + e.getMessage());
+            log.error(e.getMessage(), e);
+            throw e;
         } catch (Exception e) {
             throw new RuntimeException("An unexpected error occurred while unfreezing the account: " + e.getMessage(), e);
         }
@@ -116,12 +115,11 @@ public class AdminAccountsServiceImpl implements AdminAccountsService {
             account.setStatus(AccountStatus.ACTIVE);
             accountsFeignClient.update(accountId, account);
 
-            auditHelper.createAudit(AuditType.ACCOUNT_APPLICATION_APPROVED,
-                    "Account with ID " + accountId + " has been approved by admin: " + userId,
-                            accountId);
+            auditHelper.createAudit(AuditType.ACCOUNT_APPLICATION_APPROVED, "Account with ID " + accountId + " has been approved by admin: " + userId, accountId);
 
         } catch (FeignException e) {
-            throw new BadGatewayException("Error approving account: " + e.getMessage());
+            log.error(e.getMessage(), e);
+            throw e;
         } catch (Exception e) {
             throw new RuntimeException("An unexpected error occurred while approving the account: " + e.getMessage(), e);
         }
@@ -141,12 +139,11 @@ public class AdminAccountsServiceImpl implements AdminAccountsService {
             account.setStatus(AccountStatus.REJECTED);
             accountsFeignClient.update(accountId, account);
 
-            auditHelper.createAudit(AuditType.ACCOUNT_APPLICATION_REJECTED,
-                    "Account with ID " + accountId + " has been rejected by admin: " + userId,
-                            accountId);
+            auditHelper.createAudit(AuditType.ACCOUNT_APPLICATION_REJECTED, "Account with ID " + accountId + " has been rejected by admin: " + userId, accountId);
 
         } catch (FeignException e) {
-            throw new BadGatewayException("Error rejecting account: " + e.getMessage());
+            log.error(e.getMessage(), e);
+            throw e;
         } catch (Exception e) {
             log.error("An unexpected error occurred while rejecting the account: {}", e.getMessage(), e);
             throw e;
@@ -159,7 +156,7 @@ public class AdminAccountsServiceImpl implements AdminAccountsService {
             return accountsFeignClient.filterAdminAccounts(adminId, accountId, userId, username, email, loanId, transactionId, typeString, statusString, minBalance, maxBalance, page, size).getBody();
         } catch (FeignException e) {
             log.error(e.getMessage(), e);
-            throw new BadGatewayException("A feign error occurred while fetching transactions: " + e.getMessage());
+            throw e;
         }
     }
 
